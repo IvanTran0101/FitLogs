@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap
+data:
+  appsettings.json: |-
+    {
+    "App": {
+        "SelfUrl": "{{ include "fitlogs.hosts.blazorwebapp" . }}"
+    },
+    "AuthServer": {
+        "Authority": "{{ include "fitlogs.hosts.blazorwebapp" . }}",        "ClientId": "FitLogs_BlazorWebApp",
+        "ResponseType": "code"
+    },
+    "RemoteServices": {
+        "Default": {
+          "BaseUrl": "{{ include "fitlogs.hosts.blazorwebapp" . }}"        },
+        "AbpAccountPublic": {
+          "BaseUrl": "{{ include "fitlogs.hosts.blazorwebapp" . }}"        }
+    }
+    }

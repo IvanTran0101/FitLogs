@@ -1,0 +1,133 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "5.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.TextTemplateManagement": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.LanguageManagement": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.OpenIddict.Pro": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.Gdpr": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.AuditLogging.Pro": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Saas": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.Identity.Pro": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.Account.Pro": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "10.2.0",
+      "isInstalled": true,
+      "creationTime": "06/02/2026 06:18:29 +00:00"
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "FitLogs.Application": {
+      "path": "src/FitLogs.Application/FitLogs.Application.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.Application.Tests": {
+      "path": "test/FitLogs.Application.Tests/FitLogs.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "FitLogs.Domain.Shared": {
+      "path": "src/FitLogs.Domain.Shared/FitLogs.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.Application.Contracts": {
+      "path": "src/FitLogs.Application.Contracts/FitLogs.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.HttpApi": {
+      "path": "src/FitLogs.HttpApi/FitLogs.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.HttpApi.Client": {
+      "path": "src/FitLogs.HttpApi.Client/FitLogs.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.EntityFrameworkCore.Tests": {
+      "path": "test/FitLogs.EntityFrameworkCore.Tests/FitLogs.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "FitLogs.EntityFrameworkCore": {
+      "path": "src/FitLogs.EntityFrameworkCore/FitLogs.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.TestBase": {
+      "path": "test/FitLogs.TestBase/FitLogs.TestBase.abppkg",
+      "folder": "test"
+    },
+    "FitLogs.Domain.Tests": {
+      "path": "test/FitLogs.Domain.Tests/FitLogs.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "FitLogs.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/FitLogs.HttpApi.Client.ConsoleTestApp/FitLogs.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "FitLogs.DbMigrator": {
+      "path": "src/FitLogs.DbMigrator/FitLogs.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.Blazor": {
+      "path": "src/FitLogs.Blazor/FitLogs.Blazor.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.Blazor.Client": {
+      "path": "src/FitLogs.Blazor.Client/FitLogs.Blazor.Client.abppkg",
+      "folder": "src"
+    },
+    "FitLogs.Domain": {
+      "path": "src/FitLogs.Domain/FitLogs.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}

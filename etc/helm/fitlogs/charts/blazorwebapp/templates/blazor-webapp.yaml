@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+spec:
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-{{ .Chart.Name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-{{ .Chart.Name }}"
+    spec:
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap
+      containers:
+      - image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+        ports:
+        - name: "http"
+          containerPort: 80
+        volumeMounts:
+          - name: config-volume
+            mountPath: /app/wwwroot/appsettings.json
+            subPath: appsettings.json
+        env:
+        - name: "DOTNET_ENVIRONMENT"
+          value: "{{ .Values.global.dotnetEnvironment }}"
+        - name: "App__SelfUrl"
+          value: "{{ include "fitlogs.hosts.blazorwebapp" . }}"
+        - name: "RedirectAllowedUrls"
+          value: "{{ include "fitlogs.hosts.blazorwebapp" . }},"
+        - name: App__DisablePII
+          value: "{{ .Values.global.disablePII }}"
+        - name: "ConnectionStrings__Default"
+          value: "{{ .Values.global.connectionStrings.default | replace "[RELEASE_NAME]" .Release.Name }}"
+        - name: "AuthServer__Authority"
+          value: "{{ include "fitlogs.hosts.blazorwebapp" . }}"
+        - name: "StringEncryption__DefaultPassPhrase"
+          value: "{{ .Values.global.stringEncryptionDefaultPassPhrase }}"
+        - name: "AbpStudioClient__StudioUrl"
+          value: "{{ .Values.global.abpStudioClient.studioUrl }}"
+        - name: "AbpStudioClient__IsLinkEnabled"
+          value: "{{ .Values.global.abpStudioClient.isLinkEnabled }}"

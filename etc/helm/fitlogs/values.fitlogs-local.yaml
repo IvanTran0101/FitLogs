@@ -1,0 +1,11 @@
+global:
+  hosts:
+    dbmigrator: "[RELEASE_NAME]-dbmigrator"
+    blazorwebapp: "[RELEASE_NAME]-blazorwebapp"
+  connectionStrings:
+    default: "Host=[RELEASE_NAME]-postgresql;Port=5432;Database=FitLogs;User ID=postgres;Password=myPassword;"
+  dotnetEnvironment: "Staging"
+  disablePII: "false"
+  stringEncryptionDefaultPassPhrase: "NCYU7LgSQZiyFIDd"
+  abpStudioClient:
+    isLinkEnabled: "true"
