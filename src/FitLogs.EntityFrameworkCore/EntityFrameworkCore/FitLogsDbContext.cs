@@ -1,3 +1,4 @@
+using FitLogs.Exercises;
 using FitLogs.UserProfiles;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -34,6 +35,10 @@ public class FitLogsDbContext :
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
     public DbSet<UserProfile> UserProfiles { get; set; }
+
+    public DbSet<Exercise> Exercises { get; set; }
+    public DbSet<MuscleGroup> MuscleGroups { get; set; }
+    public DbSet<Equipment> Equipment { get; set; }
     #region Entities from the modules
 
     /* Notice: We only implemented IIdentityProDbContext and ISaasDbContext
@@ -119,6 +124,112 @@ public class FitLogsDbContext :
 
             b.HasIndex(x => x.UserId)
                 .IsUnique();
+        });
+        builder.Entity<MuscleGroup>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "MuscleGroups", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(MuscleGroupConsts.MaxNameLength);
+
+            b.Property(x => x.Code)
+                .IsRequired()
+                .HasMaxLength(MuscleGroupConsts.MaxCodeLength);
+
+            b.Property(x => x.Description)
+                .HasMaxLength(MuscleGroupConsts.MaxDescriptionLength);
+
+            b.HasIndex(x => x.Code)
+                .IsUnique();
+
+            b.HasIndex(x => x.DisplayOrder);
+        });
+        builder.Entity<Equipment>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "Equipment", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(EquipmentConsts.MaxNameLength);
+
+            b.Property(x => x.Code)
+                .IsRequired()
+                .HasMaxLength(EquipmentConsts.MaxCodeLength);
+
+            b.Property(x => x.Description)
+                .HasMaxLength(EquipmentConsts.MaxDescriptionLength);
+
+            b.HasIndex(x => x.Code)
+                .IsUnique();
+
+            b.HasIndex(x => x.DisplayOrder);
+        });
+        
+        builder.Entity<Exercise>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "Exercises", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(ExerciseConsts.MaxNameLength);
+
+            b.Property(x => x.Slug)
+                .IsRequired()
+                .HasMaxLength(ExerciseConsts.MaxSlugLength);
+
+            b.Property(x => x.Description)
+                .HasMaxLength(ExerciseConsts.MaxDescriptionLength);
+
+            b.Property(x => x.ImageUrl)
+                .HasMaxLength(ExerciseConsts.MaxUrlLength);
+
+            b.Property(x => x.GifUrl)
+                .HasMaxLength(ExerciseConsts.MaxUrlLength);
+
+            b.Property(x => x.Instructions)
+                .HasMaxLength(ExerciseConsts.MaxInstructionsLength);
+
+            b.Property(x => x.FormTips)
+                .HasMaxLength(ExerciseConsts.MaxFormTipsLength);
+
+            b.Property(x => x.CommonMistakes)
+                .HasMaxLength(ExerciseConsts.MaxCommonMistakesLength);
+
+            b.Property(x => x.Difficulty)
+                .IsRequired();
+
+            b.Property(x => x.TrackingType)
+                .IsRequired();
+
+            b.Property(x => x.PrimaryMuscleGroupId)
+                .IsRequired();
+
+            b.Property(x => x.IsActive)
+                .IsRequired();
+
+            b.HasIndex(x => x.Slug)
+                .IsUnique();
+
+            b.HasIndex(x => x.PrimaryMuscleGroupId);
+
+            b.HasIndex(x => x.EquipmentId);
+
+            b.HasOne<MuscleGroup>()
+                .WithMany()
+                .HasForeignKey(x => x.PrimaryMuscleGroupId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne<Equipment>()
+                .WithMany()
+                .HasForeignKey(x => x.EquipmentId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

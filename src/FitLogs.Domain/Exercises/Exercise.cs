@@ -111,7 +111,7 @@ public class Exercise : FullAuditedAggregateRoot<Guid>
 
     public void SetContent(string? instructions, string? formTips, string? commonMistakes)
     {
-        Instructions = Check.Length(instructions, nameof(instructions), ExerciseConsts.MaxInstructionLength);
+        Instructions = Check.Length(instructions, nameof(instructions), ExerciseConsts.MaxInstructionsLength);
         FormTips = Check.Length(formTips, nameof(formTips), ExerciseConsts.MaxFormTipsLength);
         CommonMistakes = Check.Length(commonMistakes, nameof(commonMistakes), ExerciseConsts.MaxCommonMistakesLength);
     }
