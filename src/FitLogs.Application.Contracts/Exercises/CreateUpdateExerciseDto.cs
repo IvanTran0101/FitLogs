@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FitLogs.Exercises;
 
-public class CreateUpdateExerciseDto
+public class CreateUpdateExerciseDto 
 {
     [Required]
     [StringLength(ExerciseConsts.MaxNameLength)]
