@@ -9,8 +9,8 @@ public interface IEquipmentAppService : IApplicationService
 {
     Task<EquipmentDto> GetAsync(Guid id);
     Task<PagedResultDto<EquipmentDto>> GetListAsync(GetEquipmentListInput input);
-    Task<MuscleGroupDto> CreateAsync(CreateUpdateMuscleGroupDto input);
-    Task<MuscleGroupDto> UpdateAsync(Guid id, CreateUpdateMuscleGroupDto input);
+    Task<EquipmentDto> CreateAsync(CreateUpdateEquipmentDto input);
+    Task<EquipmentDto> UpdateAsync(Guid id, CreateUpdateEquipmentDto input);
     Task ActivateAsync(Guid id);
     Task DeactivateAsync(Guid id);
 }

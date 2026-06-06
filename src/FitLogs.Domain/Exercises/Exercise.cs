@@ -103,6 +103,11 @@ public class Exercise : FullAuditedAggregateRoot<Guid>
         Name = Check.NotNullOrWhiteSpace(name, nameof(name), ExerciseConsts.MaxNameLength);
     }
 
+    public void SetDescription(string description)
+    {
+        Description = Check.NotNullOrWhiteSpace(description, nameof(description), ExerciseConsts.MaxDescriptionLength);
+    }
+
     public void SetMedia(string? imageUrl, string? gifUrl)
     {
         ImageUrl = Check.Length(imageUrl, nameof(imageUrl), ExerciseConsts.MaxUrlLength);
