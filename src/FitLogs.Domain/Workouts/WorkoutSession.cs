@@ -165,6 +165,34 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
 
         _exercises.Remove(exercise);
     }
+    public void AddSetToExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId,
+        int setNumber,
+        float weightKg,
+        int reps,
+        int? rpe = null,
+        string? note = null
+    )
+    {
+        EnsureInProgress();
+
+        var exercise = _exercises.FirstOrDefault(x => x.Id == workoutSessionExerciseId);
+
+        if (exercise == null)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
+        }
+
+        exercise.AddSet(
+            exerciseSetId,
+            setNumber,
+            weightKg,
+            reps,
+            rpe,
+            note
+        );
+    }
 
     private void EnsureInProgress()
     {

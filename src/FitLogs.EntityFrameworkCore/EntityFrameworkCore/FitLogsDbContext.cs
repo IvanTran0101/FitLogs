@@ -1,5 +1,6 @@
 using FitLogs.Exercises;
 using FitLogs.UserProfiles;
+using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -39,6 +40,8 @@ public class FitLogsDbContext :
     public DbSet<Exercise> Exercises { get; set; }
     public DbSet<MuscleGroup> MuscleGroups { get; set; }
     public DbSet<Equipment> Equipment { get; set; }
+    public DbSet<WorkoutPlan> WorkoutPlans { get; set; }
+    public DbSet<WorkoutSession> WorkoutSessions { get; set; }
     #region Entities from the modules
 
     /* Notice: We only implemented IIdentityProDbContext and ISaasDbContext
@@ -230,6 +233,218 @@ public class FitLogsDbContext :
                 .WithMany()
                 .HasForeignKey(x => x.EquipmentId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+         builder.Entity<WorkoutPlan>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "WorkoutPlans", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.UserId)
+                .IsRequired();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(WorkoutPlanConsts.MaxNameLength);
+
+            b.Property(x => x.Description)
+                .HasMaxLength(WorkoutPlanConsts.MaxDescriptionLength);
+
+            b.Property(x => x.Goal)
+                .IsRequired();
+
+            b.Property(x => x.Difficulty)
+                .IsRequired();
+
+            b.Property(x => x.IsActive)
+                .IsRequired();
+
+            b.HasIndex(x => x.UserId);
+
+            b.HasMany(x => x.Exercises)
+                .WithOne()
+                .HasForeignKey(x => x.WorkoutPlanId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.Navigation(x => x.Exercises)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<WorkoutPlanExercise>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "WorkoutPlanExercises", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.WorkoutPlanId)
+                .IsRequired();
+
+            b.Property(x => x.ExerciseId)
+                .IsRequired();
+
+            b.Property(x => x.OrderIndex)
+                .IsRequired();
+
+            b.Property(x => x.DefaultSets)
+                .IsRequired();
+
+            b.Property(x => x.DefaultReps)
+                .IsRequired();
+
+            b.Property(x => x.DefaultWeightKg);
+
+            b.Property(x => x.RestSeconds);
+
+            b.Property(x => x.Note)
+                .HasMaxLength(WorkoutPlanExerciseConsts.MaxNoteLength);
+
+            b.HasIndex(x => x.WorkoutPlanId);
+
+            b.HasIndex(x => x.ExerciseId);
+
+            b.HasIndex(x => new
+            {
+                x.WorkoutPlanId,
+                x.OrderIndex
+            }).IsUnique();
+
+            b.HasIndex(x => new
+            {
+                x.WorkoutPlanId,
+                x.ExerciseId
+            }).IsUnique();
+        });
+
+        builder.Entity<WorkoutSession>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "WorkoutSessions", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.UserId)
+                .IsRequired();
+
+            b.Property(x => x.WorkoutPlanId);
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(WorkoutSessionConsts.MaxNameLength);
+
+            b.Property(x => x.StartedAt)
+                .IsRequired();
+
+            b.Property(x => x.EndedAt);
+
+            b.Property(x => x.Status)
+                .IsRequired();
+
+            b.Property(x => x.Note)
+                .HasMaxLength(WorkoutSessionConsts.MaxNoteLength);
+
+            b.HasIndex(x => x.UserId);
+
+            b.HasIndex(x => x.WorkoutPlanId);
+
+            b.HasMany(x => x.Exercises)
+                .WithOne()
+                .HasForeignKey(x => x.WorkoutSessionId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.Navigation(x => x.Exercises)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<WorkoutSessionExercise>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "WorkoutSessionExercises", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.WorkoutSessionId)
+                .IsRequired();
+
+            b.Property(x => x.ExerciseId)
+                .IsRequired();
+
+            b.Property(x => x.OrderIndex)
+                .IsRequired();
+
+            b.Property(x => x.TargetSets)
+                .IsRequired();
+
+            b.Property(x => x.TargetReps)
+                .IsRequired();
+
+            b.Property(x => x.TargetWeightKg);
+
+            b.Property(x => x.RestSeconds);
+
+            b.Property(x => x.Note)
+                .HasMaxLength(WorkoutSessionExerciseConsts.MaxNoteLength);
+
+            b.HasIndex(x => x.WorkoutSessionId);
+
+            b.HasIndex(x => x.ExerciseId);
+
+            b.HasIndex(x => new
+            {
+                x.WorkoutSessionId,
+                x.OrderIndex
+            }).IsUnique();
+
+            b.HasIndex(x => new
+            {
+                x.WorkoutSessionId,
+                x.ExerciseId
+            }).IsUnique();
+
+            b.HasMany(x => x.Sets)
+                .WithOne()
+                .HasForeignKey(x => x.WorkoutSessionExerciseId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.Navigation(x => x.Sets)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<ExerciseSet>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "ExerciseSets", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.WorkoutSessionExerciseId)
+                .IsRequired();
+
+            b.Property(x => x.SetNumber)
+                .IsRequired();
+
+            b.Property(x => x.WeightKg)
+                .IsRequired();
+
+            b.Property(x => x.Reps)
+                .IsRequired();
+
+            b.Property(x => x.Rpe);
+
+            b.Property(x => x.Note)
+                .HasMaxLength(ExerciseSetConsts.MaxNoteLength);
+
+            b.Property(x => x.IsCompleted)
+                .IsRequired();
+
+            b.Property(x => x.CompletedAt);
+
+            b.HasIndex(x => x.WorkoutSessionExerciseId);
+
+            b.HasIndex(x => new
+            {
+                x.WorkoutSessionExerciseId,
+                x.SetNumber
+            }).IsUnique();
         });
     }
 }

@@ -56,8 +56,9 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutSessionExerciseAlreadyExists = "FitLogs:Workout:WorkoutSessionExerciseAlreadyExists";
     public const string WorkoutSessionExerciseOrderIndexAlreadyExists = "FitLogs:Workout:WorkoutSessionExerciseOrderIndexAlreadyExists";
     public const string WorkoutSessionExerciseNotFound = "FitLogs:Workout:WorkoutSessionExerciseNotFound";
+    public const string WorkoutPlanNameAlreadyExists = "FitLogs:Workout:WorkoutPlanNameAlreadyExists";
+    public const string UserHasInProgressWorkoutSession = "FitLogs:Workout:UserHasInProgressWorkoutSession";
 
-    
     public const string InvalidExerciseSetNumber = "FitLogs:Workout:InvalidExerciseSetNumber";
     public const string InvalidExerciseSetWeight = "FitLogs:Workout:InvalidExerciseSetWeight";
     public const string InvalidExerciseSetReps = "FitLogs:Workout:InvalidExerciseSetReps";
