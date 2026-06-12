@@ -75,5 +75,22 @@ public static class FitLogsDomainErrorCodes
     // Food
     public const string InvalidFoodQuantity = "FitLogs:Food:InvalidQuantity";
     public const string FoodProductNotFound = "FitLogs:Food:ProductNotFound";
+    public const string FoodProductCaloriesCannotBeNegative = "FitLogs:FoodProduct:001";
+    public const string FoodProductProteinCannotBeNegative = "FitLogs:FoodProduct:002";
+    public const string FoodProductCarbCannotBeNegative = "FitLogs:FoodProduct:003";
+    public const string FoodProductFatCannotBeNegative = "FitLogs:FoodProduct:004";
+    public const string FoodLogUserIdRequired = "FitLogs:FoodLog:001";
+    public const string FoodLogQuantityMustBeGreaterThanZero = "FitLogs:FoodLog:002";
+    public const string FoodLogCaloriesCannotBeNegative = "FitLogs:FoodLog:003";
+    public const string FoodLogProteinCannotBeNegative = "FitLogs:FoodLog:004";
+    public const string FoodLogCarbCannotBeNegative = "FitLogs:FoodLog:005";
+    public const string FoodLogFatCannotBeNegative = "FitLogs:FoodLog:006";
+    public const string FoodLogLoggedAtRequired = "FitLogs:FoodLog:007";
+    public const string FoodLogUnitInvalid = "FitLogs:FoodLog:008";
+    public const string FoodLogMealTypeInvalid = "FitLogs:FoodLog:009";
+    public const string FoodProductSourceInvalid = "FitLogs:FoodProduct:005";
+    public const string FoodProductBarcodeAlreadyExists = "FitLogs:FoodProduct:006";
+    public const string FoodProductInactive = "FitLogs:FoodProduct:007";
+    public const string FoodLogFoodProductIdRequired = "FitLogs:FoodLog:010";
 
 }
