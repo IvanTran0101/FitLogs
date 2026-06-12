@@ -42,6 +42,7 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutPlanExerciseAlreadyExists = "FitLogs:Workout:WorkoutPlanExerciseAlreadyExists";
     public const string WorkoutPlanExerciseOrderIndexAlreadyExists = "FitLogs:Workout:WorkoutPlanExerciseOrderIndexAlreadyExists";
     public const string WorkoutPlanExerciseNotFound = "FitLogs:Workout:WorkoutPlanExerciseNotFound";
+    public const string WorkoutSessionAccessDenied = "FitLogs:Workout:WorkoutSessionAccessDenied";
 
     
     
