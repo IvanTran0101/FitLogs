@@ -3,7 +3,7 @@ using Volo.Abp.Mapperly;
 
 namespace FitLogs.UserProfiles;
 
-[Mapper]
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class UserProfileMapper : MapperBase<UserProfile, UserProfileDto>
 {
     public override partial UserProfileDto Map(UserProfile source);

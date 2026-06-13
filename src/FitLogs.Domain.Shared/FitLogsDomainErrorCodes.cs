@@ -92,5 +92,15 @@ public static class FitLogsDomainErrorCodes
     public const string FoodProductBarcodeAlreadyExists = "FitLogs:FoodProduct:006";
     public const string FoodProductInactive = "FitLogs:FoodProduct:007";
     public const string FoodLogFoodProductIdRequired = "FitLogs:FoodLog:010";
+    public const string FoodLogUserRequired = "FitLogs:FoodLog:0001";
+    public const string FoodProductRequired = "FitLogs:FoodLog:0002";
+    public const string FoodLogInvalidQuantity = "FitLogs:FoodLog:0004";
+    public const string FoodLogInvalidNutrition = "FitLogs:FoodLog:0005";
+    public const string FoodLogNotOwnedByUser = "FitLogs:FoodLog:0006";
+    public const string FoodLogAccessDenied = "FitLogs:FoodLog:FoodLogAccessDenied";
+    
+    public const string FoodProductNotFoundFromOpenFoodFacts = "FitLogs:FoodLog:FoodProductNotFoundFromOpenFoodFacts";
+    public const string FoodProductBarcodeInvalid = "FitLogs:FoodProduct:BarcodeInvalid";
+
 
 }

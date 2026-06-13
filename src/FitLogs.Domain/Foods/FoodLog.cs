@@ -80,11 +80,6 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
         SetNutrition(calories, protein, carb, fat);
     }
 
-    public void ChangeQuantity(decimal quantity)
-    {
-        SetQuantity(quantity);
-    }
-
     public void ChangeMealType(MealType mealType)
     {
         SetMealType(mealType);

@@ -1,4 +1,5 @@
 using FitLogs.Exercises;
+using FitLogs.Foods;
 using FitLogs.UserProfiles;
 using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,9 @@ public class FitLogsDbContext :
     public DbSet<Equipment> Equipment { get; set; }
     public DbSet<WorkoutPlan> WorkoutPlans { get; set; }
     public DbSet<WorkoutSession> WorkoutSessions { get; set; }
+    
+    public DbSet<FoodProduct> FoodProducts { get; set; }
+    public DbSet<FoodLog> FoodLogs { get; set; }
     #region Entities from the modules
 
     /* Notice: We only implemented IIdentityProDbContext and ISaasDbContext
@@ -446,5 +450,119 @@ public class FitLogsDbContext :
                 x.SetNumber
             }).IsUnique();
         });
+        
+        builder.Entity<FoodProduct>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "FoodProducts", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Barcode)
+                .HasMaxLength(FoodProductConsts.MaxBarcodeLength);
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(FoodProductConsts.MaxNameLength);
+
+            b.Property(x => x.Brand)
+                .HasMaxLength(FoodProductConsts.MaxBrandLength);
+
+            b.Property(x => x.ImageUrl)
+                .HasMaxLength(FoodProductConsts.MaxImageUrlLength);
+
+            b.Property(x => x.ServingSize)
+                .HasMaxLength(FoodProductConsts.MaxServingSizeLength);
+
+            b.Property(x => x.Source)
+                .IsRequired();
+
+            b.Property(x => x.LastSyncedAt);
+
+            b.Property(x => x.IsActive)
+                .IsRequired();
+
+            b.Property(x => x.IsVerified)
+                .IsRequired();
+
+            b.Property(x => x.CaloriesPer100g)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.ProteinPer100g)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.CarbPer100g)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.FatPer100g)
+                .HasColumnType("decimal(18,2)");
+
+            b.HasIndex(x => x.Barcode)
+                .IsUnique()
+                .HasFilter("\"Barcode\" IS NOT NULL");
+
+            b.HasIndex(x => x.Name);
+            b.HasIndex(x => x.Source);
+            b.HasIndex(x => x.IsActive);
+            b.HasIndex(x => x.IsVerified);
+        });
+        
+        builder.Entity<FoodLog>(b =>
+        {
+            b.ToTable(FitLogsConsts.DbTablePrefix + "FoodLogs", FitLogsConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.UserId)
+                .IsRequired();
+
+            b.Property(x => x.FoodProductId)
+                .IsRequired();
+
+            b.Property(x => x.FoodName)
+                .IsRequired()
+                .HasMaxLength(FoodLogConsts.MaxFoodNameLength);
+
+            b.Property(x => x.Quantity)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.Unit)
+                .IsRequired();
+
+            b.Property(x => x.Calories)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.Protein)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.Carb)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.Fat)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.MealType)
+                .IsRequired();
+
+            b.Property(x => x.LoggedAt)
+                .IsRequired();
+
+            b.Property(x => x.Note)
+                .HasMaxLength(FoodLogConsts.MaxNoteLength);
+
+            b.HasOne<FoodProduct>()
+                .WithMany()
+                .HasForeignKey(x => x.FoodProductId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => new { x.UserId, x.LoggedAt });
+
+            b.HasIndex(x => x.FoodProductId);
+
+            b.HasIndex(x => x.MealType);
+        });
     }
+    
 }

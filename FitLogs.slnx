@@ -1,24 +1,22 @@
 <Solution>
-    <Configurations>
-        <Platform Name="Any CPU" />
-    </Configurations>
-    <Folder Name="/src/">
-        <Project Path="src/FitLogs.Domain/FitLogs.Domain.csproj" />
-        <Project Path="src/FitLogs.Application/FitLogs.Application.csproj" />
-        <Project Path="src/FitLogs.EntityFrameworkCore/FitLogs.EntityFrameworkCore.csproj" />
-        <Project Path="src/FitLogs.Domain.Shared/FitLogs.Domain.Shared.csproj" />
-        <Project Path="src/FitLogs.Application.Contracts/FitLogs.Application.Contracts.csproj" />
-        <Project Path="src/FitLogs.HttpApi/FitLogs.HttpApi.csproj" />
-        <Project Path="src/FitLogs.HttpApi.Client/FitLogs.HttpApi.Client.csproj" />
-        <Project Path="src/FitLogs.DbMigrator/FitLogs.DbMigrator.csproj" />
-        <Project Path="src/FitLogs.Blazor/FitLogs.Blazor.csproj" />
-        <Project Path="src/FitLogs.Blazor.Client/FitLogs.Blazor.Client.csproj" />
-    </Folder>
-    <Folder Name="/test/">
-        <Project Path="test/FitLogs.Application.Tests/FitLogs.Application.Tests.csproj" />
-        <Project Path="test/FitLogs.EntityFrameworkCore.Tests/FitLogs.EntityFrameworkCore.Tests.csproj" />
-        <Project Path="test/FitLogs.TestBase/FitLogs.TestBase.csproj" />
-        <Project Path="test/FitLogs.Domain.Tests/FitLogs.Domain.Tests.csproj" />
-        <Project Path="test/FitLogs.HttpApi.Client.ConsoleTestApp/FitLogs.HttpApi.Client.ConsoleTestApp.csproj" />
-    </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/FitLogs.Application.Contracts/FitLogs.Application.Contracts.csproj" />
+    <Project Path="src/FitLogs.Application/FitLogs.Application.csproj" />
+    <Project Path="src/FitLogs.Blazor.Client/FitLogs.Blazor.Client.csproj" />
+    <Project Path="src/FitLogs.Blazor/FitLogs.Blazor.csproj" />
+    <Project Path="src/FitLogs.DbMigrator/FitLogs.DbMigrator.csproj" />
+    <Project Path="src/FitLogs.Domain.Shared/FitLogs.Domain.Shared.csproj" />
+    <Project Path="src/FitLogs.Domain/FitLogs.Domain.csproj" />
+    <Project Path="src/FitLogs.EntityFrameworkCore/FitLogs.EntityFrameworkCore.csproj" />
+    <Project Path="src/FitLogs.ExternalServices/FitLogs.ExternalServices.csproj" />
+    <Project Path="src/FitLogs.HttpApi.Client/FitLogs.HttpApi.Client.csproj" />
+    <Project Path="src/FitLogs.HttpApi/FitLogs.HttpApi.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/FitLogs.Application.Tests/FitLogs.Application.Tests.csproj" />
+    <Project Path="test/FitLogs.Domain.Tests/FitLogs.Domain.Tests.csproj" />
+    <Project Path="test/FitLogs.EntityFrameworkCore.Tests/FitLogs.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="test/FitLogs.HttpApi.Client.ConsoleTestApp/FitLogs.HttpApi.Client.ConsoleTestApp.csproj" />
+    <Project Path="test/FitLogs.TestBase/FitLogs.TestBase.csproj" />
+  </Folder>
 </Solution>

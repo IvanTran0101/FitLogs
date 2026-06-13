@@ -179,12 +179,12 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
 
         return Check.Length(value.Trim(), parameterName, maxLength);
     }
-    private void Activate()
+    public void Activate()
     {
         IsActive = true;
     }
 
-    private void Deactivate()
+    public void Deactivate()
     {
         IsActive = false;
     }

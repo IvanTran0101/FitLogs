@@ -70,7 +70,7 @@ using Volo.Saas.Host;
 using Volo.Saas.Host.Blazor;
 using Volo.Saas.Host.Blazor.Server;
 using Volo.Saas.Host.Blazor.WebAssembly.Bundling;
-
+using FitLogs.ExternalServices;
 namespace FitLogs.Blazor;
 
 [DependsOn(
@@ -96,7 +96,8 @@ namespace FitLogs.Blazor;
     typeof(AbpAspNetCoreComponentsServerLeptonXLiteThemeModule),
     typeof(AbpAspNetCoreComponentsWebAssemblyLeptonXLiteThemeBundlingModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
-    typeof(AbpAspNetCoreSerilogModule)
+    typeof(AbpAspNetCoreSerilogModule),
+    typeof(FitLogsExternalServicesModule)
    )]
 public class FitLogsBlazorModule : AbpModule
 {

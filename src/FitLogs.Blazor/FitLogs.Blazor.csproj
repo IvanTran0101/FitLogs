@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.2" />
     <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
-    <PackageReference Include="KubernetesClient" Version="18.0.5"/>
+    <PackageReference Include="KubernetesClient" Version="18.0.5" />
     <PackageReference Include="IdentityModel" Version="7.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
@@ -35,6 +35,7 @@
     <ProjectReference Include="..\FitLogs.Blazor.Client\FitLogs.Blazor.Client.csproj" />
     <ProjectReference Include="..\FitLogs.HttpApi\FitLogs.HttpApi.csproj" />
     <ProjectReference Include="..\FitLogs.EntityFrameworkCore\FitLogs.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\FitLogs.ExternalServices\FitLogs.ExternalServices.csproj" />
   </ItemGroup>
 
   <ItemGroup>
