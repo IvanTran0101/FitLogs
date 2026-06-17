@@ -18,8 +18,8 @@ public class CreateUpdateExerciseDto
 
     [Required]
     public Guid PrimaryMuscleGroupId { get; set; }
-
-    public Guid? EquipmentId { get; set; }
+    [Required]
+    public Guid EquipmentId { get; set; }
 
     [Required]
     public ExerciseDifficulty Difficulty { get; set; }

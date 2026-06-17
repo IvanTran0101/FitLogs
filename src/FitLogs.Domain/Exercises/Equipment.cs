@@ -52,7 +52,8 @@ public class Equipment : FullAuditedAggregateRoot<Guid>
 
     public void SetDescription(string? description)
     {
-        Description = Check.NotNullOrWhiteSpace(description, nameof(description), EquipmentConsts.MaxDescriptionLength);
+        Description = Check.Length(description, nameof(description), EquipmentConsts.MaxDescriptionLength);
+        
     }
 
     public void Activate()

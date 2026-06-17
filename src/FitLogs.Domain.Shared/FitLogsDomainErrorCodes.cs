@@ -22,6 +22,7 @@ public static class FitLogsDomainErrorCodes
     public const string EquipmentIsUsedByExercise = "FitLogs:Exercise:EquipmentIsUsedByExercise";
     public const string EquipmentNotFound = "FitLogs:Exercise:EquipmentNotFound";
     public const string EquipmentCodeAlreadyExists = "FitLogs:Exercise:EquipmentCodeAlreadyExists";
+    public const string ExerciseEquipmentRequired = "FitLogs:Exercise:ExerciseEquipmentRequired";
 
     public const string ExercisePrimaryMuscleGroupRequired = "FitLogs:Exercise:0001";
     public const string ExerciseInvalidDifficulty = "FitLogs:Exercise:0002";
@@ -29,6 +30,8 @@ public static class FitLogsDomainErrorCodes
     public const string ExerciseSlugAlreadyExists = "FitLogs:ExerciseSlugAlreadyExists";
     public const string MuscleGroupIsUsedByExercise = "FitLogs:MuscleGroupIsUsedByExercise";
     public const string MuscleGroupCodeAlreadyExists = "FitLogs:MuscleGroupCodeAlreadyExists";
+    public const string EquipmentNameAlreadyExists = "FitLogs:EquipmentNameAlreadyExists";
+    public const string MuscleGroupNameAlreadyExists = "FitLogs:MuscleGroupNameAlreadyExists";
 
 
     // Workout

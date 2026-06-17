@@ -1,15 +1,16 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace FitLogs.Exercises;
-
+[Authorize]
 public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
 {
     private readonly IMuscleGroupRepository _muscleGroupRepository;
-    private MuscleGroupManager _muscleGroupManager;
+    private readonly MuscleGroupManager _muscleGroupManager;
 
     public MuscleGroupAppService(IMuscleGroupRepository muscleGroupRepository, MuscleGroupManager muscleGroupManager)
     {
@@ -25,18 +26,20 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
 
     public async Task<PagedResultDto<MuscleGroupDto>> GetListAsync(GetMuscleGroupListInput input)
     {
-        var totalCount = await _muscleGroupRepository.GetCountAsync(filterText:input.FilterText,
+        var totalCount = await _muscleGroupRepository.GetCountAsync(
+            filterText: input.FilterText,
             isActive: input.IsActive);
         
         var muscleGroups = await _muscleGroupRepository.GetListAsync(
-            filterText:input.FilterText,
+            filterText: input.FilterText,
             isActive: input.IsActive,
-            sorting:input.Sorting,
+            sorting: input.Sorting,
             maxResultCount: input.MaxResultCount,
-            skipCount:input.SkipCount);
+            skipCount: input.SkipCount);
         
-        var items = muscleGroups.Select(x => ObjectMapper.Map<MuscleGroup,MuscleGroupDto>(x))
-            .ToList();;
+        var items = muscleGroups
+            .Select(x => ObjectMapper.Map<MuscleGroup, MuscleGroupDto>(x))
+            .ToList();
         return new PagedResultDto<MuscleGroupDto>(totalCount, items);
     }
 
@@ -48,7 +51,7 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
             input.DisplayOrder,
             input.Description);
         
-        await _muscleGroupRepository.InsertAsync(muscleGroup, autoSave:true);
+        await _muscleGroupRepository.InsertAsync(muscleGroup, autoSave: true);
         return ObjectMapper.Map<MuscleGroup, MuscleGroupDto>(muscleGroup);
 
     }
@@ -56,23 +59,22 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
     public async Task<MuscleGroupDto> UpdateAsync(Guid id, CreateUpdateMuscleGroupDto input)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
-        _muscleGroupManager.ChangeName(muscleGroup, input.Name);
-        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave:true);
-        
+
+        await _muscleGroupManager.ChangeNameAsync(muscleGroup, input.Name);
         await _muscleGroupManager.ChangeCodeAsync(muscleGroup, input.Code);
-        
         _muscleGroupManager.ChangeDisplayOrder(muscleGroup, input.DisplayOrder);
         _muscleGroupManager.ChangeDescription(muscleGroup, input.Description);
-        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave:true);
+
+        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave: true);
+
         return ObjectMapper.Map<MuscleGroup, MuscleGroupDto>(muscleGroup);
-        
     }
 
     public async Task ActivateAsync(Guid id)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
         _muscleGroupManager.Activate(muscleGroup);
-        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave:true);
+        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave: true);
         
     }
 
@@ -80,7 +82,7 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
         await _muscleGroupManager.DeactivateAsync(muscleGroup);
-        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave:true);
+        await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave: true);
         
         
     }

@@ -10,7 +10,7 @@ public class Exercise : FullAuditedAggregateRoot<Guid>
     public string Slug { get; private set; }
     public string? Description { get; private set; }
     public Guid PrimaryMuscleGroupId { get; private set; }
-    public Guid? EquipmentId { get; private set; }
+    public Guid EquipmentId { get; private set; }
     public ExerciseDifficulty Difficulty { get; private set; }
     public ExerciseTrackingType TrackingType { get; private set; }
     public string? ImageUrl { get; private set; }
@@ -29,7 +29,7 @@ public class Exercise : FullAuditedAggregateRoot<Guid>
         string slug,
         ExerciseTrackingType trackingType,
         Guid primaryMuscleGroupId,
-        Guid? equipmentId,
+        Guid equipmentId,
         ExerciseDifficulty difficulty,
         string? description = null,
         string? formTips = null,
@@ -73,12 +73,11 @@ public class Exercise : FullAuditedAggregateRoot<Guid>
         Difficulty = difficulty;
     }
 
-    public void SetEquipment(Guid? equipmentId)
+    public void SetEquipment(Guid equipmentId)
     {
         if (equipmentId == Guid.Empty)
         {
-            EquipmentId = null;
-            return;
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseEquipmentRequired);
         }
         EquipmentId = equipmentId;
     }
@@ -103,9 +102,10 @@ public class Exercise : FullAuditedAggregateRoot<Guid>
         Name = Check.NotNullOrWhiteSpace(name, nameof(name), ExerciseConsts.MaxNameLength);
     }
 
-    public void SetDescription(string description)
+    public void SetDescription(string? description)
     {
-        Description = Check.NotNullOrWhiteSpace(description, nameof(description), ExerciseConsts.MaxDescriptionLength);
+        Description = Check.Length(description, nameof(description), ExerciseConsts.MaxDescriptionLength);
+        
     }
 
     public void SetMedia(string? imageUrl, string? gifUrl)

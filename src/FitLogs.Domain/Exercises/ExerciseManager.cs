@@ -23,7 +23,7 @@ public class ExerciseManager : DomainService
         string name,
         string slug,
         Guid primaryMuscleGroupId,
-        Guid? equipmentId,
+        Guid equipmentId,
         ExerciseDifficulty difficulty,
         ExerciseTrackingType trackingType,
         string? description = null,
@@ -33,9 +33,11 @@ public class ExerciseManager : DomainService
         string? formTips = null,
         string? commonMistakes = null)
     {
+        await CheckNameAsync(name, equipmentId);
         await CheckSlugAsync(slug);
         await CheckMuscleGroupAsync(primaryMuscleGroupId);
         await CheckEquipmentAsync(equipmentId);
+
         return new Exercise(
             GuidGenerator.Create(),
             name,
@@ -52,6 +54,17 @@ public class ExerciseManager : DomainService
             commonMistakes);
     }
 
+    public async Task ChangeNameAsync(Exercise exercise, string name, Guid equipmentId)
+    {
+        await CheckNameAsync(name, equipmentId, exercise.Id);
+        exercise.SetName(name);
+    }
+
+    public void ChangeDescription(Exercise exercise, string? description)
+    {
+        exercise.SetDescription(description);
+    }
+
     public async Task ChangeSlugAsync(Exercise exercise, string slug)
     {
         await CheckSlugAsync(slug, exercise.Id);
@@ -64,11 +77,23 @@ public class ExerciseManager : DomainService
         exercise.SetPrimaryMuscleGroup(primaryMuscleGroupId);
     }
 
-    public async Task ChangeEquipmentAsync(Exercise exercise, Guid? equipmentId)
+    public async Task ChangeEquipmentAsync(Exercise exercise, Guid equipmentId)
     {
         await CheckEquipmentAsync(equipmentId);
+        await CheckNameAsync(exercise.Name, equipmentId, exercise.Id);
         exercise.SetEquipment(equipmentId);
     }
+    private async Task CheckNameAsync(string name, Guid equipmentId, Guid? excludedId = null)
+    {
+        if (await _exerciseRepository.AnyAsync(x =>
+                x.Name == name &&
+                x.EquipmentId == equipmentId &&
+                (!excludedId.HasValue || x.Id != excludedId.Value)))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseNameAlreadyExists);
+        }
+    }
+
     private async Task CheckSlugAsync(string slug, Guid? excludedId = null)
     {
         if (await _exerciseRepository.SlugExistsAsync(slug, excludedId))
@@ -87,18 +112,28 @@ public class ExerciseManager : DomainService
         }
     }
 
-    private async Task CheckEquipmentAsync(Guid? equipmentId)
+    private async Task CheckEquipmentAsync(Guid equipmentId)
     {
-        if (!equipmentId.HasValue)
+        if (equipmentId == Guid.Empty)
         {
-            return;
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseEquipmentRequired);
         }
-
         var exists = await _equipmentRepository.AnyAsync(
-            x => x.Id == equipmentId.Value && x.IsActive);
+            x => x.Id == equipmentId && x.IsActive);
         if (!exists)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.EquipmentNotFound);
         }
+    }
+    public async Task ActivateAsync(Guid id)
+    {
+        var exercise = await _exerciseRepository.GetAsync(id);
+        exercise.Activate();
+    }
+
+    public async Task DeactivateAsync(Guid id)
+    {
+        var exercise = await _exerciseRepository.GetAsync(id);
+        exercise.Deactivate();
     }
 }

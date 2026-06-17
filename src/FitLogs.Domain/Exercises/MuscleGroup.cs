@@ -52,7 +52,8 @@ public class MuscleGroup : FullAuditedAggregateRoot<Guid>
 
     public void SetDescription(string? description)
     {
-        Description = Check.NotNullOrWhiteSpace(description, nameof(description), MuscleGroupConsts.MaxDescriptionLength);
+        Description = Check.Length(description, nameof(description), MuscleGroupConsts.MaxDescriptionLength);
+        
     }
 
     public void Activate()

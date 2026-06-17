@@ -23,7 +23,9 @@ public class MuscleGroupManager : DomainService
         int displayOrder,
         string? description = null)
     {
+        await CheckNameAsync(name);
         await CheckCodeAsync(code);
+
         return new MuscleGroup(
             GuidGenerator.Create(),
             name,
@@ -32,8 +34,9 @@ public class MuscleGroupManager : DomainService
             description);
     }
 
-    public void ChangeName(MuscleGroup muscleGroup, string name)
+    public async Task ChangeNameAsync(MuscleGroup muscleGroup, string name)
     {
+        await CheckNameAsync(name, muscleGroup.Id);
         muscleGroup.SetName(name);
     }
 
@@ -43,7 +46,7 @@ public class MuscleGroupManager : DomainService
         muscleGroup.SetCode(code);
     }
 
-    public void ChangeDescription(MuscleGroup muscleGroup, string description)
+    public void ChangeDescription(MuscleGroup muscleGroup, string? description)
     {
         muscleGroup.SetDescription(description);
     }
@@ -56,11 +59,13 @@ public class MuscleGroupManager : DomainService
     public async Task DeactivateAsync(MuscleGroup muscleGroup)
     {
         var isUsedByActiveExercise = await _exerciseRepository.AnyAsync(
-            x=> x.PrimaryMuscleGroupId == muscleGroup.Id && x.IsActive);
-        if (!isUsedByActiveExercise)
+            x => x.PrimaryMuscleGroupId == muscleGroup.Id && x.IsActive);
+
+        if (isUsedByActiveExercise)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.MuscleGroupIsUsedByExercise);
         }
+
         muscleGroup.Deactivate();
     }
 
@@ -68,6 +73,15 @@ public class MuscleGroupManager : DomainService
     {
         muscleGroup.Activate();
     }
+
+    private async Task CheckNameAsync(string name, Guid? excludedId = null)
+    {
+        if (await _muscleGroupRepository.AnyAsync(x => x.Name == name && (!excludedId.HasValue || x.Id != excludedId.Value)))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.MuscleGroupNameAlreadyExists);
+        }
+    }
+
     private async Task CheckCodeAsync(string code, Guid? excludedId = null)
     {
         if (await _muscleGroupRepository.CodeExistsAsync(code, excludedId))

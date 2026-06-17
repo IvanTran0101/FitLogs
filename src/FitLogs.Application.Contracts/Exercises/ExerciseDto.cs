@@ -9,8 +9,8 @@ public class ExerciseDto : EntityDto<Guid>
     public string Slug  { get; set; } = null!;
     public string? Description { get; set; }
     
-    public Guid PrimaryMuscleGroup { get; set; }
-    public Guid? EquipmentId  { get; set; }
+    public Guid PrimaryMuscleGroupId { get; set; }
+    public Guid EquipmentId  { get; set; }
     
     public ExerciseDifficulty Difficulty { get; set; }
     public ExerciseTrackingType TrackingType { get; set; }

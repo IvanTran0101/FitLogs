@@ -14,4 +14,6 @@ public interface IExerciseAppService : IApplicationService
     Task<ExerciseDto> UpdateAsync(Guid id, CreateUpdateExerciseDto input);
     Task ActivateAsync(Guid id);
     Task DeactivateAsync(Guid id);
+    
+    Task<PagedResultDto<ExerciseDto>> GetSelectableListAsync(GetExerciseListInput input);
 }

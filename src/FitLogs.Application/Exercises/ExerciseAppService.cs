@@ -1,12 +1,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 
 namespace FitLogs.Exercises;
-
+[Authorize]
 public class ExerciseAppService : ApplicationService, IExerciseAppService
 {
     private readonly IExerciseRepository _exerciseRepository;
@@ -85,12 +86,12 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
     public async Task<ExerciseDto> UpdateAsync(Guid id, CreateUpdateExerciseDto input)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
-        exercise.SetName(input.Name);
-        exercise.SetDescription(input.Description);
+        await _exerciseManager.ChangeNameAsync(exercise, input.Name, input.EquipmentId);
         await _exerciseManager.ChangeSlugAsync(exercise, input.Slug);
         await _exerciseManager.ChangeEquipmentAsync(exercise, input.EquipmentId);
         await _exerciseManager.ChangePrimaryMuscleGroupAsync(exercise, input.PrimaryMuscleGroupId);
         
+        _exerciseManager.ChangeDescription(exercise, input.Description);
         exercise.SetDifficulty(input.Difficulty);
         exercise.SetTrackingType(input.TrackingType);
         exercise.SetMedia(input.ImageUrl, input.GifUrl);
@@ -104,7 +105,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
     public async Task ActivateAsync(Guid id)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
-        exercise.Activate();
+        await _exerciseManager.ActivateAsync(exercise.Id);
         await _exerciseRepository.UpdateAsync(exercise, autoSave: true);
         
     }
@@ -112,8 +113,35 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
     public async Task DeactivateAsync(Guid id)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
-        exercise.Deactivate();
+        await _exerciseManager.DeactivateAsync(exercise.Id);
         await _exerciseRepository.UpdateAsync(exercise, autoSave: true);
+        
+    }
+
+    public async Task<PagedResultDto<ExerciseDto>> GetSelectableListAsync(GetExerciseListInput input)
+    {
+        var totalCount = await _exerciseRepository.GetCountAsync(
+            filterText: input.FilterText,
+            muscleGroupId: input.MuscleGroupId,
+            equipmentId: input.EquipmentId,
+            exerciseDifficulty: input.Difficulty,
+            trackingType: input.TrackingType,
+            isActive: true);
+        
+        var exercises = await _exerciseRepository.GetListAsync(
+            filterText: input.FilterText,
+            muscleGroupId: input.MuscleGroupId,
+            equipmentId: input.EquipmentId,
+            exerciseDifficulty: input.Difficulty,
+            trackingType: input.TrackingType,
+            isActive:true,
+            sorting:input.Sorting,
+            maxResults:input.MaxResultCount,
+            skipCount:input.SkipCount);
+        var items = exercises.
+            Select(x=> ObjectMapper.Map<Exercise, ExerciseDto>(x)).ToList();
+        
+        return new PagedResultDto<ExerciseDto>(totalCount, items);
         
     }
 }

@@ -6,12 +6,12 @@ using Volo.Abp.Domain.Services;
 
 namespace FitLogs.Exercises;
 
-public class EquimentManager : DomainService
+public class EquipmentManager : DomainService
 {
     private readonly IEquipmentRepository _equipmentRepository;
     private readonly IExerciseRepository _exerciseRepository;
 
-    public EquimentManager(IEquipmentRepository equipmentRepository, IExerciseRepository exerciseRepository)
+    public EquipmentManager(IEquipmentRepository equipmentRepository, IExerciseRepository exerciseRepository)
     {
         _equipmentRepository = equipmentRepository;
         _exerciseRepository = exerciseRepository;
@@ -23,7 +23,9 @@ public class EquimentManager : DomainService
         int displayOrder,
         string? description = null)
     {
+        await CheckNameAsync(name);
         await CheckCodeAsync(code);
+
         return new Equipment(
             GuidGenerator.Create(),
             name,
@@ -32,14 +34,15 @@ public class EquimentManager : DomainService
             description);
     }
 
-    public void ChangeName(Equipment equipment, string name)
+    public async Task ChangeNameAsync(Equipment equipment, string name)
     {
+        await CheckNameAsync(name, equipment.Id);
         equipment.SetName(name);
     }
 
     public async Task ChangeCodeAsync(Equipment equipment, string code)
     {
-        await CheckCodeAsync(code);
+        await CheckCodeAsync(code, equipment.Id);
         equipment.SetCode(code);
     }
 
@@ -48,7 +51,7 @@ public class EquimentManager : DomainService
         equipment.SetDisplayOrder(displayOrder);
     }
 
-    public void ChangeDescription(Equipment equipment, string description)
+    public void ChangeDescription(Equipment equipment, string? description)
     {
         equipment.SetDescription(description);
     }
@@ -68,12 +71,20 @@ public class EquimentManager : DomainService
     {
         equipment.Activate();
     }
+
+    private async Task CheckNameAsync(string name, Guid? excludedId = null)
+    {
+        if (await _equipmentRepository.AnyAsync(x => x.Name == name && (!excludedId.HasValue || x.Id != excludedId.Value)))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.EquipmentNameAlreadyExists);
+        }
+    }
+
     private async Task CheckCodeAsync(string code, Guid? excludedId = null)
     {
-        if (await _equipmentRepository.CodeExistsAsync(code,  excludedId))
+        if (await _equipmentRepository.CodeExistsAsync(code, excludedId))
         {
             throw new BusinessException(FitLogsDomainErrorCodes.EquipmentCodeAlreadyExists);
         }
-        throw new System.NotImplementedException();
     }
 }

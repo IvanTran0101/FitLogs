@@ -152,7 +152,12 @@ public class FitLogsDbContext :
             b.HasIndex(x => x.Code)
                 .IsUnique();
 
+            b.HasIndex(x => x.Name)
+                .IsUnique();
+
             b.HasIndex(x => x.DisplayOrder);
+
+            b.HasIndex(x => x.IsActive);
         });
         builder.Entity<Equipment>(b =>
         {
@@ -174,7 +179,12 @@ public class FitLogsDbContext :
             b.HasIndex(x => x.Code)
                 .IsUnique();
 
+            b.HasIndex(x => x.Name)
+                .IsUnique();
+
             b.HasIndex(x => x.DisplayOrder);
+
+            b.HasIndex(x => x.IsActive);
         });
         
         builder.Entity<Exercise>(b =>
@@ -218,15 +228,28 @@ public class FitLogsDbContext :
             b.Property(x => x.PrimaryMuscleGroupId)
                 .IsRequired();
 
+            b.Property(x => x.EquipmentId)
+                .IsRequired();
+
             b.Property(x => x.IsActive)
                 .IsRequired();
 
             b.HasIndex(x => x.Slug)
                 .IsUnique();
 
+            b.HasIndex(x => new
+            {
+                x.Name,
+                x.EquipmentId
+            }).IsUnique();
+
             b.HasIndex(x => x.PrimaryMuscleGroupId);
 
             b.HasIndex(x => x.EquipmentId);
+
+            b.HasIndex(x => x.Difficulty);
+
+            b.HasIndex(x => x.IsActive);
 
             b.HasOne<MuscleGroup>()
                 .WithMany()
@@ -554,7 +577,7 @@ public class FitLogsDbContext :
             b.HasOne<FoodProduct>()
                 .WithMany()
                 .HasForeignKey(x => x.FoodProductId)
-                .IsRequired(false)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => new { x.UserId, x.LoggedAt });
