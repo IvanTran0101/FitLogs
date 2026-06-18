@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Users;
 using Volo.Abp;
-
+using FitLogs.Permissions;
 
 namespace FitLogs.UserProfiles;
-[Authorize]
+[Authorize(FitLogsPermissions.UserProfiles.Default)]
 public class UserProfileAppService : ApplicationService, IUserProfileAppService
 {
     private readonly IUserProfileRepository _userProfileRepository;
@@ -37,6 +37,7 @@ public class UserProfileAppService : ApplicationService, IUserProfileAppService
         return _userProfileMapper.Map(userProfile);
     }
 
+    [Authorize(FitLogsPermissions.UserProfiles.Update)]
     public async Task<UserProfileDto> UpdateMyProfileAsync(UpdateUserProfileDto input)
     {
         var userId = CurrentUser.GetId();

@@ -5,13 +5,14 @@ using System.Threading.Tasks;
 using FitLogs.Foods;
 using FitLogs.UserProfiles;
 using FitLogs.Workouts;
+using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Timing;
 using Volo.Abp.Users;
 
 namespace FitLogs.Dashboards;
-[Authorize]
+[Authorize(FitLogsPermissions.Dashboards.Default)]
 public class DashboardAppService : ApplicationService, IDashboardAppService
 {
     private readonly IUserProfileRepository _userProfileRepository;

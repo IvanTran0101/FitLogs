@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -17,13 +18,13 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
         _muscleGroupRepository = muscleGroupRepository;
         _muscleGroupManager = muscleGroupManager;
     }
-
+    [Authorize(FitLogsPermissions.MuscleGroups.Default)]
     public async Task<MuscleGroupDto> GetAsync(Guid id)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
         return ObjectMapper.Map(muscleGroup, new MuscleGroupDto());
     }
-
+    [Authorize(FitLogsPermissions.MuscleGroups.Default)]
     public async Task<PagedResultDto<MuscleGroupDto>> GetListAsync(GetMuscleGroupListInput input)
     {
         var totalCount = await _muscleGroupRepository.GetCountAsync(
@@ -42,7 +43,7 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
             .ToList();
         return new PagedResultDto<MuscleGroupDto>(totalCount, items);
     }
-
+    [Authorize(FitLogsPermissions.MuscleGroups.Create)]
     public async Task<MuscleGroupDto> CreateAsync(CreateUpdateMuscleGroupDto input)
     {
         var muscleGroup = await _muscleGroupManager.CreateAsync(
@@ -55,7 +56,7 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
         return ObjectMapper.Map<MuscleGroup, MuscleGroupDto>(muscleGroup);
 
     }
-
+    [Authorize(FitLogsPermissions.MuscleGroups.Update)]
     public async Task<MuscleGroupDto> UpdateAsync(Guid id, CreateUpdateMuscleGroupDto input)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
@@ -69,7 +70,7 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
 
         return ObjectMapper.Map<MuscleGroup, MuscleGroupDto>(muscleGroup);
     }
-
+    [Authorize(FitLogsPermissions.MuscleGroups.Manage)]
     public async Task ActivateAsync(Guid id)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
@@ -77,7 +78,7 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
         await _muscleGroupRepository.UpdateAsync(muscleGroup, autoSave: true);
         
     }
-
+    [Authorize(FitLogsPermissions.MuscleGroups.Manage)]
     public async Task DeactivateAsync(Guid id)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);

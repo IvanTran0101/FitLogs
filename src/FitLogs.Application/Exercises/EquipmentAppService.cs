@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -17,12 +18,13 @@ public class EquipmentAppService : ApplicationService, IEquipmentAppService
         _equipmentRepository = equipmentRepository;
         _equipmentManager = equipmentManager;
     }
-
+    [Authorize(FitLogsPermissions.Equipments.Default)]
     public async Task<EquipmentDto> GetAsync(Guid id)
     {
         var equipment = await _equipmentRepository.GetAsync(id);
         return ObjectMapper.Map<Equipment, EquipmentDto>(equipment);
     }
+    [Authorize(FitLogsPermissions.Equipments.Default)]
 
     public async Task<PagedResultDto<EquipmentDto>> GetListAsync(GetEquipmentListInput input)
     {
@@ -42,7 +44,7 @@ public class EquipmentAppService : ApplicationService, IEquipmentAppService
             .ToList();
         return new PagedResultDto<EquipmentDto>(totalCount, items);
     }
-
+    [Authorize(FitLogsPermissions.Equipments.Create)]
     public async Task<EquipmentDto> CreateAsync(CreateUpdateEquipmentDto input)
     {
         var equipment = await _equipmentManager.CreateAsync(
@@ -53,7 +55,7 @@ public class EquipmentAppService : ApplicationService, IEquipmentAppService
         await _equipmentRepository.InsertAsync(equipment, autoSave: true);
         return ObjectMapper.Map<Equipment, EquipmentDto>(equipment);
     }
-
+    [Authorize(FitLogsPermissions.Equipments.Update)]
     public async Task<EquipmentDto> UpdateAsync(Guid id, CreateUpdateEquipmentDto input)
     {
         var equipment = await _equipmentRepository.GetAsync(id);
@@ -64,7 +66,7 @@ public class EquipmentAppService : ApplicationService, IEquipmentAppService
         await _equipmentRepository.UpdateAsync(equipment, autoSave: true);
         return ObjectMapper.Map<Equipment, EquipmentDto>(equipment);
     }
-
+    [Authorize(FitLogsPermissions.Equipments.Manage)]
     public async Task ActivateAsync(Guid id)
     {
         var equipment = await _equipmentRepository.GetAsync(id);
@@ -72,7 +74,7 @@ public class EquipmentAppService : ApplicationService, IEquipmentAppService
         _equipmentManager.Activate(equipment);
         await _equipmentRepository.UpdateAsync(equipment, autoSave: true);
     }
-
+    [Authorize(FitLogsPermissions.Equipments.Manage)]
     public async Task DeactivateAsync(Guid id)
     {
         var equipment = await _equipmentRepository.GetAsync(id);

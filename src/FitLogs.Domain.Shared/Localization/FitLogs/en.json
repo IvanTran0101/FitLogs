@@ -35,6 +35,25 @@
     "ChoosePhoto": "Choose Photo",
     "Menu:Home": "Home",
     "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information visit",
-    "Welcome": "Welcome"
+    "Welcome": "Welcome",
+
+    "Permission:FitLogs": "FitLogs",
+    "Permission:Exercises": "Exercises",
+    "Permission:Exercises.Create": "Create exercises",
+    "Permission:Exercises.Update": "Update exercises",
+    "Permission:Exercises.Manage": "Manage exercises",
+
+    "Permission:MuscleGroups": "Muscle groups",
+    "Permission:MuscleGroups.Create": "Create muscle groups",
+    "Permission:MuscleGroups.Update": "Update muscle groups",
+    "Permission:MuscleGroups.Manage": "Manage muscle groups",
+
+    "Permission:Equipments": "Equipments",
+    "Permission:Equipments.Create": "Create equipments",
+    "Permission:Equipments.Update": "Update equipments",
+    "Permission:Equipments.Manage": "Manage equipments",
+
+    "Permission:UserProfiles": "User profiles",
+    "Permission:UserProfiles.Update": "Update user profile"
   }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using FitLogs.Exercises;
+using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -11,7 +12,7 @@ using Volo.Abp.Linq;
 using Volo.Abp.Users;
 
 namespace FitLogs.Workouts;
-[Authorize]
+[Authorize(FitLogsPermissions.WorkoutSessions.Default)]
 public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppService
 {
     private readonly IExerciseRepository _exerciseRepository;
@@ -30,7 +31,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         _workoutPlanRepository = workoutPlanRepository;
         _exerciseRepository = exercisesRepository;
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Default)]
     public async Task<WorkoutSessionDto> GetAsync(Guid id)
     {
         var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
@@ -39,7 +40,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Default)]
     public async Task<PagedResultDto<WorkoutSessionDto>> GetListAsync(GetWorkoutSessionListDto input)
     {
         var userId = GetCurrentUserId();
@@ -93,7 +94,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             dtos
         );
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     public async Task<WorkoutSessionDto> CreateAsync(CreateWorkoutSessionDto input)
     {
         var userId = GetCurrentUserId();
@@ -123,7 +124,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         );
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> AddExerciseAsync(
         Guid id,
         AddWorkoutSessionExerciseDto input)
@@ -154,7 +155,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> UpdateExerciseAsync(
         Guid id,
         Guid workoutSessionExerciseId,
@@ -181,7 +182,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> RemoveExerciseAsync(
         Guid id,
         Guid workoutSessionExerciseId)
@@ -199,7 +200,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> AddSetAsync(
         Guid id,
         Guid workoutSessionExerciseId,
@@ -226,7 +227,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> UpdateSetAsync(
         Guid id,
         Guid workoutSessionExerciseId,
@@ -254,7 +255,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> RemoveSetAsync(
         Guid id,
         Guid workoutSessionExerciseId,
@@ -276,7 +277,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> CompleteSetAsync(
         Guid id,
         Guid workoutSessionExerciseId,
@@ -299,7 +300,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> UncompleteSetAsync(
         Guid id,
         Guid workoutSessionExerciseId,
@@ -321,7 +322,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Complete)]
     public async Task<WorkoutSessionDto> CompleteAsync(Guid id)
     {
         var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
@@ -337,7 +338,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Cancel)]
     public async Task<WorkoutSessionDto> CancelAsync(Guid id)
     {
         var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
@@ -353,7 +354,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Delete)]
     public async Task DeleteAsync(Guid id)
     {
         var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);

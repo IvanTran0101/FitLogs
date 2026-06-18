@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -18,14 +19,14 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         _exerciseRepository = exerciseRepository;
         _exerciseManager = exerciseManager;
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Default)]
     public async Task<ExerciseDto> GetAsync(Guid id)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
         return ObjectMapper.Map<Exercise, ExerciseDto>(exercise);
         
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Default)]
     public async Task<ExerciseDto> GetBySlugAsync(string slug)
     {
         var exercise = await _exerciseRepository.FindBySlugAsync(slug);
@@ -36,7 +37,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         return ObjectMapper.Map<Exercise, ExerciseDto>(exercise);
         
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Default)]
     public async Task<PagedResultDto<ExerciseDto>> GetListAsync(GetExerciseListInput input)
     {
         var totalCount = await _exerciseRepository.GetCountAsync(
@@ -63,7 +64,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         return new PagedResultDto<ExerciseDto>(totalCount, items);
         
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Create)]
     public async Task<ExerciseDto> CreateAsync(CreateUpdateExerciseDto input)
     {
         var exercise = await _exerciseManager.CreateAsync(
@@ -82,7 +83,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         await _exerciseRepository.InsertAsync(exercise, autoSave: true);
         return ObjectMapper.Map<Exercise, ExerciseDto>(exercise);
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Update)]
     public async Task<ExerciseDto> UpdateAsync(Guid id, CreateUpdateExerciseDto input)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
@@ -101,7 +102,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         return ObjectMapper.Map<Exercise, ExerciseDto>(exercise);
         
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Manage)]
     public async Task ActivateAsync(Guid id)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
@@ -109,7 +110,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         await _exerciseRepository.UpdateAsync(exercise, autoSave: true);
         
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Manage)]
     public async Task DeactivateAsync(Guid id)
     {
         var exercise = await _exerciseRepository.GetAsync(id);
@@ -117,7 +118,7 @@ public class ExerciseAppService : ApplicationService, IExerciseAppService
         await _exerciseRepository.UpdateAsync(exercise, autoSave: true);
         
     }
-
+    [Authorize(FitLogsPermissions.Exercises.Default)]
     public async Task<PagedResultDto<ExerciseDto>> GetSelectableListAsync(GetExerciseListInput input)
     {
         var totalCount = await _exerciseRepository.GetCountAsync(
