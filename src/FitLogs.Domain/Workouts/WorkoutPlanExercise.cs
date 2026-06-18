@@ -31,8 +31,8 @@ public class WorkoutPlanExercise : Entity<Guid>
         int? restSeconds = null,
         string? note = null) : base(id)
     {
-        WorkoutPlanId = workoutPlanId;
-        ExerciseId = exerciseId;
+        WorkoutPlanId = Check.NotDefaultOrNull<Guid>(workoutPlanId, nameof(workoutPlanId));
+        ExerciseId = Check.NotDefaultOrNull<Guid>(exerciseId, nameof(exerciseId));
         
         SetOrderIndex(orderIndex);
         SetDefaultSets(defaultSets);
@@ -44,7 +44,7 @@ public class WorkoutPlanExercise : Entity<Guid>
 
     public void SetOrderIndex(int orderIndex)
     {
-        if (orderIndex < 0)
+        if (orderIndex <= 0)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutPlanOrderIndex);
         }

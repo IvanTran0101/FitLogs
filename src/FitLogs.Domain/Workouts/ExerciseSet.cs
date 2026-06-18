@@ -28,10 +28,13 @@ public class ExerciseSet : Entity<Guid>
     float weightKg,
     int reps,
     int? rpe = null,
-    string? note = null)
+    string? note = null) : base(id)
   {
-    WorkoutSessionExerciseId = Check.NotDefaultOrNull<Guid>(workoutSessionExerciseId, nameof(workoutSessionExerciseId));
-    
+    WorkoutSessionExerciseId = Check.NotDefaultOrNull<Guid>(
+
+      workoutSessionExerciseId,
+
+      nameof(workoutSessionExerciseId));    
     SetSetNumber(setNumber);
     SetWeightKg(weightKg);
     SetReps(reps);
@@ -44,7 +47,7 @@ public class ExerciseSet : Entity<Guid>
 
   public void SetSetNumber(int setNumber)
   {
-    if (setNumber < 0)
+    if (setNumber <= 0)
     {
       throw new BusinessException(FitLogsDomainErrorCodes.InvalidExerciseSetNumber);
     }
@@ -62,7 +65,7 @@ public class ExerciseSet : Entity<Guid>
 
   public void SetReps(int reps)
   {
-    if (reps < 0)
+    if (reps <= 0)
     {
       throw new BusinessException(FitLogsDomainErrorCodes.InvalidExerciseSetReps);
 

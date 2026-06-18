@@ -48,7 +48,7 @@ public class OpenFoodFactsClient : IOpenFoodFactsClient
             FatPer100g = product.Nutriments?.Fat100g
 
         };
-        throw new NotImplementedException();
+            
     }
     
     private static string? Normalize(string? value)

@@ -63,6 +63,10 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutPlanNameAlreadyExists = "FitLogs:Workout:WorkoutPlanNameAlreadyExists";
     public const string UserHasInProgressWorkoutSession = "FitLogs:Workout:UserHasInProgressWorkoutSession";
     public const string WorkoutPlanAccessDenied = "FitLogs:Workout:WorkoutPlanAccessDenied";
+    public const string WorkoutPlanMustHaveAtLeastOneExercise = "FitLogs:Workout:WorkoutPlanMustHaveAtLeastOneExercise";
+    public const string WorkoutPlanNotBelongToUser = "FitLogs:Workout:WorkoutPlanNotBelongToUser";
+    public const string WorkoutPlanIsInactive = "FitLogs:Workout:WorkoutPlanIsInactive";
+    public const string ExerciseIsInactive = "FitLogs:Workout:ExerciseIsInactive";
 
     public const string InvalidExerciseSetNumber = "FitLogs:Workout:InvalidExerciseSetNumber";
     public const string InvalidExerciseSetWeight = "FitLogs:Workout:InvalidExerciseSetWeight";

@@ -101,18 +101,13 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         int targetReps,
         float? targetWeightKg = null,
         int? restSeconds = null,
-        string? note = null)
+        string? note = null,
+        Guid? workoutPlanExerciseId = null)
     {
         EnsureInProgress();
-        if (_exercises.Any(e => e.ExerciseId == exerciseId))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseAlreadyExists);
-        }
+        EnsureExerciseDoesNotExist(exerciseId);
+        EnsureOrderIndexDoesNotExist(orderIndex);
 
-        if (_exercises.Any(x => x.OrderIndex == orderIndex))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseOrderIndexAlreadyExists);
-        }
         _exercises.Add(new WorkoutSessionExercise(
             id,
             Id,
@@ -122,7 +117,8 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
             targetReps,
             targetWeightKg,
             restSeconds,
-            note));
+            note,
+            workoutPlanExerciseId));
     }
 
     public void UpdateExercise(
@@ -135,16 +131,9 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         string? note = null)
     {
         EnsureInProgress();
-        var exercise = _exercises.FirstOrDefault(x => x.ExerciseId == workoutSessionExerciseId);
-        if (exercise == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
-            
-        }
-        if (_exercises.Any(x => x.Id != workoutSessionExerciseId && x.OrderIndex == orderIndex))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseOrderIndexAlreadyExists);
-        }
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+        EnsureOrderIndexDoesNotExist(orderIndex, workoutSessionExerciseId);
         exercise.SetOrderIndex(orderIndex);
         exercise.SetTargetSets(targetSets);
         exercise.SetTargetReps(targetReps);
@@ -156,12 +145,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
     {
         EnsureInProgress();
 
-        var exercise = _exercises.FirstOrDefault(x => x.Id == workoutSessionExerciseId);
-
-        if (exercise == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
-        }
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
 
         _exercises.Remove(exercise);
     }
@@ -177,12 +161,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
     {
         EnsureInProgress();
 
-        var exercise = _exercises.FirstOrDefault(x => x.Id == workoutSessionExerciseId);
-
-        if (exercise == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
-        }
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
 
         exercise.AddSet(
             exerciseSetId,
@@ -192,6 +171,67 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
             rpe,
             note
         );
+
+    }
+
+    public void UpdateSetInExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId,
+        int setNumber,
+        float weightKg,
+        int reps,
+        int? rpe = null,
+        string? note = null)
+    {
+        EnsureInProgress();
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+
+        exercise.UpdateSet(
+            exerciseSetId,
+            setNumber,
+            weightKg,
+            reps,
+            rpe,
+            note
+        );
+    }
+
+    public void RemoveSetFromExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId)
+    {
+        EnsureInProgress();
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+
+        exercise.RemoveSet(exerciseSetId);
+    }
+
+    public void CompleteSetInExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId,
+        DateTime completedAt)
+    {
+        EnsureInProgress();
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+
+        exercise.CompleteSet(
+            exerciseSetId,
+            completedAt
+        );
+    }
+
+    public void UncompleteSetInExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId)
+    {
+        EnsureInProgress();
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+
+        exercise.UncompleteSet(exerciseSetId);
     }
 
     private void EnsureInProgress()
@@ -199,6 +239,34 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         if (Status != WorkoutSessionStatus.InProgress)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
+        }
+    }
+
+    private WorkoutSessionExercise GetExerciseOrThrow(Guid workoutSessionExerciseId)
+    {
+        var exercise = _exercises.FirstOrDefault(x => x.Id == workoutSessionExerciseId);
+
+        if (exercise == null)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
+        }
+
+        return exercise;
+    }
+
+    private void EnsureExerciseDoesNotExist(Guid exerciseId)
+    {
+        if (_exercises.Any(e => e.ExerciseId == exerciseId))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseAlreadyExists);
+        }
+    }
+
+    private void EnsureOrderIndexDoesNotExist(int orderIndex, Guid? excludedWorkoutSessionExerciseId = null)
+    {
+        if (_exercises.Any(x => x.Id != excludedWorkoutSessionExerciseId && x.OrderIndex == orderIndex))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseOrderIndexAlreadyExists);
         }
     }
 }

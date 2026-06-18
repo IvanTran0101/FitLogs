@@ -19,9 +19,7 @@ public class WorkoutPlanManager : DomainService
         string name,
         string? description,
         WorkoutGoal goal,
-        WorkoutDifficulty difficulty,
-        bool isActive = true)
-    
+        WorkoutDifficulty difficulty)
     {
         if (await _workoutPlanRepository.ExistsByUserAndNameAsync(userId, name))
         {
@@ -34,7 +32,7 @@ public class WorkoutPlanManager : DomainService
             description,
             goal,
             difficulty,
-            isActive
+            false
         );
     }
 

@@ -28,7 +28,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         string? description,
         WorkoutGoal goal,
         WorkoutDifficulty difficulty,
-        bool isActive = true) : base(id)
+        bool isActive = false) : base(id)
     {
         UserId = userId;
         SetName(name);
@@ -46,8 +46,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
     public void SetDescription(string? description)
     {
-        Description = Check.NotNullOrWhiteSpace(description, nameof(description), WorkoutPlanConsts.MaxDescriptionLength);
-        
+        Description = Check.Length(description, nameof(description), WorkoutPlanConsts.MaxDescriptionLength);        
     }
 
     public void SetGoal(WorkoutGoal goal)
@@ -63,6 +62,10 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
     public void Activate()
     {
+        if (!_exercises.Any())
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanMustHaveAtLeastOneExercise);
+        }
         IsActive = true;
     }
 
@@ -77,7 +80,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         int orderIndex,
         int defaultSets,
         int defaultReps,
-        float? defaultWeigthKg = null,
+        float? defaultWeightKg = null,
         int? restSeconds = null,
         string? note = null)
     {
@@ -98,7 +101,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
             orderIndex,
             defaultSets,
             defaultReps,
-            defaultWeigthKg,
+            defaultWeightKg,
             restSeconds,
             note));
     }

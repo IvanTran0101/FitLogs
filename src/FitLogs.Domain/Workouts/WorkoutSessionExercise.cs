@@ -10,7 +10,8 @@ public class WorkoutSessionExercise : Entity<Guid>
 {
     public Guid WorkoutSessionId { get; private set; }
     public Guid ExerciseId { get; private set; }
-    
+    public Guid? WorkoutPlanExerciseId { get; private set; }
+
     public int OrderIndex { get; private set; }
     public int TargetSets { get; private set; }
     public int TargetReps { get; private set; }
@@ -32,11 +33,13 @@ public class WorkoutSessionExercise : Entity<Guid>
         int targetReps,
         float? targetWeightKg = null,
         int? restSeconds = null,
-        string? note = null) : base(id)
+        string? note = null,
+        Guid? workoutPlanExerciseId = null) : base(id)
     {
-        WorkoutSessionId = workoutSessionId;
-        ExerciseId = exerciseId;
-        
+        WorkoutSessionId = Check.NotDefaultOrNull<Guid>(workoutSessionId, nameof(workoutSessionId));
+        ExerciseId = Check.NotDefaultOrNull<Guid>(exerciseId, nameof(exerciseId));
+        WorkoutPlanExerciseId = workoutPlanExerciseId;
+
         SetOrderIndex(orderIndex);
         SetTargetSets(targetSets);
         SetTargetReps(targetReps);
@@ -99,7 +102,6 @@ public class WorkoutSessionExercise : Entity<Guid>
     public void SetNote(string? note)
     {
         Note = Check.Length(note, nameof(note), WorkoutSessionExerciseConsts.MaxNoteLength);
-        throw new NotImplementedException();
     }
     public void AddSet(
         Guid id,
@@ -135,12 +137,7 @@ public class WorkoutSessionExercise : Entity<Guid>
         string? note = null
     )
     {
-        var set = _sets.FirstOrDefault(x => x.Id == exerciseSetId);
-
-        if (set == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNotFound);
-        }
+        var set = GetSetOrThrow(exerciseSetId);
 
         if (_sets.Any(x => x.Id != exerciseSetId && x.SetNumber == setNumber))
         {
@@ -156,29 +153,26 @@ public class WorkoutSessionExercise : Entity<Guid>
 
     public void RemoveSet(Guid exerciseSetId)
     {
-        var set = _sets.FirstOrDefault(x => x.Id == exerciseSetId);
-
-        if (set == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNotFound);
-        }
+        var set = GetSetOrThrow(exerciseSetId);
 
         _sets.Remove(set);
     }
 
     public void CompleteSet(Guid exerciseSetId, DateTime completedAt)
     {
-        var set = _sets.FirstOrDefault(x => x.Id == exerciseSetId);
-
-        if (set == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNotFound);
-        }
+        var set = GetSetOrThrow(exerciseSetId);
 
         set.Complete(completedAt);
     }
 
     public void UncompleteSet(Guid exerciseSetId)
+    {
+        var set = GetSetOrThrow(exerciseSetId);
+
+        set.Uncomplete();
+    }
+
+    private ExerciseSet GetSetOrThrow(Guid exerciseSetId)
     {
         var set = _sets.FirstOrDefault(x => x.Id == exerciseSetId);
 
@@ -187,6 +181,6 @@ public class WorkoutSessionExercise : Entity<Guid>
             throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNotFound);
         }
 
-        set.Uncomplete();
+        return set;
     }
 }

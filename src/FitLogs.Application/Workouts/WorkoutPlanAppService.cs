@@ -2,25 +2,31 @@ using System;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using FitLogs.Exercises;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
 using Volo.Abp.Users;
 
 namespace FitLogs.Workouts;
-
+[Authorize]
 public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
 {
+    private readonly IExerciseRepository _exerciseRepository;
     private readonly IWorkoutPlanRepository _workoutPlanRepository;
     private readonly WorkoutPlanManager _workoutPlanManager;
 
     public WorkoutPlanAppService(
         IWorkoutPlanRepository workoutPlanRepository,
-        WorkoutPlanManager workoutPlanManager)
+        WorkoutPlanManager workoutPlanManager,
+        IExerciseRepository exerciseRepository)
     {
         _workoutPlanRepository = workoutPlanRepository;
         _workoutPlanManager = workoutPlanManager;
+        _exerciseRepository = exerciseRepository;
     }
 
     public async Task<WorkoutPlanDto> GetAsync(Guid id)
@@ -91,8 +97,8 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             input.Name,
             input.Description,
             input.Goal,
-            input.Difficulty,
-            input.IsActive
+            input.Difficulty
+
         );
 
         workoutPlan = await _workoutPlanRepository.InsertAsync(
@@ -154,7 +160,12 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
         var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
 
         EnsureWorkoutPlanOwner(workoutPlan);
+        var exercise = await _exerciseRepository.GetAsync(input.ExerciseId);
 
+        if (!exercise.IsActive)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
+        }
         workoutPlan.AddExercise(
             GuidGenerator.Create(),
             input.ExerciseId,
