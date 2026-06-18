@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using FitLogs.Exercises;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
@@ -9,18 +11,24 @@ using Volo.Abp.Linq;
 using Volo.Abp.Users;
 
 namespace FitLogs.Workouts;
-
+[Authorize]
 public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppService
 {
+    private readonly IExerciseRepository _exerciseRepository;
+    private readonly IWorkoutPlanRepository _workoutPlanRepository;
     private readonly IWorkoutSessionRepository _workoutSessionRepository;
     private readonly WorkoutSessionManager _workoutSessionManager;
 
     public WorkoutSessionAppService(
         IWorkoutSessionRepository workoutSessionRepository,
-        WorkoutSessionManager workoutSessionManager)
+        WorkoutSessionManager workoutSessionManager,
+        IWorkoutPlanRepository workoutPlanRepository,
+        IExerciseRepository exercisesRepository)
     {
         _workoutSessionRepository = workoutSessionRepository;
         _workoutSessionManager = workoutSessionManager;
+        _workoutPlanRepository = workoutPlanRepository;
+        _exerciseRepository = exercisesRepository;
     }
 
     public async Task<WorkoutSessionDto> GetAsync(Guid id)
@@ -89,20 +97,30 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
     public async Task<WorkoutSessionDto> CreateAsync(CreateWorkoutSessionDto input)
     {
         var userId = GetCurrentUserId();
-
-        var workoutSession = await _workoutSessionManager.CreateAsync(
-            userId,
-            input.WorkoutPlanId,
-            input.Name,
-            input.StartedAt,
-            input.Note
-        );
-
+        WorkoutSession workoutSession;
+        if (input.WorkoutPlanId.HasValue)
+        {
+            var workoutPlan = await _workoutPlanRepository.GetAsync(input.WorkoutPlanId.Value);
+            workoutSession = await _workoutSessionManager.CreateFromPlanAsync(
+                userId,
+                workoutPlan,
+                input.StartedAt,
+                input.Note
+            );
+        }
+        else
+        {
+            workoutSession = await _workoutSessionManager.CreateFreeSessionAsync(
+                userId,
+                input.Name,
+                input.StartedAt,
+                input.Note
+            );
+        }
         workoutSession = await _workoutSessionRepository.InsertAsync(
             workoutSession,
             autoSave: true
         );
-
         return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
     }
 
@@ -113,7 +131,11 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
 
         EnsureWorkoutSessionOwner(workoutSession);
-
+        var exercise = await _exerciseRepository.GetAsync(input.ExerciseId);
+        if (exercise == null)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
+        }
         workoutSession.AddExercise(
             GuidGenerator.Create(),
             input.ExerciseId,
@@ -187,12 +209,8 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         EnsureWorkoutSessionOwner(workoutSession);
 
-        var exercise = GetWorkoutSessionExerciseOrThrow(
-            workoutSession,
-            workoutSessionExerciseId
-        );
-
-        exercise.AddSet(
+        workoutSession.AddSetToExercise(
+            workoutSessionExerciseId,
             GuidGenerator.Create(),
             input.SetNumber,
             input.WeightKg,
@@ -219,12 +237,8 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         EnsureWorkoutSessionOwner(workoutSession);
 
-        var exercise = GetWorkoutSessionExerciseOrThrow(
-            workoutSession,
-            workoutSessionExerciseId
-        );
-
-        exercise.UpdateSet(
+        workoutSession.UpdateSetInExercise(
+            workoutSessionExerciseId,
             exerciseSetId,
             input.SetNumber,
             input.WeightKg,
@@ -250,12 +264,10 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         EnsureWorkoutSessionOwner(workoutSession);
 
-        var exercise = GetWorkoutSessionExerciseOrThrow(
-            workoutSession,
-            workoutSessionExerciseId
+        workoutSession.RemoveSetFromExercise(
+            workoutSessionExerciseId,
+            exerciseSetId
         );
-
-        exercise.RemoveSet(exerciseSetId);
 
         workoutSession = await _workoutSessionRepository.UpdateAsync(
             workoutSession,
@@ -274,12 +286,8 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         EnsureWorkoutSessionOwner(workoutSession);
 
-        var exercise = GetWorkoutSessionExerciseOrThrow(
-            workoutSession,
-            workoutSessionExerciseId
-        );
-
-        exercise.CompleteSet(
+        workoutSession.CompleteSetInExercise(
+            workoutSessionExerciseId,
             exerciseSetId,
             Clock.Now
         );
@@ -301,12 +309,10 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         EnsureWorkoutSessionOwner(workoutSession);
 
-        var exercise = GetWorkoutSessionExerciseOrThrow(
-            workoutSession,
-            workoutSessionExerciseId
+        workoutSession.UncompleteSetInExercise(
+            workoutSessionExerciseId,
+            exerciseSetId
         );
-
-        exercise.UncompleteSet(exerciseSetId);
 
         workoutSession = await _workoutSessionRepository.UpdateAsync(
             workoutSession,
