@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -21,6 +22,13 @@ public interface IWorkoutSessionRepository : IRepository<WorkoutSession, Guid>
     Task<bool> HasInProgressSessionAsync(
         Guid userId,
         Guid? excludedId = null,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<List<WorkoutSession>> GetCompletedListByUserAndDateRangeAsync(
+        Guid userId,
+        DateTime startDate,
+        DateTime endDate,
         CancellationToken cancellationToken = default
     );
 }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FitLogs.Workouts;
@@ -47,6 +49,21 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
             && x.Status == WorkoutSessionStatus.InProgress
             && (!excludedId.HasValue || x.Id != excludedId.Value),
             GetCancellationToken(cancellationToken));
+        
+    }
+
+    public async Task<List<WorkoutSession>> GetCompletedListByUserAndDateRangeAsync(Guid userId, DateTime startDate, DateTime endDate,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = await GetQueryableAsync();
+        return await queryable
+            .Include(x=> x.Exercises)
+            .ThenInclude(x=>x.Sets)
+            .Where(x=> x.UserId == userId)
+            .Where(x=> x.Status == WorkoutSessionStatus.Completed)
+            .Where(x=> x.StartedAt >= startDate && x.StartedAt <endDate)
+            .OrderBy(x=> x.StartedAt)
+            .ToListAsync(GetCancellationToken(cancellationToken));
         
     }
 }
