@@ -1,12 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FitLogs.EntityFrameworkCore;
 using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
-namespace FitLogs.EntityFrameworkCore.Workouts;
+namespace FitLogs.Workouts;
 
 public class EfCoreWorkoutPlanRepository : EfCoreRepository<FitLogsDbContext, WorkoutPlan, Guid>,
     IWorkoutPlanRepository
@@ -32,7 +33,7 @@ public class EfCoreWorkoutPlanRepository : EfCoreRepository<FitLogsDbContext, Wo
     {
         var dbSet = await GetDbSetAsync();
         return await dbSet.FirstOrDefaultAsync(
-            x=> x.UserId == userId && x.Name == name,
+            x=> x.UserId == userId && x.Name == name && !x.IsArchived,
             GetCancellationToken(cancellationToken));
         
     }

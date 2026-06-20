@@ -46,6 +46,13 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutPlanExerciseOrderIndexAlreadyExists = "FitLogs:Workout:WorkoutPlanExerciseOrderIndexAlreadyExists";
     public const string WorkoutPlanExerciseNotFound = "FitLogs:Workout:WorkoutPlanExerciseNotFound";
     public const string WorkoutSessionAccessDenied = "FitLogs:Workout:WorkoutSessionAccessDenied";
+    public const string InvalidWorkoutPlanExerciseOrder = "FitLogs:Workout:InvalidWorkoutPlanExerciseOrder";
+    public const string InvalidOrderIndex = "FitLogs:Workout:InvalidOrderIndex";
+    public const string WorkoutPlanIsArchived = "FitLogs:Workout:WorkoutPlanIsArchived";
+    public const string CompletedWorkoutSessionCannotBeDeleted = "FitLogs:Workout:WorkoutPlanIsArchived";
+    public const string CurrentWorkoutSessionExerciseNotFound = "FitLogs:Workout:CurrentWorkoutSessionExerciseNotFound";
+    public const string NextWorkoutSessionExerciseNotFound = "FitLogs:Workout:NextWorkoutSessionExerciseNotFound";
+    public const string PreviousWorkoutSessionExerciseNotFound = "FitLogs:Workout:PreviousWorkoutSessionExerciseNotFound";
 
     
     

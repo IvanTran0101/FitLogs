@@ -36,7 +36,7 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
 
         EnsureWorkoutPlanOwner(workoutPlan);
 
-        return ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        return MapToDto(workoutPlan);
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.Default)]
     public async Task<PagedResultDto<WorkoutPlanDto>> GetListAsync(GetWorkoutPlanListDto input)
@@ -56,6 +56,13 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
                 input.IsActive.HasValue,
                 x => x.IsActive == input.IsActive!.Value
             )
+            .WhereIf(
+                input.IsArchived.HasValue,
+                x => x.IsArchived == input.IsArchived!.Value
+            )
+            .WhereIf(
+                !input.IsArchived.HasValue,
+                x=> !x.IsArchived)
             .WhereIf(
                 input.Goal.HasValue,
                 x => x.Goal == input.Goal!.Value
@@ -107,7 +114,7 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        return MapToDto(workoutPlan);
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.Update)]
     public async Task<WorkoutPlanDto> UpdateAsync(Guid id, UpdateWorkoutPlanDto input)
@@ -139,7 +146,7 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        return MapToDto(workoutPlan);
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.Delete)]
     public async Task DeleteAsync(Guid id)
@@ -183,7 +190,7 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        return MapToDto(workoutPlan);
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.ManageExercises)]
     public async Task<WorkoutPlanDto> UpdateExerciseAsync(
@@ -210,7 +217,7 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        return MapToDto(workoutPlan);
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.ManageExercises)]
     public async Task<WorkoutPlanDto> RemoveExerciseAsync(
@@ -228,7 +235,39 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        return MapToDto(workoutPlan);
+    }
+    [Authorize(FitLogsPermissions.WorkoutPlans.Archive)]
+    public async Task ArchiveAsync(Guid id)
+    {
+        var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
+        EnsureWorkoutPlanOwner(workoutPlan);
+        workoutPlan.Archive();
+        await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true);
+        
+    }
+    [Authorize(FitLogsPermissions.WorkoutPlans.Restore)]
+    public async Task<WorkoutPlanDto> RestoreAsync(Guid id)
+    {
+        var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
+        EnsureWorkoutPlanOwner(workoutPlan);
+        workoutPlan.Restore();
+        workoutPlan = await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true);
+        return MapToDto(workoutPlan);
+        
+    }
+    [Authorize(FitLogsPermissions.WorkoutPlans.ManageExercises)]
+    public async Task<WorkoutPlanDto> ReorderExercisesAsync(Guid id, ReorderWorkoutPlanExercisesDto input)
+    {
+        var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
+        EnsureWorkoutPlanOwner(workoutPlan);
+        var orderIndexes = input.Exercises.ToDictionary(
+            x => x.WorkoutPlanExerciseId,
+            x => x.OrderIndex);
+        workoutPlan.ReorderExercises(orderIndexes);
+        workoutPlan = await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true);
+        return MapToDto(workoutPlan);
+        
     }
 
     private Guid GetCurrentUserId()
@@ -255,4 +294,14 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanAccessDenied);
         }
     }
+
+    private WorkoutPlanDto MapToDto(WorkoutPlan workoutPlan)
+    {
+        var dto = ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>(workoutPlan);
+        dto.Exercises = dto.Exercises?
+            .OrderBy(x=> x.OrderIndex)
+            .ToList() ?? [];
+        return dto;
+    }
+
 }

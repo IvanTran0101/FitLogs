@@ -18,6 +18,7 @@ public class WorkoutSessionExercise : Entity<Guid>
     public float? TargetWeightKg { get; private set; }
     public int? RestSeconds { get; private set; }
     public string? Note { get; private set; }
+    public WorkoutSessionExerciseStatus Status { get; private set; }
     private readonly List<ExerciseSet> _sets = new();
     public IReadOnlyCollection<ExerciseSet> Sets => _sets.AsReadOnly();
     protected WorkoutSessionExercise()
@@ -46,6 +47,7 @@ public class WorkoutSessionExercise : Entity<Guid>
         SetTargetWeightKg(targetWeightKg);
         SetRestSeconds(restSeconds);
         SetNote(note);
+        Status = WorkoutSessionExerciseStatus.Pending;
     }
 
     public void SetOrderIndex(int orderIndex)
@@ -171,6 +173,17 @@ public class WorkoutSessionExercise : Entity<Guid>
 
         set.Uncomplete();
     }
+
+    public void Skip()
+    {
+        Status = WorkoutSessionExerciseStatus.Skipped;
+    }
+
+    public void MarkInProgress()
+    {
+        Status = WorkoutSessionExerciseStatus.InProgress;
+    }
+    
 
     private ExerciseSet GetSetOrThrow(Guid exerciseSetId)
     {

@@ -84,4 +84,13 @@ public interface IWorkoutSessionAppService : IApplicationService
     Task<WorkoutSessionDto> CancelAsync(Guid id);
 
     Task DeleteAsync(Guid id);
+    Task<WorkoutSessionDto?> GetActiveAsync();
+
+    Task<WorkoutSessionExerciseDto> GetCurrentExerciseAsync(Guid id);
+    
+    Task<WorkoutSessionDto> MoveToNextExerciseAsync(Guid id);
+    Task<WorkoutSessionDto> MoveToPreviousExerciseAsync(Guid id);
+    
+    Task<WorkoutSessionDto> SkipCurrentExerciseAsync(Guid id);
+
 }

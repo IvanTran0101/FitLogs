@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FitLogs.EntityFrameworkCore;
 using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
-namespace FitLogs.EntityFrameworkCore.Workouts;
+namespace FitLogs.Workouts;
 
 public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext, WorkoutSession, Guid>,
     IWorkoutSessionRepository
@@ -35,10 +36,12 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
     public async Task<WorkoutSession?> FindCurrentInProgressAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var dbSet = await GetDbSetAsync();
-        return await dbSet.FirstOrDefaultAsync(
-            x => x.UserId == userId &&
-                 x.Status == WorkoutSessionStatus.InProgress,
-            GetCancellationToken(cancellationToken));
+        return await dbSet
+            .Include(x => x.Exercises)
+            .ThenInclude(x => x.Sets)
+            .FirstOrDefaultAsync(x => x.UserId == userId &&
+                                      x.Status == WorkoutSessionStatus.InProgress,
+                                      GetCancellationToken(cancellationToken));
     }
 
     public async Task<bool> HasInProgressSessionAsync(Guid userId, Guid? excludedId = null, CancellationToken cancellationToken = default)

@@ -14,6 +14,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
     public WorkoutGoal Goal { get; private set; }
     public WorkoutDifficulty Difficulty { get; private set; }
     public bool IsActive { get; private set; }
+    public bool IsArchived { get; private set; }
     private readonly List<WorkoutPlanExercise> _exercises = new();
 
     public IReadOnlyCollection<WorkoutPlanExercise> Exercises => _exercises.AsReadOnly();
@@ -28,14 +29,16 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         string? description,
         WorkoutGoal goal,
         WorkoutDifficulty difficulty,
-        bool isActive = false) : base(id)
+        bool isActive = false,
+        bool isArchived = false) : base(id)
     {
-        UserId = userId;
+        UserId = Check.NotDefaultOrNull<Guid>(userId, nameof(userId));
         SetName(name);
         SetDescription(description);
         SetGoal(goal);
         SetDifficulty(difficulty);
         IsActive = isActive;
+        IsArchived = isArchived;
     }
 
     public void SetName(string name)
@@ -62,6 +65,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
     public void Activate()
     {
+        EnsureNotArchived();
         if (!_exercises.Any())
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanMustHaveAtLeastOneExercise);
@@ -71,7 +75,22 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
     public void Deactivate()
     {
+        EnsureNotArchived();
+
         IsActive = false;
+    }
+
+    public void Archive()
+    {
+        EnsureNotArchived();
+
+        IsActive = false;
+        IsArchived = true;
+    }
+
+    public void Restore()
+    {
+        IsArchived = false;
     }
 
     public void AddExercise(
@@ -84,6 +103,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         int? restSeconds = null,
         string? note = null)
     {
+        EnsureNotArchived();
         if (_exercises.Any(x => x.ExerciseId == exerciseId))
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseAlreadyExists);
@@ -126,6 +146,7 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseOrderIndexAlreadyExists);
         }
+        EnsureNotArchived();
 
         exercise.SetOrderIndex(orderIndex);
         exercise.SetDefaultSets(defaultSets);
@@ -142,7 +163,48 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseNotFound);
         }
+        EnsureNotArchived();
 
         _exercises.Remove(exercise);
+    }
+
+    
+    //Reorder exercises
+    public void ReorderExercises(Dictionary<Guid, int> orderIndexes)
+    {
+        EnsureNotArchived();
+        if (orderIndexes.Count != _exercises.Count)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutPlanExerciseOrder);
+        }
+
+        if (orderIndexes.Values.Any(x => x <= 0))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidOrderIndex);
+        }
+
+        if (orderIndexes.Values.Distinct().Count() != orderIndexes.Count)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseOrderIndexAlreadyExists);
+        }
+
+        foreach (var item in orderIndexes)
+        {
+            var exercise = _exercises.FirstOrDefault(x=> x.Id == item.Key);
+            if (exercise == null)
+            {
+                throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseNotFound);
+            }
+            exercise.SetOrderIndex(item.Value);
+        }
+    }
+    
+    //Helpers
+    private void EnsureNotArchived()
+    {
+        if (IsArchived)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanIsArchived);            
+        }
     }
 }

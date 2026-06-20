@@ -12,6 +12,6 @@ public class WorkoutPlanDto : FullAuditedEntityDto<Guid>
     public WorkoutGoal Goal { get; set; }
     public WorkoutDifficulty Difficulty { get; set; }
     public bool IsActive { get; set; }
-
+    public bool IsArchived { get; set; }
     public List<WorkoutPlanExerciseDto> Exercises { get; set; } = new();
 }

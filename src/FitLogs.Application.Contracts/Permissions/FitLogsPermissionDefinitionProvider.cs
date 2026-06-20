@@ -34,6 +34,9 @@ public class FitLogsPermissionDefinitionProvider : PermissionDefinitionProvider
         workoutPlans.AddChild(FitLogsPermissions.WorkoutPlans.Update, L("Permission:WorkoutPlans.Update"));
         workoutPlans.AddChild(FitLogsPermissions.WorkoutPlans.Delete, L("Permission:WorkoutPlans.Delete"));
         workoutPlans.AddChild(FitLogsPermissions.WorkoutPlans.ManageExercises, L("Permission:WorkoutPlans.ManageExercises"));
+        workoutPlans.AddChild(FitLogsPermissions.WorkoutPlans.Archive, L("Permission:WorkoutPlans.Archive"));
+        workoutPlans.AddChild(FitLogsPermissions.WorkoutPlans.Restore, L("Permission:WorkoutPlans.Restore"));
+
 
         var workoutSessions = myGroup.AddPermission(FitLogsPermissions.WorkoutSessions.Default, L("Permission:WorkoutSessions"));
         workoutSessions.AddChild(FitLogsPermissions.WorkoutSessions.Create, L("Permission:WorkoutSessions.Create"));

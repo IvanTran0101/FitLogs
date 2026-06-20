@@ -14,6 +14,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
     public DateTime StartedAt { get; private set; }
     public DateTime? EndedAt { get; private set; }
     public WorkoutSessionStatus Status { get; private set; }
+    public Guid? CurrentWorkoutSessionExerciseId { get; private set; }
     public string? Note { get;  private set; }
     private readonly List<WorkoutSessionExercise> _exercises = new();
 
@@ -108,7 +109,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         EnsureExerciseDoesNotExist(exerciseId);
         EnsureOrderIndexDoesNotExist(orderIndex);
 
-        _exercises.Add(new WorkoutSessionExercise(
+        var sessionExercise = new WorkoutSessionExercise(
             id,
             Id,
             exerciseId,
@@ -118,7 +119,13 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
             targetWeightKg,
             restSeconds,
             note,
-            workoutPlanExerciseId));
+            workoutPlanExerciseId);
+        _exercises.Add(sessionExercise);
+        if (CurrentWorkoutSessionExerciseId == null)
+        {
+            CurrentWorkoutSessionExerciseId = sessionExercise.Id;
+        }
+
     }
 
     public void UpdateExercise(
@@ -223,6 +230,63 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         );
     }
 
+    public void MoveToNextExercise()
+    {
+        EnsureInProgress();
+        if (!_exercises.Any())
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
+            
+        }
+
+        if (CurrentWorkoutSessionExerciseId is not Guid currentExerciseId)
+        {
+            CurrentWorkoutSessionExerciseId = _exercises
+                .OrderBy(x => x.OrderIndex)
+                .First()
+                .Id;
+            return;
+        }
+        var currentExercise = GetExerciseOrThrow(currentExerciseId);
+        var nextExercise = _exercises
+            .Where(x => x.OrderIndex > currentExercise.OrderIndex)
+            .OrderBy(x => x.OrderIndex)
+            .FirstOrDefault();
+        if (nextExercise == null)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.NextWorkoutSessionExerciseNotFound);
+        }
+        CurrentWorkoutSessionExerciseId = nextExercise.Id;
+    }
+
+    public void MoveToPreviousExercise()
+    {
+        EnsureInProgress();
+        if (!_exercises.Any())
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
+        }
+
+        if (CurrentWorkoutSessionExerciseId is not Guid currentExerciseId)
+        {
+            CurrentWorkoutSessionExerciseId = _exercises
+                .OrderBy(x=>x.OrderIndex)
+                .First()
+                .Id;
+            return;
+        }
+        var currentExercise = GetExerciseOrThrow(currentExerciseId);
+        var previousExercise = _exercises
+            .Where(x => x.OrderIndex < currentExercise.OrderIndex)
+            .OrderBy(x => x.OrderIndex)
+            .FirstOrDefault();
+        if (previousExercise == null)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.PreviousWorkoutSessionExerciseNotFound);
+        }
+        CurrentWorkoutSessionExerciseId = previousExercise.Id;
+    }
+    
     public void UncompleteSetInExercise(
         Guid workoutSessionExerciseId,
         Guid exerciseSetId)
@@ -234,6 +298,29 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         exercise.UncompleteSet(exerciseSetId);
     }
 
+    public WorkoutSessionExercise GetCurrentExercise()
+    {
+        if (CurrentWorkoutSessionExerciseId == null)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.CurrentWorkoutSessionExerciseNotFound);
+            
+        }
+        return GetExerciseOrThrow(CurrentWorkoutSessionExerciseId.Value);
+    }
+
+    public void SkipCurrentExercise()
+    {
+        EnsureInProgress();
+        var currentExercise = GetCurrentExercise();
+        currentExercise.Skip();
+        var nextExercise = _exercises
+            .Where(x=>
+                x.OrderIndex > currentExercise.OrderIndex &&
+                x.Status !=WorkoutSessionExerciseStatus.Skipped)
+            .OrderBy(x=>x.OrderIndex)
+            .FirstOrDefault();
+        CurrentWorkoutSessionExerciseId = nextExercise?.Id;
+    }
     private void EnsureInProgress()
     {
         if (Status != WorkoutSessionStatus.InProgress)

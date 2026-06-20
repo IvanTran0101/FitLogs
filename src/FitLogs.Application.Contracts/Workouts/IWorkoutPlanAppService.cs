@@ -30,4 +30,11 @@ public interface IWorkoutPlanAppService : IApplicationService
     );
 
     Task<WorkoutPlanDto> RemoveExerciseAsync(Guid id, Guid workoutPlanExerciseId);
+    
+    Task ArchiveAsync(Guid id);
+    
+    Task<WorkoutPlanDto> RestoreAsync(Guid id);
+    
+    Task<WorkoutPlanDto> ReorderExercisesAsync(Guid id,
+        ReorderWorkoutPlanExercisesDto input);
 }
