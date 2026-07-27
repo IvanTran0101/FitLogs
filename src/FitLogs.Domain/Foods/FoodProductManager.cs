@@ -24,6 +24,8 @@ public class FoodProductManager : DomainService
         decimal? carbPer100g,
         decimal? fatPer100g,
         string? servingSize,
+        decimal? servingSizeInGrams,
+        decimal? pieceWeightInGrams,
         FoodProductSource source,
         DateTime? lastSyncedAt = null)
     {
@@ -40,6 +42,8 @@ public class FoodProductManager : DomainService
             carbPer100g,
             fatPer100g,
             servingSize,
+            servingSizeInGrams,
+            pieceWeightInGrams,
             source,
             lastSyncedAt
         );
@@ -59,13 +63,17 @@ public class FoodProductManager : DomainService
         string name,
         string? brand,
         string? imageUrl,
-        string? servingSize)
+        string? servingSize,
+        decimal? servingSizeInGrams,
+        decimal? pieceWeightInGrams)
     {
         foodProduct.UpdateDisplayInfo(
             name,
             brand,
             imageUrl,
-            servingSize
+            servingSize,
+            servingSizeInGrams,
+            pieceWeightInGrams
         );
     }
 
@@ -94,6 +102,7 @@ public class FoodProductManager : DomainService
         decimal? carbPer100g,
         decimal? fatPer100g,
         string? servingSize,
+        decimal? servingSizeInGrams,
         DateTime syncedAt)
     {
         foodProduct.UpdateFromOpenFoodFacts(
@@ -105,6 +114,7 @@ public class FoodProductManager : DomainService
             carbPer100g,
             fatPer100g,
             servingSize,
+            servingSizeInGrams,
             syncedAt
         );
     }

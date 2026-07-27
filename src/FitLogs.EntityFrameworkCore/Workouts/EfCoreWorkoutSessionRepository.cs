@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FitLogs.EntityFrameworkCore;
 using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-
-namespace FitLogs.Workouts;
+using Npgsql;
+using Volo.Abp;
+namespace FitLogs.EntityFrameworkCore.Workouts;
 
 public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext, WorkoutSession, Guid>,
     IWorkoutSessionRepository
@@ -36,12 +36,10 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
     public async Task<WorkoutSession?> FindCurrentInProgressAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var dbSet = await GetDbSetAsync();
-        return await dbSet
-            .Include(x => x.Exercises)
-            .ThenInclude(x => x.Sets)
-            .FirstOrDefaultAsync(x => x.UserId == userId &&
-                                      x.Status == WorkoutSessionStatus.InProgress,
-                                      GetCancellationToken(cancellationToken));
+        return await dbSet.FirstOrDefaultAsync(
+            x => x.UserId == userId &&
+                 x.Status == WorkoutSessionStatus.InProgress,
+            GetCancellationToken(cancellationToken));
     }
 
     public async Task<bool> HasInProgressSessionAsync(Guid userId, Guid? excludedId = null, CancellationToken cancellationToken = default)
@@ -68,5 +66,27 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
             .OrderBy(x=> x.StartedAt)
             .ToListAsync(GetCancellationToken(cancellationToken));
         
+    }
+
+    public override async Task<WorkoutSession> InsertAsync(
+        WorkoutSession entity,
+        bool autoSave = false,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await base.InsertAsync(entity, autoSave, cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsInProgressSessionUniqueViolation(exception))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.UserHasInProgressWorkoutSession);
+        }
+    }
+
+    private static bool IsInProgressSessionUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException
+               && postgresException.SqlState == PostgresErrorCodes.UniqueViolation
+               && postgresException.ConstraintName == "IX_AppWorkoutSessions_UserId_InProgress";;
     }
 }

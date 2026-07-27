@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using FitLogs.Foods;
 
 namespace FitLogs.ExternalServices.OpenFoodFacts;
@@ -45,12 +47,37 @@ public class OpenFoodFactsClient : IOpenFoodFactsClient
 
             CarbPer100g = product.Nutriments?.Carbohydrates100g,
 
-            FatPer100g = product.Nutriments?.Fat100g
+            FatPer100g = product.Nutriments?.Fat100g,
+            
+            ServingSizeInGrams = TryParseServingSizeInGrams(product.ServingSize),
 
         };
             
     }
-    
+
+    private static decimal? TryParseServingSizeInGrams(string? servingSize)
+    {
+        if (string.IsNullOrWhiteSpace(servingSize))
+        {
+            return null;
+        }
+
+        var match = Regex.Match(
+            servingSize,
+            @"(?<value>\d+(?:[.,]\d+)?)\s*(?<unit>g|gram|grams)\b",
+            RegexOptions.IgnoreCase);
+        if (!match.Success)
+        {
+            return null;
+        }
+        var normalizedValue = match.Groups["value"].Value.Replace(',', '.');
+        
+        return decimal.TryParse(
+            normalizedValue,
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out var value) ? value : null;
+    }
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();

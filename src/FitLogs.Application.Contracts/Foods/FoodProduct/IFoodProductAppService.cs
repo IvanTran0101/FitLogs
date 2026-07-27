@@ -15,7 +15,8 @@ public interface IFoodProductAppService : IApplicationService
     Task<FoodProductDto> GetAsync(Guid id);
 
     Task<PagedResultDto<FoodProductDto>> GetListAsync(GetFoodProductListInput input);
-
+    Task ActivateAsync(Guid id);
+    
     Task DeactivateAsync(Guid id);
 
     Task VerifyAsync(Guid id);

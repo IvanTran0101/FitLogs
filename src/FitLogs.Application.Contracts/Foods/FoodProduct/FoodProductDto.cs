@@ -16,6 +16,8 @@ public class FoodProductDto : EntityDto<Guid>
     public decimal? FatPer100g { get; set; }
 
     public string? ServingSize { get; set; }
+    public decimal? ServingSizeInGrams { get; set; }
+    public decimal? PieceWeightInGrams { get; set; }
     public FoodProductSource Source { get; set; }
     public DateTime? LastSyncedAt { get; set; }
 

@@ -17,6 +17,9 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
     public decimal? FatPer100g {get; private set; }
     
     public string? ServingSize { get; private set; }
+    
+    public decimal? ServingSizeInGrams { get; private set; }
+    public decimal? PieceWeightInGrams { get; private set; }
     public FoodProductSource Source { get; private set; }
     public DateTime? LastSyncedAt { get; private set; }
     public bool IsActive { get; private set; }
@@ -37,6 +40,8 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         decimal? carbPer100G,
         decimal? fatPer100G,
         string? servingSize,
+        decimal? servingSizeInGrams,
+        decimal? pieceWeightInGrams,
         FoodProductSource source,
         DateTime? lastSyncedAt = null) : base(id)
     {
@@ -47,11 +52,32 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         SetNutrition(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         SetServingSize(servingSize);
         SetSource(source);
+        SetServingSizeInGrams(servingSizeInGrams);
+        SetPieceWeightInGrams(pieceWeightInGrams);
         LastSyncedAt = lastSyncedAt;
         IsActive = true;
         SetVerifiedBySource(source);
         
     }
+
+    private void SetServingSizeInGrams(decimal? servingSizeInGrams)
+    {
+        if (servingSizeInGrams.HasValue && servingSizeInGrams <= 0)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductServingSizeInGramsMustBePositive);
+        }
+        ServingSizeInGrams = servingSizeInGrams;
+    }
+
+    private void SetPieceWeightInGrams(decimal? pieceWeightInGrams)
+    {
+        if (pieceWeightInGrams.HasValue && pieceWeightInGrams <= 0)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductPieceWeightInGramsMustBePositive);
+        }
+        PieceWeightInGrams = pieceWeightInGrams;
+    }
+
     private void SetVerifiedBySource(FoodProductSource source)
     {
         IsVerified = source == FoodProductSource.System;
@@ -76,6 +102,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         decimal? carbPer100G,
         decimal? fatPer100G,
         string? servingSize,
+        decimal? servingSizeInGrams,
         DateTime syncedAt)
     {
         SetName(name);
@@ -84,6 +111,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         SetNutrition(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         SetServingSize(servingSize);
         SetSource(FoodProductSource.OpenFoodFacts);
+        SetServingSizeInGrams(servingSizeInGrams);
         LastSyncedAt = syncedAt;
         IsVerified = false;
     }
@@ -103,12 +131,14 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
     {
         SetBarcode(barcode);
     }
-    public void UpdateDisplayInfo(string name, string? brand, string? imageUrl, string? servingSize)
+    public void UpdateDisplayInfo(string name, string? brand, string? imageUrl, string? servingSize,decimal? servingSizeInGrams, decimal? pieceWeightInGrams )
     {
         SetName(name);
         Brand = NormalizeOptionalText(brand, FoodProductConsts.MaxBrandLength, nameof(brand));
         ImageUrl = NormalizeOptionalText(imageUrl, FoodProductConsts.MaxImageUrlLength, nameof(imageUrl));
         SetServingSize(servingSize);
+        SetServingSizeInGrams(servingSizeInGrams);
+        SetPieceWeightInGrams(pieceWeightInGrams);
     }
 
     private void SetBarcode(string? barcode)

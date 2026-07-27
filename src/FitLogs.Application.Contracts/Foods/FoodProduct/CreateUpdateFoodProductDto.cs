@@ -31,4 +31,10 @@ public class CreateUpdateFoodProductDto
 
     [StringLength(FoodProductConsts.MaxServingSizeLength)]
     public string? ServingSize { get; set; }
+    
+    [Range(typeof(decimal), "0.01", "999999")]
+    public decimal? ServingSizeInGrams { get; set; }
+    
+    [Range(typeof(decimal), "0.01", "999999")]
+    public decimal? PieceWeightInGrams { get; set; }
 }
