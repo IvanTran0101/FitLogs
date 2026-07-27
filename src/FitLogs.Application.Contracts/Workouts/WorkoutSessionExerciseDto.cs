@@ -15,6 +15,6 @@ public class WorkoutSessionExerciseDto : EntityDto<Guid>
     public float? TargetWeightKg { get; set; }
     public int? RestSeconds { get; set; }
     public string? Note { get; set; }
-
+    public WorkoutSessionExerciseStatus Status { get; set; }
     public List<ExerciseSetDto> Sets { get; set; } = new();
 }

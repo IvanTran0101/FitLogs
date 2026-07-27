@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using FitLogs.EntityFrameworkCore;
 using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -68,5 +70,27 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
             .OrderBy(x=> x.StartedAt)
             .ToListAsync(GetCancellationToken(cancellationToken));
         
+    }
+
+    public override async Task<WorkoutSession> InsertAsync(
+        WorkoutSession entity,
+        bool autoSave = false,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await base.InsertAsync(entity, autoSave, cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsInProgressSessionUniqueViolation(exception))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.UserHasInProgressWorkoutSession);
+        }
+    }
+
+    private static bool IsInProgressSessionUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException
+               && postgresException.SqlState == PostgresErrorCodes.UniqueViolation
+               && postgresException.ConstraintName == "IX_AppWorkoutSessions_UserId_InProgress";
     }
 }

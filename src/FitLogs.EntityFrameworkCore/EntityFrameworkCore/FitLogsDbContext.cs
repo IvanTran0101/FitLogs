@@ -376,6 +376,10 @@ public class FitLogsDbContext :
             b.Property(x=> x.CurrentWorkoutSessionExerciseId)
                 .IsRequired(false);
             b.HasIndex(x => x.CurrentWorkoutSessionExerciseId);
+            b.HasIndex(x => x.UserId)
+                .HasDatabaseName("IX_AppWorkoutSessions_UserId_InProgress")
+                .IsUnique()
+                .HasFilter("\"Status\" = 0");
             b.HasIndex(x => x.UserId);
 
             b.HasIndex(x => x.WorkoutPlanId);
@@ -424,7 +428,8 @@ public class FitLogsDbContext :
 
             b.Property(x => x.Note)
                 .HasMaxLength(WorkoutSessionExerciseConsts.MaxNoteLength);
-
+            b.Property(x => x.Status)
+                .IsRequired();
             b.HasIndex(x => x.WorkoutPlanExerciseId);
             b.HasIndex(x => x.WorkoutSessionId);
 

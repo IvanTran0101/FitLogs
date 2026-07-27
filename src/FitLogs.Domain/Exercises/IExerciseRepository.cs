@@ -28,4 +28,5 @@ public interface IExerciseRepository : IRepository<Exercise, Guid>
         ExerciseDifficulty? exerciseDifficulty = null,
         ExerciseTrackingType? trackingType = null,
         bool? isActive = null);
+    Task<bool> AnyInactiveByIdsAsync(List<Guid> ids);
 }

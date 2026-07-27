@@ -677,6 +677,9 @@ namespace FitLogs.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -700,6 +703,8 @@ namespace FitLogs.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IsArchived");
 
                     b.HasIndex("UserId");
 
@@ -771,6 +776,9 @@ namespace FitLogs.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<Guid?>("CurrentWorkoutSessionExerciseId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
                         .HasColumnName("DeleterId");
@@ -824,6 +832,8 @@ namespace FitLogs.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CurrentWorkoutSessionExerciseId");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("WorkoutPlanId");
@@ -849,6 +859,9 @@ namespace FitLogs.Migrations
                     b.Property<int?>("RestSeconds")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<int>("TargetReps")
                         .HasColumnType("integer");
 
@@ -867,6 +880,8 @@ namespace FitLogs.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExerciseId");
+
+                    b.HasIndex("WorkoutPlanExerciseId");
 
                     b.HasIndex("WorkoutSessionId");
 
@@ -3419,6 +3434,14 @@ namespace FitLogs.Migrations
                         .HasForeignKey("WorkoutPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FitLogs.Workouts.WorkoutSession", b =>
+                {
+                    b.HasOne("FitLogs.Workouts.WorkoutPlan", null)
+                        .WithMany()
+                        .HasForeignKey("WorkoutPlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("FitLogs.Workouts.WorkoutSessionExercise", b =>

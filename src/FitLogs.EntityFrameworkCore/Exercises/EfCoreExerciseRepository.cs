@@ -132,4 +132,18 @@ public class EfCoreExerciseRepository : EfCoreRepository<FitLogsDbContext, Exerc
                 x => x.IsActive == isActive.Value
             );
     }
+    public async Task<bool> AnyInactiveByIdsAsync(List<Guid> ids)
+    {
+        if (ids.Count == 0)
+        {
+            return false;
+        }
+
+        var dbSet = await GetDbSetAsync();
+
+        return await dbSet.AnyAsync(x =>
+            ids.Contains(x.Id) &&
+            !x.IsActive
+        );
+    }
 }

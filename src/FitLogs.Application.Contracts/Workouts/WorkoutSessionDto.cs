@@ -13,6 +13,6 @@ public class WorkoutSessionDto : FullAuditedEntityDto<Guid>
     public DateTime? EndedAt { get; set; }
     public WorkoutSessionStatus Status { get; set; }
     public string? Note { get; set; }
-
+    public Guid? CurrentWorkoutSessionExerciseId { get; set; }
     public List<WorkoutSessionExerciseDto> Exercises { get; set; } = new();
 }

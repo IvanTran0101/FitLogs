@@ -102,7 +102,20 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         WorkoutSession workoutSession;
         if (input.WorkoutPlanId.HasValue)
         {
-            var workoutPlan = await _workoutPlanRepository.GetAsync(input.WorkoutPlanId.Value);
+            var workoutPlan = await _workoutPlanRepository.FindWithDetailsAsync(input.WorkoutPlanId.Value);
+            if (workoutPlan == null)
+            {
+                throw new EntityNotFoundException(typeof(WorkoutPlan), input.WorkoutPlanId.Value);
+            }
+            var exerciseIds = workoutPlan.Exercises
+                .Select(x => x.ExerciseId)
+                .ToList();
+
+            if (await _exerciseRepository.AnyInactiveByIdsAsync(exerciseIds))
+            {
+                throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
+            }
+
             workoutSession = await _workoutSessionManager.CreateFromPlanAsync(
                 userId,
                 workoutPlan,
@@ -478,4 +491,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         return dto;
         
     }
+
+
+    
 }

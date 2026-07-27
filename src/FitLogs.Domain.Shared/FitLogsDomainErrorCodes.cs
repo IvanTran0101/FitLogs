@@ -49,10 +49,11 @@ public static class FitLogsDomainErrorCodes
     public const string InvalidWorkoutPlanExerciseOrder = "FitLogs:Workout:InvalidWorkoutPlanExerciseOrder";
     public const string InvalidOrderIndex = "FitLogs:Workout:InvalidOrderIndex";
     public const string WorkoutPlanIsArchived = "FitLogs:Workout:WorkoutPlanIsArchived";
-    public const string CompletedWorkoutSessionCannotBeDeleted = "FitLogs:Workout:WorkoutPlanIsArchived";
     public const string CurrentWorkoutSessionExerciseNotFound = "FitLogs:Workout:CurrentWorkoutSessionExerciseNotFound";
     public const string NextWorkoutSessionExerciseNotFound = "FitLogs:Workout:NextWorkoutSessionExerciseNotFound";
     public const string PreviousWorkoutSessionExerciseNotFound = "FitLogs:Workout:PreviousWorkoutSessionExerciseNotFound";
+    public const string CompletedWorkoutSessionCannotBeDeleted = "FitLogs:Workout:CompletedWorkoutSessionCannotBeDeleted";
+    public const string WorkoutPlanNotFound = "FitLogs:Workout:WorkoutPlanNotFound";
 
     
     

@@ -278,7 +278,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         var currentExercise = GetExerciseOrThrow(currentExerciseId);
         var previousExercise = _exercises
             .Where(x => x.OrderIndex < currentExercise.OrderIndex)
-            .OrderBy(x => x.OrderIndex)
+            .OrderByDescending(x => x.OrderIndex)
             .FirstOrDefault();
         if (previousExercise == null)
         {
