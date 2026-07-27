@@ -28,7 +28,7 @@ public class FoodLogManager : DomainService
         CheckQuantity(quantity);
 
         var foodProduct = await GetActiveFoodProductAsync(foodProductId);
-        var nutrition = CalculateNutrition(foodProduct, quantity,unit);
+        var nutrition = CalculateNutrition(foodProduct, quantity);
 
         return new FoodLog(
             GuidGenerator.Create(),
@@ -61,7 +61,7 @@ public class FoodLogManager : DomainService
         CheckQuantity(quantity);
 
         var foodProduct = await GetActiveFoodProductAsync(foodProductId);
-        var nutrition = CalculateNutrition(foodProduct, quantity, unit);
+        var nutrition = CalculateNutrition(foodProduct, quantity);
 
         foodLog.Update(
             foodProduct.Id,
@@ -133,17 +133,9 @@ public class FoodLogManager : DomainService
 
     private static FoodNutritionValues CalculateNutrition(
         FoodProduct foodProduct,
-        decimal quantity,
-        FoodUnit unit)
+        decimal quantity)
     {
-        var factor = unit switch
-        {
-            FoodUnit.Gram => quantity / 100m,
-            FoodUnit.Milliliter => quantity / 100m,
-            FoodUnit.Serving => CalculateServingFactor(foodProduct, quantity),
-            FoodUnit.Piece => CalculatePieceFactor(foodProduct, quantity),
-            _ => throw new BusinessException(FitLogsDomainErrorCodes.FoodLogUnitInvalid)
-        };
+        var factor = quantity / 100m;
 
         return new FoodNutritionValues(
             foodProduct.CaloriesPer100g * factor,
@@ -183,24 +175,4 @@ public class FoodLogManager : DomainService
         decimal? Carb,
         decimal? Fat
     );
-    
-    private static decimal CalculateServingFactor(FoodProduct foodProduct, decimal quantity)
-    {
-        if (!foodProduct.ServingSizeInGrams.HasValue || foodProduct.ServingSizeInGrams <= 0)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.FoodLogServingSizeInGramsRequired);
-        }
-
-        return quantity * foodProduct.ServingSizeInGrams.Value / 100m;
-    }
-
-    private static decimal CalculatePieceFactor(FoodProduct foodProduct, decimal quantity)
-    {
-        if (!foodProduct.PieceWeightInGrams.HasValue || foodProduct.PieceWeightInGrams <= 0)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.FoodLogPieceWeightInGramsRequired);
-        }
-
-        return quantity * foodProduct.PieceWeightInGrams.Value / 100m;
-    }
 }

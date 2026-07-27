@@ -146,13 +146,16 @@ public class WorkoutSessionExercise : Entity<Guid>
             throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNumberAlreadyExists);
         }
 
-        set.Update(setNumber, weightKg, reps, rpe, note);
+        set.SetSetNumber(setNumber);
+        set.SetWeightKg(weightKg);
+        set.SetReps(reps);
+        set.SetRpe(rpe);
+        set.SetNote(note);
     }
 
     public void RemoveSet(Guid exerciseSetId)
     {
         var set = GetSetOrThrow(exerciseSetId);
-        set.EnsureNotCompleted();
 
         _sets.Remove(set);
     }
@@ -193,11 +196,4 @@ public class WorkoutSessionExercise : Entity<Guid>
 
         return set;
     }
-    
-    public bool HasCompletedSets()
-    {
-        return _sets.Any(x => x.IsCompleted);
-    }
-
-    
 }

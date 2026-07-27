@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -29,6 +28,4 @@ public interface IExerciseRepository : IRepository<Exercise, Guid>
         ExerciseDifficulty? exerciseDifficulty = null,
         ExerciseTrackingType? trackingType = null,
         bool? isActive = null);
-    
-    Task<bool> AnyInactiveByIdsAsync(IEnumerable<Guid> exerciseIds, CancellationToken cancellationToken = default);
 }

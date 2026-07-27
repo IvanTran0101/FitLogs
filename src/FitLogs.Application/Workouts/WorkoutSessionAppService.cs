@@ -7,6 +7,7 @@ using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Linq;
 using Volo.Abp.Users;
@@ -38,7 +39,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
 
         EnsureWorkoutSessionOwner(workoutSession);
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.Default)]
     public async Task<PagedResultDto<WorkoutSessionDto>> GetListAsync(GetWorkoutSessionListDto input)
@@ -101,18 +102,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         WorkoutSession workoutSession;
         if (input.WorkoutPlanId.HasValue)
         {
-            var workoutPlan = await _workoutPlanRepository.FindWithDetailsAsync(input.WorkoutPlanId.Value);
-
-            if (workoutPlan == null)
-            {
-                throw new EntityNotFoundException(typeof(WorkoutPlan), input.WorkoutPlanId.Value);
-            }
-            var exerciseIds = workoutPlan.Exercises.Select(x => x.ExerciseId).ToList();
-            if (await _exerciseRepository.AnyInactiveByIdsAsync(exerciseIds))
-            {
-                throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
-            }
-            
+            var workoutPlan = await _workoutPlanRepository.GetAsync(input.WorkoutPlanId.Value);
             workoutSession = await _workoutSessionManager.CreateFromPlanAsync(
                 userId,
                 workoutPlan,
@@ -129,13 +119,11 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
                 input.Note
             );
         }
-        
         workoutSession = await _workoutSessionRepository.InsertAsync(
             workoutSession,
             autoSave: true
         );
-        
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> AddExerciseAsync(
@@ -150,7 +138,6 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         {
             throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
         }
-        
         workoutSession.AddExercise(
             GuidGenerator.Create(),
             input.ExerciseId,
@@ -194,7 +181,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> RemoveExerciseAsync(
@@ -212,7 +199,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> AddSetAsync(
@@ -239,7 +226,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> UpdateSetAsync(
@@ -267,7 +254,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> RemoveSetAsync(
@@ -289,7 +276,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> CompleteSetAsync(
@@ -312,7 +299,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
     public async Task<WorkoutSessionDto> UncompleteSetAsync(
@@ -334,7 +321,8 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
+        
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.Complete)]
     public async Task<WorkoutSessionDto> CompleteAsync(Guid id)
@@ -350,7 +338,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.Cancel)]
     public async Task<WorkoutSessionDto> CancelAsync(Guid id)
@@ -366,18 +354,25 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.Delete)]
     public async Task DeleteAsync(Guid id)
     {
         var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+
+        EnsureWorkoutSessionOwner(workoutSession);
         if (workoutSession.Status == WorkoutSessionStatus.Completed)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.CompletedWorkoutSessionCannotBeDeleted);
-
         }
-        EnsureWorkoutSessionOwner(workoutSession);
+
+        if (workoutSession.Status == WorkoutSessionStatus.InProgress)
+        {
+            workoutSession.Cancel(Clock.Now);
+            await _workoutSessionRepository.UpdateAsync(workoutSession,autoSave: true);
+            return;
+        }
 
         await _workoutSessionRepository.DeleteAsync(
             workoutSession,
@@ -385,6 +380,62 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         );
     }
 
+    public async Task<WorkoutSessionDto?> GetActiveAsync()
+    {
+        var userId = GetCurrentUserId();
+        var workingSession = await _workoutSessionRepository.FindCurrentInProgressAsync(userId);
+        if (workingSession == null)
+        {
+            return null;
+        }
+        return MapToDto(workingSession);
+        
+    }
+    [Authorize(FitLogsPermissions.WorkoutSessions.Default)]
+    public async Task<WorkoutSessionExerciseDto> GetCurrentExerciseAsync(Guid id)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+        EnsureWorkoutSessionOwner(workoutSession);
+        var currentExercise = workoutSession.GetCurrentExercise();
+        var dto = ObjectMapper.Map<WorkoutSessionExercise, WorkoutSessionExerciseDto>(currentExercise);
+        dto.Sets = dto.Sets?
+            .OrderBy(x => x.SetNumber)
+            .ToList() ?? [];
+        return dto;
+    }
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
+    public async Task<WorkoutSessionDto> MoveToNextExerciseAsync(Guid id)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+        EnsureWorkoutSessionOwner(workoutSession);
+        workoutSession.MoveToNextExercise();
+        workoutSession = await _workoutSessionRepository.UpdateAsync(workoutSession, autoSave: true);
+        return MapToDto(workoutSession);
+        
+    }
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
+    public async Task<WorkoutSessionDto> MoveToPreviousExerciseAsync(Guid id)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+        EnsureWorkoutSessionOwner(workoutSession);
+        workoutSession.MoveToPreviousExercise();
+        workoutSession = await _workoutSessionRepository.UpdateAsync(workoutSession, autoSave: true);
+        return MapToDto(workoutSession);
+        
+    }
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
+    public async Task<WorkoutSessionDto> SkipCurrentExerciseAsync(Guid id)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+        EnsureWorkoutSessionOwner(workoutSession);
+        workoutSession.SkipCurrentExercise();
+        workoutSession = await _workoutSessionRepository.UpdateAsync(workoutSession, autoSave: true);
+        return MapToDto(workoutSession);
+        
+    }
+
+
+    //helpers
     private Guid GetCurrentUserId()
     {
         return CurrentUser.GetId();
@@ -406,22 +457,25 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
     {
         if (workoutSession.UserId != GetCurrentUserId())
         {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionAccessDenied);
-        }
+            throw new AbpAuthorizationException();        }
     }
 
-    private WorkoutSessionExercise GetWorkoutSessionExerciseOrThrow(
-        WorkoutSession workoutSession,
-        Guid workoutSessionExerciseId)
+
+    private WorkoutSessionDto MapToDto(WorkoutSession workoutSession)
     {
-        var exercise = workoutSession.Exercises
-            .FirstOrDefault(x => x.Id == workoutSessionExerciseId);
-
-        if (exercise == null)
+        var dto = ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        
+        dto.Exercises = dto.Exercises?
+            .OrderBy(x=>x.OrderIndex)
+            .ToList() ?? [];
+        foreach (var exercise in dto.Exercises)
         {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseNotFound);
+            exercise.Sets = exercise.Sets?
+                .OrderBy(x=>x.SetNumber)
+                .ToList() ?? [];
         }
-
-        return exercise;
+        
+        return dto;
+        
     }
 }

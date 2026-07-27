@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using FitLogs.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
-using System.Threading;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -95,8 +94,6 @@ public class EfCoreExerciseRepository : EfCoreRepository<FitLogsDbContext, Exerc
         return await query.LongCountAsync();
     }
 
-   
-
     private static IQueryable<Exercise> ApplyFilter(
         IQueryable<Exercise> query,
         string? filterText = null,
@@ -134,23 +131,5 @@ public class EfCoreExerciseRepository : EfCoreRepository<FitLogsDbContext, Exerc
                 isActive.HasValue,
                 x => x.IsActive == isActive.Value
             );
-    }
-
-    public async Task<bool> AnyInactiveByIdsAsync(
-        IEnumerable<Guid> exerciseIds,
-        CancellationToken cancellationToken = default)
-    {
-        var ids = exerciseIds.Distinct().ToList();
-
-        if (ids.Count == 0)
-        {
-            return false;
-        }
-        var dbSet = await GetDbSetAsync();
-        
-        return await dbSet.AnyAsync(
-            x=> ids.Contains(x.Id) && !x.IsActive,
-            GetCancellationToken(cancellationToken));
-        
     }
 }

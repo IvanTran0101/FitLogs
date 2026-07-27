@@ -286,11 +286,11 @@ public class FitLogsDbContext :
             b.Property(x => x.IsActive)
                 .IsRequired();
 
-            b.HasIndex(x => new { x.UserId, x.Name })
-                .HasDatabaseName("IX_AppWorkoutPlans_UserId_Name")
-                .IsUnique()
-                .HasFilter("\"IsDeleted\" = false");
-            
+            b.Property(x => x.IsArchived)
+                .IsRequired();
+
+            b.HasIndex(x => x.IsArchived);
+
             b.HasIndex(x => x.UserId);
 
             b.HasMany(x => x.Exercises)
@@ -373,12 +373,9 @@ public class FitLogsDbContext :
 
             b.Property(x => x.Note)
                 .HasMaxLength(WorkoutSessionConsts.MaxNoteLength);
-            
-            b.HasIndex(x => x.UserId)
-                .HasDatabaseName("IX_AppWorkoutSessions_UserId_InProgress")
-                .IsUnique()
-                .HasFilter("\"Status\" = 0");
-            
+            b.Property(x=> x.CurrentWorkoutSessionExerciseId)
+                .IsRequired(false);
+            b.HasIndex(x => x.CurrentWorkoutSessionExerciseId);
             b.HasIndex(x => x.UserId);
 
             b.HasIndex(x => x.WorkoutPlanId);
@@ -389,6 +386,11 @@ public class FitLogsDbContext :
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
+            b.HasOne<WorkoutPlan>()
+                .WithMany()
+                .HasForeignKey(x => x.WorkoutPlanId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
             b.Navigation(x => x.Exercises)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
@@ -417,10 +419,13 @@ public class FitLogsDbContext :
             b.Property(x => x.TargetWeightKg);
 
             b.Property(x => x.RestSeconds);
+            b.Property(x => x.WorkoutPlanExerciseId)
+                .IsRequired(false);
 
             b.Property(x => x.Note)
                 .HasMaxLength(WorkoutSessionExerciseConsts.MaxNoteLength);
 
+            b.HasIndex(x => x.WorkoutPlanExerciseId);
             b.HasIndex(x => x.WorkoutSessionId);
 
             b.HasIndex(x => x.ExerciseId);
@@ -505,11 +510,7 @@ public class FitLogsDbContext :
 
             b.Property(x => x.ServingSize)
                 .HasMaxLength(FoodProductConsts.MaxServingSizeLength);
-            b.Property(x => x.ServingSizeInGrams)
-                .HasColumnType("decimal(18,2)");
 
-            b.Property(x => x.PieceWeightInGrams)
-                .HasColumnType("decimal(18,2)");
             b.Property(x => x.Source)
                 .IsRequired();
 

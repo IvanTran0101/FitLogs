@@ -75,11 +75,6 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         {
             throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutSessionEndedAt);
         }
-        if (!_exercises.SelectMany(x=>x.Sets).Any(x=>x.IsCompleted))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionMustHaveCompletedSet);
-            
-        }
         EndedAt = endedAt;
         Status = WorkoutSessionStatus.Completed;
     }
@@ -145,10 +140,6 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         EnsureInProgress();
 
         var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
-        if (exercise.HasCompletedSets())
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseHasCompletedSets);
-        }
         EnsureOrderIndexDoesNotExist(orderIndex, workoutSessionExerciseId);
         exercise.SetOrderIndex(orderIndex);
         exercise.SetTargetSets(targetSets);
@@ -162,10 +153,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         EnsureInProgress();
 
         var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
-        if (exercise.HasCompletedSets())
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionExerciseHasCompletedSets);
-        }
+
         _exercises.Remove(exercise);
     }
     public void AddSetToExercise(

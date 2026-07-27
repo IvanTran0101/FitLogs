@@ -48,18 +48,8 @@ public class FitLogsPermissionDefinitionProvider : PermissionDefinitionProvider
         workoutSessions.AddChild(FitLogsPermissions.WorkoutSessions.Cancel, L("Permission:WorkoutSessions.Cancel"));
         workoutSessions.AddChild(FitLogsPermissions.WorkoutSessions.History, L("Permission:WorkoutSessions.History"));
         
-        
-        var foodProducts = myGroup.AddPermission(FitLogsPermissions.FoodProducts.Default, L("Permission:FoodProducts"));
-        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Create, L("Permission:FoodProducts.Create"));
-        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Update, L("Permission:FoodProducts.Update"));
-        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Delete, L("Permission:FoodProducts.Delete"));
-        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Verify, L("Permission:FoodProducts.Verify"));
-
-        
         myGroup.AddPermission(FitLogsPermissions.Dashboards.Default, L("Permission:Dashboards"));
 
-        
-        
     }
 
     private static LocalizableString L(string name)

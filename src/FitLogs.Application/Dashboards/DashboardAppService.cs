@@ -126,22 +126,18 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     {
         var workoutExercises = workoutSessions.SelectMany(x => x.Exercises).ToList();
         
-        var completedSets = workoutExercises
-            .SelectMany(x=> x.Sets)
-            .Where(x => x.IsCompleted)
-            .ToList();
+        var exerciseSets = workoutExercises.SelectMany(x=> x.Sets).ToList();
 
         return new DailyWorkoutSummaryDto
         {
             HasWorkout = workoutSessions.Any(),
             CompletedSessions = workoutSessions.Count(),
             TotalExercises = workoutExercises.Count(),
-            TotalSets = completedSets.Count(),
+            TotalSets = exerciseSets.Count(),
             TotalDurationMinutes = workoutSessions
                 .Where(x => x.EndedAt.HasValue)
                 .Sum(x => (x.EndedAt!.Value - x.StartedAt).TotalMinutes),
-            TotalWeightVolume = completedSets
-                .Where(x => x.WeightKg > 0 && x.Reps > 0)
+            TotalWeightVolume = exerciseSets.Where(x => x.WeightKg > 0 && x.Reps > 0)
                 .Sum(x => (decimal)x.WeightKg * x.Reps)
         };
     }

@@ -45,21 +45,6 @@ public class ExerciseSet : Entity<Guid>
     CompletedAt = null;
   }
 
-  public void Update(
-    int setNumber,
-    float weightKg,
-    int reps,
-    int? rpe = null,
-    string? note = null)
-  {
-    EnsureNotCompleted();
-
-    SetSetNumber(setNumber);
-    SetWeightKg(weightKg);
-    SetReps(reps);
-    SetRpe(rpe);
-    SetNote(note);
-  }
   public void SetSetNumber(int setNumber)
   {
     if (setNumber <= 0)
@@ -126,12 +111,5 @@ public class ExerciseSet : Entity<Guid>
   {
     IsCompleted = false;
     CompletedAt = null;
-  }
-  public void EnsureNotCompleted()
-  {
-    if (IsCompleted)
-    {
-      throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetAlreadyCompleted);
-    }
   }
 }

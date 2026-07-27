@@ -165,11 +165,6 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
         }
         EnsureNotArchived();
 
-        if (IsActive && _exercises.Count == 1)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanMustHaveAtLeastOneExercise);
-        }
-
         _exercises.Remove(exercise);
     }
 

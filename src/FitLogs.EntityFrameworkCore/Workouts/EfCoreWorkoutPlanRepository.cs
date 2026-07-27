@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using FitLogs.EntityFrameworkCore;
 using FitLogs.Workouts;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using Volo.Abp;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -51,44 +49,4 @@ public class EfCoreWorkoutPlanRepository : EfCoreRepository<FitLogsDbContext, Wo
             GetCancellationToken(cancellationToken));
         
     }
-
-    public override async Task<WorkoutPlan> InsertAsync(
-        WorkoutPlan workoutPlan,
-        bool autoSave = false,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await base.InsertAsync(
-                workoutPlan,
-                autoSave,
-                cancellationToken);
-        }
-        catch(DbUpdateException ex) when (IsWorkoutPlanNameUniqueViolation(ex))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanNameAlreadyExists);
-        }
-    }
-    public override async Task<WorkoutPlan> UpdateAsync(
-        WorkoutPlan entity,
-        bool autoSave = false,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await base.UpdateAsync(entity, autoSave, cancellationToken);
-        }
-        catch (DbUpdateException exception) when (IsWorkoutPlanNameUniqueViolation(exception))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanNameAlreadyExists);
-        }
-    }
-    private static bool IsWorkoutPlanNameUniqueViolation(DbUpdateException exception)
-    {
-        return exception.InnerException is PostgresException postgresException
-               && postgresException.SqlState == PostgresErrorCodes.UniqueViolation
-               && postgresException.ConstraintName == "IX_AppWorkoutPlans_UserId_Name";
-        
-    }
-    
 }

@@ -72,19 +72,16 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutPlanAccessDenied = "FitLogs:Workout:WorkoutPlanAccessDenied";
     public const string WorkoutPlanMustHaveAtLeastOneExercise = "FitLogs:Workout:WorkoutPlanMustHaveAtLeastOneExercise";
     public const string WorkoutPlanNotBelongToUser = "FitLogs:Workout:WorkoutPlanNotBelongToUser";
-    
-    public const string CompletedWorkoutSessionCannotBeDeleted = "FitLogs:Workout:CompletedWorkoutSessionCannotBeDeleted";
-
     public const string WorkoutPlanIsInactive = "FitLogs:Workout:WorkoutPlanIsInactive";
     public const string ExerciseIsInactive = "FitLogs:Workout:ExerciseIsInactive";
-    public const string WorkoutSessionMustHaveCompletedSet = "FitLogs:Workout:WorkoutSessionMustHaveCompletedSet";
+
     public const string InvalidExerciseSetNumber = "FitLogs:Workout:InvalidExerciseSetNumber";
     public const string InvalidExerciseSetWeight = "FitLogs:Workout:InvalidExerciseSetWeight";
     public const string InvalidExerciseSetReps = "FitLogs:Workout:InvalidExerciseSetReps";
     public const string InvalidExerciseSetRpe = "FitLogs:Workout:InvalidExerciseSetRpe";
     public const string ExerciseSetAlreadyCompleted = "FitLogs:Workout:ExerciseSetAlreadyCompleted";
     public const string InvalidExerciseSetCompletedAt = "FitLogs:Workout:InvalidExerciseSetCompletedAt";
-    public const string WorkoutSessionExerciseHasCompletedSets = "FitLogs:Workout:WorkoutSessionExerciseHasCompletedSets";
+
     public const string ExerciseSetNumberAlreadyExists = "FitLogs:Workout:ExerciseSetNumberAlreadyExists";
     public const string ExerciseSetNotFound = "FitLogs:Workout:ExerciseSetNotFound";
 
@@ -115,11 +112,7 @@ public static class FitLogsDomainErrorCodes
     public const string FoodLogInvalidNutrition = "FitLogs:FoodLog:0005";
     public const string FoodLogNotOwnedByUser = "FitLogs:FoodLog:0006";
     public const string FoodLogAccessDenied = "FitLogs:FoodLog:FoodLogAccessDenied";
-    public const string FoodProductServingSizeInGramsMustBePositive = "FitLogs:FoodLog:FoodProductServingSizeInGramsMustBePositive";
-    public const string FoodProductPieceWeightInGramsMustBePositive = "FitLogs:FoodLog:FoodProductPieceWeightInGramsMustBePositive";
-    public const string FoodLogServingSizeInGramsRequired = "FitLogs:FoodLog:FoodLogServingSizeInGramsRequired";
-    public const string FoodLogPieceWeightInGramsRequired = "FitLogs:FoodLog:FoodLogPieceWeightInGramsRequired";
-
+    
     public const string FoodProductNotFoundFromOpenFoodFacts = "FitLogs:FoodLog:FoodProductNotFoundFromOpenFoodFacts";
     public const string FoodProductBarcodeInvalid = "FitLogs:FoodProduct:BarcodeInvalid";
 

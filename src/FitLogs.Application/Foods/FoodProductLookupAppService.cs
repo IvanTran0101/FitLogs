@@ -1,12 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using FitLogs.Foods.FoodProducts;
-using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 
 namespace FitLogs.Foods;
-[Authorize]
+
 public class FoodProductLookupAppService : ApplicationService, IFoodProductLookupAppService
 {
     private readonly IFoodProductRepository _foodProductRepository;
@@ -62,9 +61,6 @@ public class FoodProductLookupAppService : ApplicationService, IFoodProductLooku
 
             externalProduct.ServingSize,
 
-            externalProduct.ServingSizeInGrams,
-
-null,
             FoodProductSource.OpenFoodFacts,
 
             Clock.Now
@@ -120,7 +116,6 @@ null,
             externalProduct.FatPer100g,
 
             externalProduct.ServingSize,
-            externalProduct.ServingSizeInGrams,
 
             Clock.Now
 
@@ -181,8 +176,7 @@ null,
 
             FatPer100g = foodProduct.FatPer100g,
 
-            ServingSize = foodProduct.ServingSize,
-            ServingSizeInGrams = foodProduct.ServingSizeInGrams,
+            ServingSize = foodProduct.ServingSize
 
         };
 

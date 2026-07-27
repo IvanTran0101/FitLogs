@@ -19,5 +19,4 @@ public class OpenFoodFactsProductResult
     public decimal? FatPer100g { get; set; }
 
     public string? ServingSize { get; set; }
-    public decimal? ServingSizeInGrams { get; set; }
 }

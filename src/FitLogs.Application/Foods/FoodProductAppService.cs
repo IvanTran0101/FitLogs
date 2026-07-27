@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FitLogs.Foods.FoodProducts;
-using FitLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -27,7 +26,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         _foodLogRepository = foodLogRepository;
         _foodProductManager = foodProductManager;
     }
-    [Authorize(FitLogsPermissions.FoodProducts.Create)]
+
     public async Task<FoodProductDto> CreateAsync(CreateUpdateFoodProductDto input)
     {
         var foodProduct = await _foodProductManager.CreateAsync(
@@ -40,8 +39,6 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
             input.CarbPer100g,
             input.FatPer100g,
             input.ServingSize,
-            input.ServingSizeInGrams,
-            input.PieceWeightInGrams,
             FoodProductSource.Manual
         );
 
@@ -49,25 +46,21 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
 
         return ObjectMapper.Map<FoodProduct, FoodProductDto>(foodProduct);
     }
-    [Authorize(FitLogsPermissions.FoodProducts.Update)]
+
     public async Task<FoodProductDto> UpdateAsync(Guid id, CreateUpdateFoodProductDto input)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
 
         await _foodProductManager.ChangeBarcodeAsync(foodProduct, input.Barcode);
 
-        _foodProductManager.ChangeDisplayInfo(
-            foodProduct,
+        foodProduct.UpdateDisplayInfo(
             input.Name,
             input.Brand,
             input.ImageUrl,
-            input.ServingSize,
-            input.ServingSizeInGrams,
-            input.PieceWeightInGrams
+            input.ServingSize
         );
 
-        _foodProductManager.ChangeManualNutrition(
-            foodProduct,
+        foodProduct.UpdateManualNutrition(
             input.CaloriesPer100g,
             input.ProteinPer100g,
             input.CarbPer100g,
@@ -79,7 +72,6 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         return ObjectMapper.Map<FoodProduct, FoodProductDto>(foodProduct);
     }
 
-    [Authorize(FitLogsPermissions.FoodProducts.Default)]
     public async Task<FoodProductDto> GetAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -122,47 +114,42 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         );
     }
 
-    [Authorize(FitLogsPermissions.FoodProducts.Delete)]
     public async Task DeactivateAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
 
-        _foodProductManager.Deactivate(foodProduct);
+        foodProduct.Deactivate();
 
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
-    [Authorize(FitLogsPermissions.FoodProducts.Default)]
     public async Task ActivateAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
 
-        _foodProductManager.Activate(foodProduct);
+        foodProduct.Activate();
 
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
-    [Authorize(FitLogsPermissions.FoodProducts.Verify)]
     public async Task VerifyAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
 
-        _foodProductManager.MarkAsVerified(foodProduct);
+        foodProduct.MarkAsVerified();
 
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
-    [Authorize(FitLogsPermissions.FoodProducts.Default)]
     public async Task UnverifyAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
 
-        _foodProductManager.MarkAsUnverified(foodProduct);
+        foodProduct.MarkAsUnverified();
 
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
-    [Authorize(FitLogsPermissions.FoodProducts.Delete)]
     public async Task DeleteAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -171,7 +158,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
 
         if (hasFoodLogs)
         {
-            _foodProductManager.Deactivate(foodProduct);
+            foodProduct.Deactivate();
             await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
             return;
         }
