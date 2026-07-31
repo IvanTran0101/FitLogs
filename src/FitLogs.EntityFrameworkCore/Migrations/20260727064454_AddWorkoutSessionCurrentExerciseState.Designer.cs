@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using FitLogs.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -13,9 +14,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace FitLogs.Migrations
 {
     [DbContext(typeof(FitLogsDbContext))]
-    partial class FitLogsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727064454_AddWorkoutSessionCurrentExerciseState")]
+    partial class AddWorkoutSessionCurrentExerciseState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -834,10 +837,7 @@ namespace FitLogs.Migrations
 
                     b.HasIndex("CurrentWorkoutSessionExerciseId");
 
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_AppWorkoutSessions_UserId_InProgress")
-                        .HasFilter("\"Status\" = 0");
+                    b.HasIndex("UserId");
 
                     b.HasIndex("WorkoutPlanId");
 

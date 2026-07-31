@@ -272,3 +272,15 @@ src/FitLogs.Blazor.Server.Tiered/Logs/*
 # IdentityServer temp files
 tempkey.rsa
 tempkey.jwk
+
+# Build folders
+**/bin/
+**/obj/
+
+# Rider / Visual Studio
+.vs/
+.idea/
+
+# User files
+*.user
+*.suo
