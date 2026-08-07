@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getSelectableExercises,
   type ExerciseDto,
@@ -11,10 +11,12 @@ import {
   type WorkoutPlanDto,
   type WorkoutPlanExerciseDto,
 } from '../../api/workoutPlansApi'
+import { createWorkoutSession } from '../../api/workoutSessionsApi'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
 import { NeoCard } from '../../components/NeoCard'
+import { NeoButton } from '../../components/NeoButton'
 import { PageShell } from '../../components/PageShell'
 
 function getExerciseName(exercises: ExerciseDto[], exerciseId: string) {
@@ -58,12 +60,15 @@ function moveExercise(
 
 export function WorkoutPlanDetailPage() {
   const { planId } = useParams()
+  const navigate = useNavigate()
 
   const [plan, setPlan] = useState<WorkoutPlanDto | null>(null)
   const [exerciseCatalog, setExerciseCatalog] = useState<ExerciseDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [mutatingExerciseId, setMutatingExerciseId] = useState<string | null>(null)
+  const [isStartingWorkout, setIsStartingWorkout] = useState(false)
+  const [startWorkoutError, setStartWorkoutError] = useState<string | null>(null)
   useEffect(() => {
     async function loadPlanDetail() {
       if (!planId) {
@@ -123,6 +128,30 @@ export function WorkoutPlanDetailPage() {
       )
     } finally {
       setMutatingExerciseId(null)
+    }
+  }
+
+  async function handleStartWorkout() {
+    if (!plan) {
+      return
+    }
+
+    try {
+      setIsStartingWorkout(true)
+      setStartWorkoutError(null)
+
+      await createWorkoutSession({
+        workoutPlanId: plan.id,
+        name: plan.name ?? 'Buổi tập',
+      })
+
+      navigate('/workout')
+    } catch (error) {
+      setStartWorkoutError(
+        error instanceof Error ? error.message : 'Không thể bắt đầu buổi tập.',
+      )
+    } finally {
+      setIsStartingWorkout(false)
     }
   }
 
@@ -215,6 +244,15 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
           <p>Plan đã archived nên không thể chỉnh sửa.</p>
         ) : (
           <>
+            <NeoButton
+              className="link-button"
+              type="button"
+              disabled={isStartingWorkout}
+              onClick={() => void handleStartWorkout()}
+            >
+              {isStartingWorkout ? 'Đang bắt đầu...' : 'Bắt đầu buổi tập'}
+            </NeoButton>
+
             <Link className="neo-button link-button" to={`/plans/${plan.id}/edit`}>
               Sửa kế hoạch
             </Link>
@@ -228,6 +266,13 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
           </>
         )}
       </NeoCard>
+
+      {startWorkoutError ? (
+        <ErrorState
+          title="Không thể bắt đầu buổi tập"
+          message={startWorkoutError}
+        />
+      ) : null}
 
      {planExercises.length === 0 ? (
           <EmptyState
