@@ -71,6 +71,8 @@ using Volo.Saas.Host.Blazor;
 using Volo.Saas.Host.Blazor.Server;
 using Volo.Saas.Host.Blazor.WebAssembly.Bundling;
 using FitLogs.ExternalServices;
+using Volo.Abp.AspNetCore.Mvc.AntiForgery;
+
 namespace FitLogs.Blazor;
 
 [DependsOn(
@@ -152,7 +154,20 @@ public class FitLogsBlazorModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
-
+        context.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder
+                    .WithOrigins(
+                        "http://localhost:5173",
+                        "https://localhost:5173"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
         // Add services to the container.
         context.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
@@ -171,8 +186,12 @@ public class FitLogsBlazorModule : AbpModule
                 options.DisableTransportSecurityRequirement = true;
             });
         }
-
+        
         ConfigureAuthentication(context);
+        Configure<AbpAntiForgeryOptions>(options =>
+        {
+            options.AutoValidate = false;
+        });
         ConfigureUrls(configuration);
         ConfigureBundles(hostingEnvironment);
         ConfigureImpersonation(context, configuration);
@@ -425,6 +444,8 @@ public class FitLogsBlazorModule : AbpModule
 
         app.UseCorrelationId();
         app.UseRouting();
+        app.UseCors();
+        
         var configuration = context.GetConfiguration();
         if (Convert.ToBoolean(configuration["AuthServer:IsOnK8s"]))
         {

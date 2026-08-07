@@ -18,13 +18,15 @@ public class MuscleGroupAppService : ApplicationService,  IMuscleGroupAppService
         _muscleGroupRepository = muscleGroupRepository;
         _muscleGroupManager = muscleGroupManager;
     }
-    [Authorize(FitLogsPermissions.MuscleGroups.Default)]
+    //[Authorize(FitLogsPermissions.MuscleGroups.Default)]
+    [AllowAnonymous]
     public async Task<MuscleGroupDto> GetAsync(Guid id)
     {
         var muscleGroup = await _muscleGroupRepository.GetAsync(id);
         return ObjectMapper.Map(muscleGroup, new MuscleGroupDto());
     }
-    [Authorize(FitLogsPermissions.MuscleGroups.Default)]
+    //[Authorize(FitLogsPermissions.MuscleGroups.Default)]
+    [AllowAnonymous]
     public async Task<PagedResultDto<MuscleGroupDto>> GetListAsync(GetMuscleGroupListInput input)
     {
         var totalCount = await _muscleGroupRepository.GetCountAsync(

@@ -22,6 +22,7 @@ body {
     margin: 0;
     background: var(--color-bg);
     color: var(--color-text);
+    overflow: hidden;
 }
 
 button,
@@ -56,21 +57,23 @@ button {
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .page-shell {
   width: min(100%, 430px);
-  min-height: 100vh;
+  height: 100vh;
   margin: 0 auto;
   background: var(--color-bg);
   border-left: var(--border-thick);
   border-right: var(--border-thick);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app-header {
+  flex: 0 0 auto;
   height: 72px;
   padding: 0 16px;
   border-bottom: var(--border-thick);
@@ -105,6 +108,7 @@ button {
 }
 
 .page-title {
+  flex: 0 0 auto;
   padding: 12px 16px;
   border-bottom: var(--border-thick);
   background: var(--color-yellow);
@@ -115,6 +119,9 @@ button {
 
 .page-content {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px;
   padding-bottom: 96px;
 }
@@ -457,4 +464,452 @@ button {
 .full-width-button {
   width: 100%;
   margin-top: 18px;
+}
+.exercise-filter-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.exercise-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.exercise-list {
+  display: grid;
+  gap: 14px;
+}
+
+.exercise-card {
+  padding: 0;
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  overflow: hidden;
+  background: var(--color-white);
+}
+
+.exercise-thumb {
+  min-height: 110px;
+  border-right: var(--border-thick);
+  background: var(--color-blue);
+  color: var(--color-white);
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 950;
+}
+
+.exercise-card:nth-child(2n) .exercise-thumb {
+  background: var(--color-yellow);
+  color: var(--color-text);
+}
+
+.exercise-card:nth-child(3n) .exercise-thumb {
+  background: var(--color-lime);
+  color: var(--color-text);
+}
+
+.exercise-card-content {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.exercise-card-header {
+  display: grid;
+  gap: 6px;
+}
+
+.exercise-card-header h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.exercise-status {
+  width: fit-content;
+  border: 2px solid var(--color-border);
+  background: var(--color-lime);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.exercise-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exercise-tags span {
+  border: 2px solid var(--color-border);
+  background: var(--color-pink);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.exercise-tags span:nth-child(2) {
+  background: var(--color-yellow);
+}
+
+.exercise-tags span:nth-child(3) {
+  background: var(--color-lime);
+}
+.training-action-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.training-action-card {
+  padding: 18px;
+}
+
+.training-action-card h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.training-action-card p:last-of-type {
+  margin-bottom: 16px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.training-action-card.blue {
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+.training-action-card.lime {
+  background: var(--color-lime);
+}
+
+.link-button {
+  display: inline-block;
+  text-decoration: none;
+}
+.exercise-detail-card {
+  padding: 18px;
+  background: var(--color-white);
+}
+
+.exercise-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exercise-detail-card h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.exercise-slug {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 900;
+  color: #555;
+}
+
+.exercise-status.inactive {
+  background: var(--color-pink);
+}
+
+.exercise-detail-hero {
+  min-height: 180px;
+  margin: 18px 0;
+  border: var(--border-thick);
+  background: var(--color-blue);
+  color: var(--color-white);
+  box-shadow: 4px 4px 0 var(--color-border);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.exercise-detail-hero span {
+  font-size: 48px;
+  font-weight: 950;
+}
+
+.exercise-detail-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.exercise-detail-section {
+  margin-top: 18px;
+  border-top: var(--border-thick);
+  padding-top: 14px;
+}
+
+.exercise-detail-section h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  text-transform: uppercase;
+}
+
+.exercise-detail-section p {
+  margin: 0;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.exercise-detail-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+.exercise-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.exercise-card-link:active .exercise-card {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 var(--color-border);
+}
+
+.exercise-card-link:active .plan-list-card {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 var(--color-border);
+}
+
+.plan-list-card {
+  padding: 16px;
+  display: block;
+  background: var(--color-white);
+}
+
+.plan-list-card .exercise-card-content {
+  padding: 0;
+}
+
+.plan-list-card .exercise-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plan-list-card .exercise-card-header h2 {
+  max-width: 70%;
+}
+
+.plan-list-card p {
+  margin: 8px 0 14px;
+  font-weight: 750;
+}
+
+.plan-list-tags {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.plan-list-tags span {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.05;
+}
+.picker-list {
+  display: grid;
+  gap: 12px;
+}
+
+.picker-card {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  align-items: start;
+  gap: 12px;
+  background: var(--color-white);
+}
+
+.picker-card.selected {
+  background: var(--color-lime);
+}
+
+.picker-card h2 {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.picker-card > .exercise-tags {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.picker-toggle {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  justify-self: end;
+  width: 54px;
+  height: 54px;
+  border: var(--border-thick);
+  background: var(--color-yellow);
+  box-shadow: 3px 3px 0 var(--color-border);
+  font-size: 28px;
+  font-weight: 950;
+}
+
+.picker-toggle.selected {
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+.picker-toggle:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-border);
+}
+
+.picker-footer {
+  position: fixed;
+  left: 50%;
+  bottom: 68px;
+  width: min(100%, 430px);
+  transform: translateX(-50%);
+  padding: 12px 16px;
+  background: var(--color-bg);
+  border-left: var(--border-thick);
+  border-right: var(--border-thick);
+  border-top: var(--border-thick);
+  z-index: 9;
+}
+.secondary-link-button {
+  margin-top: 12px;
+  background: var(--color-pink);
+}
+.back-link {
+  width: fit-content;
+  display: inline-block;
+  margin-bottom: 16px;
+  border: var(--border-thick);
+  background: var(--color-yellow);
+  color: var(--color-text);
+  box-shadow: 3px 3px 0 var(--color-border);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 950;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.back-link:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-border);
+}
+.form-stack {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.form-stack .neo-field {
+  min-width: 0;
+}
+
+textarea.neo-input {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.35;
+}
+
+.neo-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.neo-checkbox-row input {
+  width: 28px;
+  height: 28px;
+  accent-color: var(--color-blue);
+}
+.editor-card {
+  padding: 18px;
+  background: var(--color-lime);
+}
+
+.editor-card h2 {
+  margin: 0 0 12px;
+  font-size: 30px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.plan-exercise-card {
+  display: block;
+  padding: 16px;
+  background: var(--color-white);
+}
+
+.plan-exercise-card .exercise-card-content {
+  padding: 0;
+}
+
+.plan-exercise-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.plan-exercise-action-button {
+  padding: 10px 8px;
+  font-size: 12px;
+}
+
+.plan-exercise-action-button.danger {
+  background: var(--color-pink);
+}
+
+.neo-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--shadow-hard);
+}
+.picker-target-form {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 14px;
+  border-top: 3px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.picker-target-form .neo-field:last-child {
+  grid-column: 1 / -1;
+}
+
+.picker-target-form .neo-input {
+  min-height: 44px;
+  padding: 8px 10px;
+  box-shadow: 3px 3px 0 var(--color-border);
 }

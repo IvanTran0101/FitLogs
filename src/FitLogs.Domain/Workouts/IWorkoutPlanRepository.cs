@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -25,5 +26,16 @@ public interface IWorkoutPlanRepository : IRepository<WorkoutPlan,Guid>
         Guid? excludedId = null,
         CancellationToken cancellationToken = default
     );
-    
+    Task<List<WorkoutPlan>> GetListWithDetailsAsync(
+        Guid userId,
+        string? filterText = null,
+        bool? isArchived = null,
+        bool? isActive = null,
+        WorkoutGoal? goal = null,
+        WorkoutDifficulty? difficulty = null,
+        string? sorting = null,
+        int maxResultCount = 50,
+        int skipCount = 0,
+        CancellationToken cancellationToken = default
+    );
 }

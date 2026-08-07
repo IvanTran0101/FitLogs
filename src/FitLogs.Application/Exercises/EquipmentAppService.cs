@@ -18,14 +18,15 @@ public class EquipmentAppService : ApplicationService, IEquipmentAppService
         _equipmentRepository = equipmentRepository;
         _equipmentManager = equipmentManager;
     }
-    [Authorize(FitLogsPermissions.Equipments.Default)]
+    //[Authorize(FitLogsPermissions.Equipments.Default)]
+    [AllowAnonymous]
     public async Task<EquipmentDto> GetAsync(Guid id)
     {
         var equipment = await _equipmentRepository.GetAsync(id);
         return ObjectMapper.Map<Equipment, EquipmentDto>(equipment);
     }
-    [Authorize(FitLogsPermissions.Equipments.Default)]
-
+    //[Authorize(FitLogsPermissions.Equipments.Default)]
+    [AllowAnonymous]
     public async Task<PagedResultDto<EquipmentDto>> GetListAsync(GetEquipmentListInput input)
     {
         var totalCount = await _equipmentRepository.GetCountAsync(

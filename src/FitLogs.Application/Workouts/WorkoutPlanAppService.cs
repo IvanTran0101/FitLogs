@@ -74,20 +74,21 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
 
         var totalCount = await AsyncExecuter.CountAsync(queryable);
 
-        queryable = queryable.OrderBy(
-            string.IsNullOrWhiteSpace(input.Sorting)
-                ? $"{nameof(WorkoutPlan.Name)} asc"
-                : input.Sorting
+        var workoutPlans = await _workoutPlanRepository.GetListWithDetailsAsync(
+            userId,
+            input.FilterText,
+            input.IsArchived,
+            input.IsActive,
+            input.Goal,
+            input.Difficulty,
+            input.Sorting,
+            input.MaxResultCount,
+            input.SkipCount
         );
 
-        queryable = queryable
-            .Skip(input.SkipCount)
-            .Take(input.MaxResultCount);
-
-        var workoutPlans = await AsyncExecuter.ToListAsync(queryable);
 
         var dtos = workoutPlans
-            .Select(ObjectMapper.Map<WorkoutPlan, WorkoutPlanDto>)
+            .Select(MapToDto)
             .ToList();
 
         return new PagedResultDto<WorkoutPlanDto>(
@@ -261,13 +262,25 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
     {
         var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
         EnsureWorkoutPlanOwner(workoutPlan);
+
         var orderIndexes = input.Exercises.ToDictionary(
             x => x.WorkoutPlanExerciseId,
             x => x.OrderIndex);
+
+        workoutPlan.ValidateReorderExercises(orderIndexes);
+
+        var temporaryStartingOrderIndex = workoutPlan.Exercises
+            .Select(x => x.OrderIndex)
+            .DefaultIfEmpty(0)
+            .Max() + 1000;
+
+        workoutPlan.MoveExercisesToTemporaryOrderIndexes(temporaryStartingOrderIndex);
+        workoutPlan = await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true);
+
         workoutPlan.ReorderExercises(orderIndexes);
         workoutPlan = await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true);
+
         return MapToDto(workoutPlan);
-        
     }
 
     private Guid GetCurrentUserId()

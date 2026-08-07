@@ -170,9 +170,10 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
     
     //Reorder exercises
-    public void ReorderExercises(Dictionary<Guid, int> orderIndexes)
+    public void ValidateReorderExercises(Dictionary<Guid, int> orderIndexes)
     {
         EnsureNotArchived();
+
         if (orderIndexes.Count != _exercises.Count)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutPlanExerciseOrder);
@@ -190,11 +191,34 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
         foreach (var item in orderIndexes)
         {
-            var exercise = _exercises.FirstOrDefault(x=> x.Id == item.Key);
-            if (exercise == null)
+            if (_exercises.All(x => x.Id != item.Key))
             {
                 throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseNotFound);
             }
+        }
+    }
+
+    public void MoveExercisesToTemporaryOrderIndexes(int startingOrderIndex)
+    {
+        EnsureNotArchived();
+
+        var orderedExercises = _exercises
+            .OrderBy(x => x.OrderIndex)
+            .ToList();
+
+        for (var index = 0; index < orderedExercises.Count; index++)
+        {
+            orderedExercises[index].SetOrderIndex(startingOrderIndex + index);
+        }
+    }
+
+    public void ReorderExercises(Dictionary<Guid, int> orderIndexes)
+    {
+        ValidateReorderExercises(orderIndexes);
+
+        foreach (var item in orderIndexes)
+        {
+            var exercise = _exercises.First(x => x.Id == item.Key);
             exercise.SetOrderIndex(item.Value);
         }
     }

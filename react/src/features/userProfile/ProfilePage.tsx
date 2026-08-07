@@ -3,7 +3,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
-
+import { login, logout } from '../../auth/authService'
 export function ProfilePage() {
   return (
     <PageShell title="Hồ sơ">
@@ -54,6 +54,8 @@ export function ProfilePage() {
         <NeoButton className="full-width-button">
           Lưu thay đổi
         </NeoButton>
+        <NeoButton onClick={login}>Đăng nhập</NeoButton>
+        <NeoButton onClick={logout}>Đăng xuất</NeoButton>   
       </NeoCard>
     </PageShell>
   )
