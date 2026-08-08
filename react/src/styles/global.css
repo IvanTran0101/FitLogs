@@ -596,6 +596,101 @@ button {
   display: inline-block;
   text-decoration: none;
 }
+
+.current-exercise-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: var(--color-white);
+}
+
+.current-exercise-header,
+.set-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.current-exercise-header h2,
+.current-exercise-header h3 {
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.current-exercise-header h2 {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.current-exercise-header h3 {
+  font-size: 22px;
+}
+
+.session-navigation,
+.set-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.session-navigation .neo-button,
+.set-actions .neo-button {
+  min-width: 0;
+  padding: 10px 8px;
+  font-size: 12px;
+}
+
+.set-management-section {
+  display: grid;
+  gap: 14px;
+  border-top: var(--border-thick);
+  padding-top: 16px;
+}
+
+.set-empty-message {
+  margin: 0;
+  font-weight: 800;
+}
+
+.set-list {
+  display: grid;
+  gap: 12px;
+}
+
+.set-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  background: var(--color-bg);
+}
+
+.set-card.completed {
+  background: var(--color-lime);
+}
+
+.set-form {
+  display: grid;
+  gap: 12px;
+}
+
+.set-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.add-set-form {
+  border: var(--border-thick);
+  background: var(--color-yellow);
+  box-shadow: var(--shadow-hard);
+  padding: 14px;
+}
+
+.set-actions .danger-button {
+  background: var(--color-pink);
+}
+
 .exercise-detail-card {
   padding: 18px;
   background: var(--color-white);
