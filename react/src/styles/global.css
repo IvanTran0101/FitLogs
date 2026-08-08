@@ -685,6 +685,7 @@ button {
 
 .food-log-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
@@ -716,7 +717,7 @@ button {
 }
 
 .food-log-nutrition {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   text-align: right;
 }
 
@@ -726,6 +727,7 @@ button {
 
 .food-log-edit-link {
   align-self: center;
+  margin-left: auto;
   color: var(--color-text);
   font-size: 12px;
   font-weight: 950;
@@ -734,16 +736,36 @@ button {
 }
 
 @media (max-width: 360px) {
+  .food-form-grid {
+    grid-template-columns: 1fr;
+  }
+
   .food-summary-grid {
     grid-template-columns: 1fr;
   }
 
   .food-log-row {
     display: grid;
+    grid-template-columns: 1fr auto;
   }
 
   .food-log-nutrition {
+    grid-column: 1 / -1;
     text-align: left;
+  }
+
+  .food-log-edit-link {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .food-pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .food-pagination span {
+    grid-column: 1 / -1;
+    grid-row: 1;
   }
 }
 .state-card {

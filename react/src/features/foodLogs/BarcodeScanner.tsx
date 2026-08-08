@@ -163,11 +163,17 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
 
       {scannerState === 'scanning' ? (
         <div className="barcode-video-frame">
-          <video ref={videoRef} autoPlay muted playsInline />
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            aria-label="Hình ảnh camera để quét mã vạch"
+          />
           <span className="barcode-scan-guide" aria-hidden="true" />
         </div>
       ) : (
-        <div className="barcode-scanner-message">
+        <div className="barcode-scanner-message" role="status" aria-live="polite">
           <strong>{scannerState === 'starting' ? 'Đang mở camera...' : 'Không thể quét mã'}</strong>
           <span>{errorMessage ?? 'Vui lòng chờ trong giây lát.'}</span>
         </div>

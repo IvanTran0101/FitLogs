@@ -91,11 +91,13 @@ function ProductSummary({
   sourceLabel,
   selected,
   onSelect,
+  disabled,
 }: {
   product: SelectableFoodProduct
   sourceLabel?: string
   selected?: boolean
   onSelect?: () => void
+  disabled?: boolean
 }) {
   const isLookupResult = 'found' in product
   const isActive = isLookupResult || product.isActive
@@ -128,7 +130,7 @@ function ProductSummary({
       {onSelect ? (
         <NeoButton
           className="food-product-select"
-          disabled={!isActive}
+          disabled={!isActive || disabled}
           onClick={onSelect}
         >
           {selected ? 'Đã chọn' : 'Chọn món này'}
@@ -355,12 +357,13 @@ export function FoodAddPage() {
           </p>
           <form className="food-search-form" onSubmit={handleSearchSubmit}>
             <NeoInput
-              label="Tên hoặc từ khoá"
-              placeholder="Ví dụ: sữa, yến mạch..."
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-            />
-            <NeoButton type="submit" disabled={isSearching}>
+                label="Tên hoặc từ khoá"
+                placeholder="Ví dụ: sữa, yến mạch..."
+                value={searchText}
+                disabled={isCreating}
+                onChange={(event) => setSearchText(event.target.value)}
+              />
+            <NeoButton type="submit" disabled={isSearching || isCreating}>
               {isSearching ? 'Đang tìm...' : 'Tìm sản phẩm'}
             </NeoButton>
           </form>
@@ -392,6 +395,7 @@ export function FoodAddPage() {
                 product={product}
                 selected={selectedProductId === product.id}
                 onSelect={() => selectProduct(product)}
+                disabled={isCreating}
               />
             ))}
             <div className="food-pagination">
@@ -418,7 +422,7 @@ export function FoodAddPage() {
           <p className="eyebrow">Tra cứu nhanh</p>
           <h2>Nhập mã vạch</h2>
           <p className="food-add-help">
-            Bản đầu tiên nhận mã vạch được nhập hoặc dán thủ công. Camera sẽ được thêm ở phase sau.
+            Nhập hoặc dán mã vạch, hoặc mở camera nếu trình duyệt hỗ trợ đọc mã vạch.
           </p>
           <form className="food-search-form" onSubmit={handleBarcodeSubmit}>
             <NeoInput
@@ -426,16 +430,17 @@ export function FoodAddPage() {
               inputMode="numeric"
               placeholder="Nhập hoặc dán mã vạch"
               value={barcode}
+              disabled={isCreating}
               onChange={(event) => setBarcode(event.target.value)}
               error={lookupError && !isLookingUp ? lookupError : undefined}
             />
-            <NeoButton type="submit" disabled={isLookingUp}>
+            <NeoButton type="submit" disabled={isLookingUp || isCreating}>
               {isLookingUp ? 'Đang tra cứu...' : 'Tra cứu mã vạch'}
             </NeoButton>
             <NeoButton
               type="button"
               className="camera-button"
-              disabled={isLookingUp || isCameraOpen}
+              disabled={isLookingUp || isCameraOpen || isCreating}
               onClick={() => {
                 setLookupError(null)
                 setIsCameraOpen(true)
@@ -468,6 +473,7 @@ export function FoodAddPage() {
             product={lookupResult}
             sourceLabel={lookupResult.fromCache ? 'Đã có trong hệ thống' : 'Tìm từ Open Food Facts'}
             selected={selectedProductId === lookupResult.foodProductId}
+            disabled={isCreating}
             onSelect={
               lookupResult.foodProductId
                 ? () => selectProduct(lookupResult)
