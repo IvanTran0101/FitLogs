@@ -1258,104 +1258,448 @@ Risks:
 
 ---
 
-# Phase 5 — Food Product + Food Log Aggregate
+# Phase 5 — Food Product Search + Daily Food Log
 
 Status:
 
-- Planned.
+- Planned. Backend contracts have now been audited against the current C# source and `react/src/api/openapi.json`.
+- `react/src/features/foodLogs/FoodLogPage.tsx` is still placeholder-only.
+- No food API client, product search flow, barcode flow, daily log integration, or food-log editor exists in React.
 
-Current repository state:
+## Objective
 
-- `react/src/features/foodLogs/FoodLogPage.tsx` exists but is placeholder/static UI.
+Replace the static `/food` page with a backend-connected daily nutrition log. A signed-in user must be able to select a date, view the server-calculated daily totals, search or scan for a food product, create a log entry, and edit or delete an owned entry.
+
+Food-product catalog administration is not part of the end-user Phase 5 slice. The backend exposes product mutation operations, but their authorization contract is incomplete and must be resolved before an administration UI is planned.
+
+## Backend evidence
+
+Primary source files:
+
+- `src/FitLogs.Application/Foods/FoodProductAppService.cs`
+- `src/FitLogs.Application/Foods/FoodProductLookupAppService.cs`
+- `src/FitLogs.Application/Foods/FoodLogAppService.cs`
+- `src/FitLogs.Domain/Foods/FoodLogManager.cs`
+- `src/FitLogs.Domain/Foods/FoodLog.cs`
+- `src/FitLogs.Domain/Foods/FoodProduct.cs`
+- `src/FitLogs.EntityFrameworkCore/Foods/EfCoreFoodLogRepository.cs`
+- `src/FitLogs.Application.Contracts/Foods/`
+- `react/src/api/openapi.json`
+
+## Barcode-to-food-log audit result
+
+The backend portion of the intended flow exists, but the complete product flow is not implemented in React:
+
+| Intended step | Actual implementation | Status |
+| --- | --- | --- |
+| Barcode scanner sends a barcode to FitLogs | No scanner or food API client exists in React. `FoodLogPage` is static. | Missing frontend work |
+| FitLogs receives the barcode | `POST /api/app/food-product-lookup/lookup-by-barcode` accepts a `barcode` query parameter. | Implemented backend |
+| FitLogs calls Open Food Facts | `FoodProductLookupAppService.LookupByBarcodeAsync` calls `IOpenFoodFactsClient.GetByBarcodeAsync`. | Implemented backend |
+| Open Food Facts response is mapped | `OpenFoodFactsClient` maps a limited `product`/`nutriments` shape into `OpenFoodFactsProductResult`. | Partially implemented; nutrient coverage is limited |
+| Product is cached or created | `FindByBarcodeAsync` checks the database first; a miss creates a `FoodProduct` with source `OpenFoodFacts` and persists it. | Implemented backend |
+| Product and macros are displayed | `FoodProductLookupResultDto` supports display, but no React consumer exists. | Missing frontend work |
+| User selects quantity/unit/meal/date | Backend DTOs support these fields, but no React form exists. | Missing frontend work |
+| FoodLog is created | `FoodLogAppService.CreateAsync` validates the active product, calculates nutrition, applies optional overrides, and persists the log. | Implemented backend |
+| Daily log and totals refresh | `by-date` and `daily-summary` endpoints exist, but `/food` does not call either endpoint. | Missing frontend work |
+
+Conclusion: the frontend must call FitLogs only. It must not call Open Food Facts directly, duplicate the external mapping, or calculate final log macros independently.
+
+## External Open Food Facts client audit
+
+Evidence:
+
+- Interface: `src/FitLogs.Application.Contracts/Foods/IOpenFoodFactsClient.cs`, `IOpenFoodFactsClient.GetByBarcodeAsync(string barcode)`.
+- Implementation: `src/FitLogs.ExternalServices/OpenFoodFacts/OpenFoodFactsClient.cs`, `OpenFoodFactsClient.GetByBarcodeAsync`.
+- Registration: `src/FitLogs.ExternalServices/FitLogsExternalServicesModule.cs`.
+- JSON models: `src/FitLogs.ExternalServices/OpenFoodFacts/OpenFoodFactsResponse.cs`.
+
+Actual request behavior:
+
+- Base address is hardcoded to `https://world.openfoodfacts.org/`.
+- The request path is `api/v2/product/{barcode}.json`, producing `https://world.openfoodfacts.org/api/v2/product/{barcode}.json`.
+- The barcode is interpolated into the URL by the client. The application service trims whitespace before calling the client, but the client itself has no additional URL encoding or barcode-format validation.
+- `HttpClient.Timeout` is configured to 10 seconds in `FitLogsExternalServicesModule`.
+- No `User-Agent` header is configured in the client registration or request.
+- No retry, backoff, circuit breaker, rate-limit handling, or explicit response logging is configured.
+- No `CancellationToken` is accepted by `IOpenFoodFactsClient` or passed to `GetFromJsonAsync`; request cancellation is therefore not part of the application contract.
+- `GetFromJsonAsync<OpenFoodFactsResponse>` is used directly. Non-success HTTP responses, transport errors, timeout cancellation, and malformed JSON can escape as exceptions; there is no client-level normalization into a FitLogs result type.
+
+Open Food Facts response handling:
+
+| External response condition | Current behavior |
+| --- | --- |
+| `status == 1` and `product != null` with nonblank `product_name` | Maps to `OpenFoodFactsProductResult`. |
+| `status == 0` | Returns `null`. The application service returns `Found = false`. |
+| Any status other than `1` | Returns `null`; status meaning is not preserved. |
+| `status == 1` but missing `product` | Returns `null`. |
+| Product exists but `product_name` is null/blank | Returns `null`; no product is created. |
+| `nutriments` is null | Product is still mapped; calories become `0`, macros become `null`. |
+| `energy-kcal_100g` is missing | Calories become `0` because of `?? 0`. Missing energy is therefore indistinguishable from a verified zero-calorie value. |
+| Protein, carbohydrate, or fat field is missing | The nullable value remains `null`; it is not converted to zero by the external client. |
+| Malformed JSON or HTTP/network failure | Exception propagates from the client; no documented FitLogs-specific error envelope or fallback is created here. |
+
+The current implementation has no explicit Open Food Facts rate-limit interpretation. HTTP 429, 5xx, and other non-success responses are `REQUIRES VERIFICATION` at the API boundary because the client does not catch and classify them.
+
+## Open Food Facts nutrition mapping audit
+
+The external model supports only these JSON fields:
+
+| Open Food Facts field | Backend property | Basis | Result |
+| --- | --- | --- | --- |
+| `nutriments.energy-kcal_100g` | `CaloriesPer100g` | Per 100g | Mapped; missing values become numeric zero. |
+| `nutriments.proteins_100g` | `ProteinPer100g` | Per 100g | Mapped as nullable decimal. |
+| `nutriments.carbohydrates_100g` | `CarbPer100g` | Per 100g | Mapped as nullable decimal. |
+| `nutriments.fat_100g` | `FatPer100g` | Per 100g | Mapped as nullable decimal. |
+| `product.serving_size` | `ServingSize` | Descriptive text | Preserved as nullable text; not parsed. |
+
+Not supported by the current external model, `OpenFoodFactsProductResult`, `FoodProduct`, or `FoodProductDto`:
+
+- Saturated fat.
+- Sugar.
+- Fiber.
+- Sodium.
+- Salt.
+- `energy-kcal_100ml` or other per-100ml variants.
+- Per-serving nutrient values.
+- Numeric serving quantity or serving unit.
+- A nutrition basis/unit field that distinguishes grams, milliliters, and servings.
+
+These nutrients and basis variants must not be added to the frontend types or UI as if they were available. They are `BACKEND MISSING` for the current contract.
+
+The mapping also does not fall back from `energy-kcal_100g` to an energy-kilojoule field. The backend therefore cannot promise calorie data when the kcal field is absent; today it persists zero calories instead. Whether zero should be treated as unknown rather than a valid value requires a backend/data-contract decision.
+
+## Backend product persistence and cache audit
+
+`FoodProductLookupAppService.LookupByBarcodeAsync` performs this sequence:
+
+1. `NormalizeBarcode` trims the input and rejects blank values with `FitLogs:FoodProduct:BarcodeInvalid`.
+2. `IFoodProductRepository.FindByBarcodeAsync` searches for an exact barcode match.
+3. A match is returned with `Found = true` and `FromCache = true`; no external refresh occurs.
+4. A miss calls Open Food Facts.
+5. A non-null external result is passed to `FoodProductManager.CreateAsync` with `FoodProductSource.OpenFoodFacts` and `Clock.Now`.
+6. The new entity is inserted with `autoSave: true`.
+7. The response is mapped to `FoodProductLookupResultDto` with `Found = true` and `FromCache = false`.
+8. A null external result returns `Found = false`, `FromCache = false`, and the normalized barcode; no `FoodProduct` is stored.
+
+Persistence facts:
+
+- `FoodProduct` stores `CaloriesPer100g`, nullable protein/carbohydrate/fat per 100g, descriptive `ServingSize`, `Source`, `LastSyncedAt`, `IsActive`, and `IsVerified`.
+- Open Food Facts products are active by default and not verified by default; `FoodProduct` sets `IsVerified = true` only for `FoodProductSource.System`.
+- `FoodProductManager.CheckBarcodeAsync` trims the barcode and rejects a duplicate with `FitLogs:FoodProduct:006` before insert/update.
+- EF Core also creates a unique filtered index on non-null `Barcode` in `FitLogsDbContext`; concurrent first-time lookups can still race between the application check and database insert. The resulting database exception is not normalized by the lookup service.
+- There is no TTL, freshness policy, automatic revalidation, or cache invalidation. `RefreshFromOpenFoodFactsAsync` is an explicit separate operation.
+- Refresh keeps the existing product ID, updates display/nutrition fields, sets source to `OpenFoodFacts`, updates `LastSyncedAt`, and sets `IsVerified = false`. A missing external product raises `FitLogs:FoodLog:FoodProductNotFoundFromOpenFoodFacts`.
+
+## Macro calculation audit
+
+`src/FitLogs.Domain/Foods/FoodLogManager.cs` contains the only current calculation:
+
+```text
+factor = quantity / 100
+calories = product.CaloriesPer100g × factor
+protein = product.ProteinPer100g × factor
+carb = product.CarbPer100g × factor
+fat = product.FatPer100g × factor
+```
+
+This is correct only when `quantity` is grams and the product values are per 100g. `FoodUnit` is stored and enum-validated, but it is not used in `CalculateNutrition`. Selecting `Milliliter`, `Serving`, or `Piece` does not change the formula. `ServingSize` is never converted into grams or a numeric serving amount.
+
+Examples of current behavior (not desired product semantics):
+
+- Product with `200` kcal per 100g and quantity `50`, unit `Gram` → `100` kcal.
+- Same product with quantity `50`, unit `Serving` → also `100` kcal.
+- Same product with quantity `50`, unit `Piece` → also `100` kcal.
+
+The frontend must send the selected `Quantity` and `Unit` and display the backend-returned `FoodLogDto` values. It must not present the current formula as a correct serving/piece/ml conversion and must not silently “fix” it in React. Accurate non-gram nutrition requires a backend contract and data-model change.
+
+Nutrition override behavior:
+
+- `CreateFoodLogDto` and `UpdateFoodLogDto` accept optional `OverrideCalories`, `OverrideProtein`, `OverrideCarb`, and `OverrideFat`.
+- `FoodLogAppService.ApplyNutritionOverrides` replaces only supplied values and keeps calculated values for omitted fields.
+- `FoodLog.SetNutrition` rejects negative values, but the override DTOs do not declare range attributes; final validation is domain-level.
+- The standard end-user barcode flow should not expose override fields unless product requirements explicitly call for them. If exposed, the UI must label them as manual overrides and never use them to disguise missing external nutrients.
+
+## Authorization, errors, and observability audit
+
+- `FoodLogAppService` and `FoodProductAppService` have class-level `[Authorize]`.
+- `FoodProductLookupAppService` has no explicit `[Authorize]` attribute. Swagger lists 401/403 responses, but the effective anonymous/authenticated behavior is `REQUIRES VERIFICATION` against a running API.
+- Food-log get/update/delete operations enforce current-user ownership with `FitLogs:Food:FoodLogAccessDenied`.
+- Lookup-specific business errors include `FitLogs:FoodProduct:BarcodeInvalid`, `FitLogs:FoodLog:FoodProductNotFoundFromOpenFoodFacts`, and `FitLogs:FoodProduct:006` for duplicate barcode (use the declarations in `FitLogsDomainErrorCodes` when wiring frontend mappings).
+- The external client does not log request IDs, barcode outcomes, status codes, latency, or rate-limit headers in its own code. Whether ABP auditing or host logging captures the service call is `REQUIRES VERIFICATION`.
+- No circuit breaker, retry queue, background refresh job, stale-data fallback, or user-facing “external service unavailable” domain error exists in this flow.
+- Frontend error handling must distinguish invalid barcode, normal product-not-found (`Found = false`), HTTP/auth failure, timeout/network failure, malformed external response surfaced as a server failure, inactive product, and food-log validation/ownership failure.
+
+## Frontend barcode-to-food-log implementation plan
+
+Current React evidence:
+
+- `react/src/features/foodLogs/FoodLogPage.tsx` renders only hardcoded placeholder content.
+- `react/src/App.tsx` exposes only `/food`; there is no add-food, product result, barcode, or edit-log route.
 - No `react/src/api/foodsApi.ts` exists.
-- No food search page, food product detail page, food log editor, or barcode UI exists.
-- Local OpenAPI contains food log, food product, and barcode lookup endpoints/schemas.
+- No React code references `FoodProductLookupResultDto`, `FoodLogDto`, or the barcode endpoint.
+- `react/src/api/httpClient.ts` is the required transport and already attaches the OIDC bearer token when available.
 
-Backend verification required:
+Planned vertical slice:
 
-- Confirm `FoodProductDto` fields and units.
-- Confirm `FoodLogDto`, `CreateFoodLogDto`, and `UpdateFoodLogDto` fields.
-- Confirm enum meanings for `FoodUnit` and `MealType`.
-- Confirm query conventions for `GET /api/app/food-product`.
-- Confirm date format for `GET /api/app/food-log/by-date` and `daily-summary` query `Date`.
-- Confirm barcode lookup behavior and whether lookup creates/caches products.
-- Confirm whether food product management actions are user-facing, admin-only, or not intended for mobile UI.
+1. Add one handwritten `foodsApi.ts` using the exact lookup query, product list/detail, food-log list/summary, create, update, and delete contracts. Do not call Open Food Facts from React.
+2. Add a barcode entry surface under `/food/add`. The baseline flow accepts typed/pasted barcode input. Camera scanning is a planned extension and requires a frontend camera-permission flow, an approved barcode decoder, mobile-browser testing, and HTTPS/secure-context support.
+3. Submit the barcode to FitLogs and branch on `Found`/`FromCache`; render only fields returned by `FoodProductLookupResultDto`.
+4. Keep the selected `FoodProductId` and let the user enter `Quantity`, `Unit`, `MealType`, optional `LoggedAt`, and optional `Note` from the exact create DTO.
+5. Submit `POST /api/app/food-log`, then reload both `GET /api/app/food-log/by-date` and `GET /api/app/food-log/daily-summary` for the selected date. Do not calculate totals locally.
+6. Add edit/delete for owned logs using `GET/PUT/DELETE /api/app/food-log/{id}` and refresh list/summary after mutation.
+7. Add loading, empty, retry, validation, unauthorized/forbidden, external failure, and duplicate-submit states.
 
-Relevant local OpenAPI evidence:
+Required frontend states:
 
-FoodProduct = catalog/source nutrition data:
+- Barcode idle, submitting, cached match, external match, normal not-found, invalid barcode, timeout/network failure, and server failure.
+- Product result with nullable brand/image/macros/serving text; no fake zero values for missing nullable macros.
+- Food-log quantity/unit/meal/date validation using backend-supported fields only.
+- Empty daily log with server-provided zero summary.
+- Successful mutation refresh and stale-data prevention when selected date changes.
 
-- `GET /api/app/food-product`
+## Barcode and nutrition QA matrix
+
+The implementation plan must include contract tests or manual API checks for:
+
+| Scenario | Expected verification |
+| --- | --- |
+| Known barcode already cached | Lookup returns `Found = true`, `FromCache = true`, no new product row. |
+| Known barcode not cached, Open Food Facts `status = 1` | Product fields and four supported per-100g nutrients map, product persists with `Source = OpenFoodFacts`, lookup returns `FromCache = false`. |
+| Open Food Facts `status = 0` | Lookup returns `Found = false`; no product or log is created. |
+| `status = 1` with missing product or blank product name | Lookup behaves as not-found; exact HTTP/domain envelope is verified. |
+| Missing `nutriments` or missing `energy-kcal_100g` | Confirm current zero-calorie/null-macro behavior and decide whether backend must distinguish unknown from zero before frontend release. |
+| Missing protein/carbohydrate/fat fields | Confirm nulls survive external mapping, persistence, DTO mapping, and daily summary. |
+| Per-serving/per-100ml-only external data | Confirm current client does not map it; frontend must not infer a conversion. |
+| Open Food Facts 429, 5xx, timeout, malformed JSON | Record actual FitLogs response and user-facing error mapping; retry/rate-limit policy is currently missing. |
+| Blank or whitespace barcode | `FitLogs:FoodProduct:BarcodeInvalid`; no external request. |
+| Duplicate concurrent barcode creation | Confirm unique-index behavior and whether the API returns a normalized business error or an unhandled server failure. |
+| Inactive product used for log creation/update | `FitLogs:FoodProduct:007` rejection; no log mutation. |
+| Gram quantity calculation | Verify `per100g × grams / 100`. |
+| Serving/piece/ml quantity calculation | Confirm current backend uses the same formula and keep this as a documented blocker, not frontend logic. |
+| Food-log empty day | Empty list plus zero daily totals. |
+| Food-log ownership violation | Verify authorization/business error and ensure React does not reveal or mutate another user's data. |
+
+## Phase 5 acceptance update
+
+Phase 5 is complete only when:
+
+- The backend-to-Open Food Facts mapping is documented as limited to `energy-kcal_100g`, `proteins_100g`, `carbohydrates_100g`, `fat_100g`, and `serving_size`.
+- The frontend never calls Open Food Facts directly and uses only the FitLogs lookup endpoint.
+- `/food` has no mock nutrition values and loads the selected-day list and summary from the backend.
+- A barcode result can be selected into a food-log form, and the create request uses the exact backend DTO fields.
+- Macro totals and entry macros are always rendered from backend responses after create/update/delete.
+- Missing nullable nutrients remain visibly unknown/absent; the UI does not convert them to zero without an explicit product decision.
+- Unit semantics and timezone behavior are visibly documented as backend limitations until verified or corrected.
+- All external, validation, authorization, ownership, inactive-product, empty-result, and mutation-refresh states are covered.
+- No product-administration controls are shipped until the missing FoodProducts permission enforcement and lookup authorization are resolved.
+
+### Food-product read and lookup APIs used by Phase 5
+
+| Method and route | Request | Response | Confirmed behavior |
+| --- | --- | --- | --- |
+| `GET /api/app/food-product` | Query: `FilterText`, `OnlyActive`, `Sorting`, `SkipCount`, `MaxResultCount` | `PagedResultDto<FoodProductDto>` | Searches name, brand, or barcode. `OnlyActive` defaults to `true`. Default sorting is name ascending. |
+| `GET /api/app/food-product/{id}` | UUID path parameter | `FoodProductDto` | Returns one product or a repository not-found error. |
+| `POST /api/app/food-product-lookup/lookup-by-barcode?barcode=...` | `barcode` query parameter | `FoodProductLookupResultDto` | Returns a cached product when present. Otherwise queries Open Food Facts and persists a new product when found. A normal not-found result has `found=false`; it is not a fabricated product. |
+
+The following product-management operations exist but are excluded from the end-user food-log slice:
+
 - `POST /api/app/food-product`
-- `GET /api/app/food-product/{id}`
 - `PUT /api/app/food-product/{id}`
 - `DELETE /api/app/food-product/{id}`
 - `POST /api/app/food-product/{id}/activate`
 - `POST /api/app/food-product/{id}/deactivate`
 - `POST /api/app/food-product/{id}/verify`
 - `POST /api/app/food-product/{id}/unverify`
-- `POST /api/app/food-product-lookup/lookup-by-barcode`
 - `POST /api/app/food-product-lookup/refresh-from-open-food-facts/{foodProductId}`
 
-FoodLog = user-specific logged consumption:
+`ActivateAsync`, `UnverifyAsync`, and `DeleteAsync` are public methods on `FoodProductAppService` and appear in Swagger even though they are missing from `IFoodProductAppService`. The runtime API surface and the application-service implementation are the evidence for these routes; the interface is incomplete.
 
-- `POST /api/app/food-log`
-- `GET /api/app/food-log/by-date`
-- `GET /api/app/food-log/daily-summary`
-- `GET /api/app/food-log/{id}`
-- `PUT /api/app/food-log/{id}`
-- `DELETE /api/app/food-log/{id}`
+### Food-log APIs used by Phase 5
 
-Local OpenAPI field evidence:
+| Method and route | Request | Response | Confirmed behavior |
+| --- | --- | --- | --- |
+| `GET /api/app/food-log/by-date?Date=...` | `Date` is an OpenAPI `date-time` query value | `FoodLogDto[]` | Returns only the current user's entries, ordered by `loggedAt`. An empty day returns an empty array. |
+| `GET /api/app/food-log/daily-summary?Date=...` | Same `Date` query contract | `DailyFoodNutritionSummaryDto` | Returns server-summed calories, protein, carbohydrate, and fat. An empty day returns zero totals. |
+| `GET /api/app/food-log/{id}` | UUID path parameter | `FoodLogDto` | Returns an owned log. A log owned by another user is rejected. |
+| `POST /api/app/food-log` | JSON `CreateFoodLogDto` | `FoodLogDto` | Creates an entry for `CurrentUser`; omitted `loggedAt` uses the backend clock. |
+| `PUT /api/app/food-log/{id}` | JSON `UpdateFoodLogDto` | `FoodLogDto` | Recalculates nutrition from the selected active product and quantity, then applies any supplied nutrition overrides. Omitted `loggedAt` preserves the existing timestamp. |
+| `DELETE /api/app/food-log/{id}` | UUID path parameter | No content | Deletes an owned entry. Duplicate deletion resolves as a missing-resource error; there is no idempotency contract. |
 
-- `FoodProductDto`: barcode, name, brand, imageUrl, caloriesPer100g, proteinPer100g, carbPer100g, fatPer100g, servingSize, source, lastSyncedAt, isActive, isVerified.
-- `FoodLogDto`: userId, foodProductId, foodName, quantity, unit, calories, protein, carb, fat, mealType, loggedAt, note.
-- `CreateFoodLogDto` / `UpdateFoodLogDto`: foodProductId, quantity, unit, mealType, loggedAt, note, optional override calories/protein/carb/fat.
-- `DailyFoodNutritionSummaryDto`: date, totalCalories, totalProtein, totalCarb, totalFat.
+## Actual DTO and enum contracts
 
-Planned frontend areas:
+`FoodProductDto`:
 
-- Add `react/src/api/foodsApi.ts` or equivalent, not multiple duplicate modules.
-- Replace `FoodLogPage` placeholder with real date-based log view.
-- Add food search/add flow, likely under `features/foodLogs` unless a separate `features/foodProducts` folder becomes justified.
-- Add food log editor for update/delete.
-- Reuse existing state components and form controls.
+- `id: Guid`
+- `barcode: string?`
+- `name: string`
+- `brand: string?`
+- `imageUrl: string?`
+- `caloriesPer100g: decimal`
+- `proteinPer100g: decimal?`
+- `carbPer100g: decimal?`
+- `fatPer100g: decimal?`
+- `servingSize: string?`
+- `source: FoodProductSource`
+- `lastSyncedAt: DateTime?`
+- `isActive: bool`
+- `isVerified: bool`
 
-Expected user flow:
+`FoodProductLookupResultDto`:
 
-```text
-Food page
-→ Select date
-→ View food entries and daily summary
-→ Search product or barcode lookup
-→ Select product
-→ Enter quantity/unit/meal/note
-→ Add to food log
-→ Edit/delete logged entry
-```
+- `found: bool`
+- `fromCache: bool`
+- `foodProductId: Guid?`
+- `barcode`, `name`, `brand`, `imageUrl`, and `servingSize`: nullable strings
+- `caloriesPer100g`, `proteinPer100g`, `carbPer100g`, and `fatPer100g`: nullable decimals
 
-Dependencies:
+`FoodLogDto`:
 
-- `apiRequest()`.
-- Existing `PageShell`, `NeoInput`, `NeoSelect`, `NeoButton`, `EmptyState`, `LoadingState`, `ErrorState`.
-- Backend auth for user-specific food logs.
-- Verified enum labels for `FoodUnit` and `MealType`.
+- `id`, `userId`, `foodProductId`
+- `foodName`, `quantity`, `unit`
+- `calories`, `protein`, `carb`, `fat`
+- `mealType`, `loggedAt`, `note`
 
-Definition of done:
+`CreateFoodLogDto` and `UpdateFoodLogDto` have the same writable fields:
 
-- `foodsApi.ts` contains verified DTOs/enums and endpoint functions.
-- `FoodLogPage` loads entries and daily summary for selected date from real APIs.
-- Empty/error/loading states are present for logs, product search, and barcode failure.
-- Add flow can search/select product, enter backend-supported fields, and create a log entry.
-- Editor can update and delete a log entry using real APIs.
-- FoodProduct catalog data and FoodLog user data are kept conceptually separate in code and UI.
+- Required: `foodProductId`, `quantity`, `unit`, `mealType`
+- Optional: `loggedAt`, `note`, `overrideCalories`, `overrideProtein`, `overrideCarb`, `overrideFat`
 
-Risks:
+`DailyFoodNutritionSummaryDto` contains `date`, `totalCalories`, `totalProtein`, `totalCarb`, and `totalFat`.
 
-- Unit enum values must be verified before rendering labels or sending payloads.
-- Barcode lookup behavior may depend on external Open Food Facts integration and can fail independently.
-- Nutrition values are per-100g on products but computed values on logs; do not compute final nutrition incorrectly if backend already computes it.
-- Product management endpoints may not be intended for regular users.
+Actual enum values:
+
+| Enum | Values |
+| --- | --- |
+| `FoodUnit` | `Gram = 1`, `Milliliter = 2`, `Serving = 3`, `Piece = 4` |
+| `MealType` | `Breakfast = 1`, `Lunch = 2`, `Dinner = 3`, `Snack = 4`, `PreWorkout = 5`, `PostWorkout = 6` |
+| `FoodProductSource` | `Manual = 1`, `OpenFoodFacts = 2`, `System = 3` |
+
+## Business rules the frontend must respect
+
+- `quantity` is a JSON decimal and is validated by the DTO from `0.01` through `999999`.
+- A food log can only reference an active food product. Inactive products are rejected with `FitLogs:FoodProduct:007`.
+- The backend stores a food-name snapshot and calculated nutrition on each log; the frontend must render the returned `FoodLogDto` rather than recomputing persisted values.
+- Base nutrition is calculated as `product per-100g value * (quantity / 100)`.
+- **Important backend limitation:** the calculation ignores `FoodUnit`. Gram, Milliliter, Serving, and Piece all currently use the same `quantity / 100` formula.
+- `servingSize` is descriptive text only. It is not parsed or used in food-log nutrition calculation.
+- The frontend must not invent conversions for milliliters, servings, or pieces and must not simulate a corrected business rule. Accurate non-gram calculation requires a backend contract change.
+- Nutrition overrides are supported by the API. Phase 5 should not expose them in the standard end-user form unless the product explicitly requires manual override UX; hidden frontend calculations are prohibited.
+- `loggedAt` defaults to the backend clock on create and remains unchanged when omitted on update.
+- Date filtering uses `date.Date` through a half-open server-side range `[day start, next day start)`. No user-timezone conversion contract exists.
+- The frontend must send an explicit selected-day `Date` value and label timezone behavior as `REQUIRES VERIFICATION`; it must not claim that days are grouped in the user's local timezone.
+- Food-log get/update/delete operations check `CurrentUser` ownership. List and summary queries are also restricted to `CurrentUser`.
+- Barcode input is trimmed. Blank barcode produces `FitLogs:FoodProduct:BarcodeInvalid`.
+- A successful external lookup may create a shared `FoodProduct` record. Retrying the same barcode normally returns that cached product.
+- Product deletion deactivates a product when food logs reference it; otherwise it hard-deletes the product. This is backend administration behavior and is not duplicated in React.
+
+## Authentication, permissions, and blockers
+
+- `FoodLogAppService` and `FoodProductAppService` have class-level `[Authorize]`; the React food flow requires a signed-in user.
+- Food-log operations have ownership checks but no named fine-grained permissions.
+- `FitLogsPermissions.FoodProducts` constants exist, but the current permission definition provider does not register the FoodProducts permission tree and `FoodProductAppService` does not apply those permission names.
+- `FoodProductLookupAppService` has no explicit `[Authorize]` attribute. Whether anonymous barcode lookup is intentional is `REQUIRES VERIFICATION`.
+- Do not expose create/update/delete/activate/deactivate/verify/unverify/refresh product-management controls until the backend authorization policy is corrected or explicitly approved.
+- Exact runtime status codes for business exceptions and authorization failures must be verified against a running API. The frontend must already distinguish 401, 403, validation failures, missing resources, ABP business codes, and network/external-service failures.
+
+## Frontend scope and routes
+
+Keep `/food` as the main route and use the existing mobile shell. Add frontend routes only as needed for focused forms:
+
+| Route | Purpose |
+| --- | --- |
+| `/food` | Selected-day log list, totals, meal grouping, and add-food entry point. |
+| `/food/add` | Product search and barcode lookup, followed by the create-log form. |
+| `/food/logs/:foodLogId/edit` | Load one owned entry and submit update or delete. |
+| `/food/products/:foodProductId` | Optional read-only product detail used during selection; do not add management controls. |
+
+Create one `react/src/api/foodsApi.ts` module containing the verified DTOs, enums, query types, and endpoint functions. Do not generate an API client and do not split the same contracts across duplicate modules.
+
+Recommended components under the existing food feature:
+
+- Daily date selector.
+- Daily nutrition summary card.
+- Meal-type section/list.
+- Food-log row with edit action.
+- Product search field and paged result list.
+- Barcode lookup form/result state. The first slice accepts typed/pasted barcode values. A camera-scanning extension must handle camera permissions, decoder setup, mobile browser differences, HTTPS/secure-context requirements, and a typed-input fallback.
+- Create/update food-log form using only backend-supported fields.
+- Delete confirmation.
+
+Use current page-local `useState`/`useEffect` conventions and `apiRequest()` for this phase. Do not introduce a query-cache, form, validation, or state-management library solely for Phase 5. After every successful create/update/delete, reload both the selected-day list and daily summary from the backend.
+
+## Required UI states and failure behavior
+
+- Daily log: initial loading, populated, empty day, load error, and date-change loading.
+- Product search: idle, searching, paged results, no result, request error, and inactive product protection.
+- Barcode: idle, submitting, cached match, external match, `found=false`, invalid barcode, and external-service/network failure.
+- Create/update: field validation, submitting, backend validation failure, product inactive, missing product/log, authorization failure, and success navigation.
+- Delete: confirmation, deleting, missing/already-deleted resource, authorization failure, and success refresh.
+- Disable duplicate mutation submissions while a request is in progress.
+- Preserve entered form values when a recoverable API error occurs.
+- Never replace a backend rejection with silently calculated or mocked data.
+
+## Camera scanning extension
+
+Status:
+
+- Planned follow-up within Phase 5; not included in the first typed/pasted barcode slice.
+
+Requirements:
+
+- Request camera access through the browser permission flow and handle denied, unavailable, and already-in-use cameras.
+- Add and approve a barcode decoder dependency or browser-supported decoder before implementation; no decoder dependency currently exists.
+- Require an HTTPS secure context in production. `localhost` may be used for local development where the browser permits camera access.
+- Test on supported mobile Chrome and Safari versions, including portrait/landscape behavior, permission prompts, camera cleanup, and narrow-screen layout.
+- Stop camera tracks when leaving the scanner or after a successful read; do not upload or persist camera frames.
+- Send only the decoded barcode string to FitLogs through the existing lookup endpoint.
+- Keep typed/pasted barcode entry available as a fallback when camera access or decoding fails.
+
+## Recommended implementation order
+
+1. Add verified `foodsApi.ts` types, enum labels, list/detail/lookup/log/summary/mutation functions, and food-related ABP error mappings.
+2. Replace `/food` placeholder content with selected-date list and daily summary calls.
+3. Group returned logs by `MealType` in the presentation layer and add loading, empty, error, and retry states.
+4. Build paged product search using `FilterText`, `OnlyActive: true`, `SkipCount`, and `MaxResultCount`; do not download the full catalog for local filtering.
+5. Add typed/pasted barcode lookup and handle cached, external, and not-found results distinctly.
+6. Add the camera-scanning extension after the permission, decoder, HTTPS, and mobile-browser prerequisites are satisfied; preserve typed/pasted fallback behavior.
+7. Build create-log form and refresh both list and summary from server response data.
+8. Build owned-log edit and delete flow with confirmation and mutation guards.
+9. Complete mobile, keyboard, accessibility, and narrow-screen validation.
+
+## Dependencies
+
+- App-wide authentication state and protected-route behavior from the authentication phase.
+- Existing `apiRequest()`, `ApiError`, and OIDC token handling.
+- Existing `PageShell`, `NeoInput`, `NeoSelect`, `NeoButton`, `NeoCard`, `LoadingState`, `EmptyState`, and `ErrorState`.
+- Backend availability and Open Food Facts network availability for uncached barcode lookups.
+- Camera scanning prerequisites: browser camera permissions, an approved barcode decoder, HTTPS/secure context, and mobile Chrome/Safari test coverage.
+- Backend clarification or change before any accurate Serving, Piece, or Milliliter nutrition UX is promised.
+
+## Acceptance criteria
+
+- `/food` contains no hardcoded nutrition or placeholder log data.
+- A signed-in user can select a date and see the exact list and totals returned by the two daily endpoints.
+- An empty day displays a useful empty state with zero server totals and an add-food action.
+- Product search uses backend paging and returns active products only in the selection flow.
+- Typed/pasted barcode lookup correctly distinguishes cache hit, external hit, normal not-found, invalid input, and request failure.
+- If camera scanning is enabled, it requests permission clearly, handles denied/unavailable cameras, decodes on supported mobile browsers, stops camera tracks safely, and falls back to typed/pasted input.
+- Create and update payloads contain only fields from `CreateFoodLogDto` or `UpdateFoodLogDto`.
+- All four `FoodUnit` and six `MealType` enum values use their exact numeric values.
+- The UI does not calculate unit conversions or treat `servingSize` as a numeric conversion factor.
+- The server-returned `FoodLogDto` and daily summary are reloaded after every mutation.
+- Users cannot edit or delete another user's entry; 401/403 responses produce an authorization-specific UI state.
+- Product-management actions remain absent until their permission contract is verified.
+- All forms and result lists have loading, empty, validation, error, retry, and duplicate-submit protection as applicable.
+- The flow remains usable on narrow mobile screens and with keyboard navigation.
+
+## Technical risks and unresolved blockers
+
+- **Unit semantics:** the backend accepts four units but calculates all nutrition as though quantity were a per-100g multiplier. Non-gram accuracy is blocked by a backend change.
+- **Timezone semantics:** daily queries use server-side `DateTime.Date` boundaries without an explicit user-timezone policy.
+- **Authorization:** food-product administration permissions are declared incompletely and are not enforced by the product app service; barcode lookup is not explicitly authenticated.
+- **Contract drift:** the product application-service interface omits public operations exposed by the runtime conventional controller.
+- **External dependency:** uncached barcode lookup depends on Open Food Facts and may fail even when the FitLogs API is otherwise healthy.
+- **Concurrency:** barcode uniqueness is enforced in persistence/domain logic, so concurrent first-time lookups for the same barcode can still require runtime error handling. No optimistic concurrency token is exposed to the React client.
 
 ---
 

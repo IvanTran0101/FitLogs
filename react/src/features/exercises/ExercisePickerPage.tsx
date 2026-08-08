@@ -49,6 +49,7 @@ export function ExercisePickerPage() {
     const [exercises, setExercises] = useState<ExerciseDto[]>([])
     const [muscleGroups, setMuscleGroups] = useState<MuscleGroupDto[]>([])
     const [equipments, setEquipments] = useState<EquipmentDto[]>([])
+    const [existingExerciseIds, setExistingExerciseIds] = useState<string[]>([])
 
   const { planId } = useParams()
   const navigate = useNavigate()
@@ -119,6 +120,15 @@ export function ExercisePickerPage() {
           setExercises(exerciseResult.items ?? [])
           setMuscleGroups(muscleGroupResult.items ?? [])
           setEquipments(equipmentResult.items ?? [])
+
+          if (planId) {
+            const plan = await getWorkoutPlan(planId)
+            setExistingExerciseIds(
+              (plan.exercises ?? []).map((exercise) => exercise.exerciseId),
+            )
+          } else {
+            setExistingExerciseIds([])
+          }
         } catch (error) {
           setExercises([])
           setErrorMessage(
@@ -130,7 +140,7 @@ export function ExercisePickerPage() {
       }
 
       void loadPickerData()
-    }, [])
+    }, [planId])
 
     const [isLoading, setIsLoading] = useState(true)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -138,6 +148,10 @@ export function ExercisePickerPage() {
     const [muscleGroupFilter, setMuscleGroupFilter] = useState('')
     const [equipmentFilter, setEquipmentFilter] = useState('')
     function toggleExercise(exerciseId: string) {
+      if (existingExerciseIds.includes(exerciseId)) {
+        return
+      }
+
       const isSelected = exerciseId in selectedExerciseTargets
 
       if (isSelected) {
@@ -245,25 +259,46 @@ return (
         <section className="picker-list">
             {filteredExercises.map((exercise) => {
             const isSelected = selectedExerciseIds.includes(exercise.id)
+            const isAlreadyInPlan = existingExerciseIds.includes(exercise.id)
 
             return (
                 <NeoCard
                 key={exercise.id}
-                className={isSelected ? 'picker-card selected' : 'picker-card'}
+                className={
+                  isAlreadyInPlan
+                    ? 'picker-card already-in-plan'
+                    : isSelected
+                      ? 'picker-card selected'
+                      : 'picker-card'
+                }
                 >
                 <h2>{exercise.name ?? 'Bài tập chưa đặt tên'}</h2>
                 <div className="exercise-tags">
                   <span>{getNameById(muscleGroups, exercise.primaryMuscleGroupId)}</span>
                   <span>{getNameById(equipments, exercise.equipmentId)}</span>
+                  {isAlreadyInPlan ? <span>Đã có trong plan</span> : null}
                 </div>
 
                 <button
-                    className={isSelected ? 'picker-toggle selected' : 'picker-toggle'}
+                    className={
+                      isAlreadyInPlan
+                        ? 'picker-toggle already-in-plan'
+                        : isSelected
+                          ? 'picker-toggle selected'
+                          : 'picker-toggle'
+                    }
                     type="button"
+                    disabled={isAlreadyInPlan || isSubmitting}
                     onClick={() => toggleExercise(exercise.id)}
-                    aria-label={isSelected ? 'Bỏ chọn bài tập' : 'Chọn bài tập'}
+                    aria-label={
+                      isAlreadyInPlan
+                        ? 'Bài tập đã có trong plan'
+                        : isSelected
+                          ? 'Bỏ chọn bài tập'
+                          : 'Chọn bài tập'
+                    }
                 >
-                    {isSelected ? '✓' : '+'}
+                    {isAlreadyInPlan ? '✓' : isSelected ? '✓' : '+'}
                 </button>
                 {isSelected ? (
                   <div className="picker-target-form">

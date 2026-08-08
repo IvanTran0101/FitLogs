@@ -4,6 +4,7 @@ import { DashboardPage } from './features/dashboard/DashboardPage'
 import { ExerciseDetailPage } from './features/exercises/ExerciseDetailPage'
 import { ExerciseLibraryPage } from './features/exercises/ExerciseLibraryPage'
 import { FoodLogPage } from './features/foodLogs/FoodLogPage'
+import { FoodAddPage } from './features/foodLogs/FoodAddPage'
 import { ProfilePage } from './features/userProfile/ProfilePage'
 import { WorkoutPage } from './features/workoutSessions/WorkoutPage'
 import { WorkoutPlansPage } from './features/workoutPlans/WorkoutPlansPage'
@@ -17,6 +18,7 @@ function App() {
     <Routes>
       <Route path="/" element={<DashboardPage />} />
       <Route path="/food" element={<FoodLogPage />} />
+      <Route path="/food/add" element={<FoodAddPage />} />
       <Route path="/workout" element={<WorkoutPage />} />
       <Route path="/plans" element={<WorkoutPlansPage />} />
       <Route path="/profile" element={<ProfilePage />} />

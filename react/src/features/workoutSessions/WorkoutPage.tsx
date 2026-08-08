@@ -277,6 +277,7 @@ export function WorkoutPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [sessionOutcomeMessage, setSessionOutcomeMessage] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [setDraft, setSetDraft] = useState<SetDraft>(createSetDraft(1))
   const [editingSetId, setEditingSetId] = useState<string | null>(null)
@@ -329,6 +330,7 @@ export function WorkoutPage() {
       setIsLoading(true)
       setErrorMessage(null)
       setActionError(null)
+      setSessionOutcomeMessage(null)
 
       const session = await getActiveWorkoutSession()
       if (session) {
@@ -551,7 +553,22 @@ export function WorkoutPage() {
       return
     }
 
-    await runSessionAction('complete-session', completeWorkoutSession)
+    try {
+      setActionLoading('complete-session')
+      setActionError(null)
+      await completeWorkoutSession(activeSession.id)
+      setActiveSession(null)
+      setCurrentExercise(null)
+      setExercise(null)
+      setExerciseCatalog([])
+      setSessionOutcomeMessage('Buổi tập đã được hoàn thành và không còn là buổi tập đang diễn ra.')
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : 'Không thể hoàn thành buổi tập.',
+      )
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   async function handleCancelSession() {
@@ -567,7 +584,22 @@ export function WorkoutPage() {
       return
     }
 
-    await runSessionAction('cancel-session', cancelWorkoutSession)
+    try {
+      setActionLoading('cancel-session')
+      setActionError(null)
+      await cancelWorkoutSession(activeSession.id)
+      setActiveSession(null)
+      setCurrentExercise(null)
+      setExercise(null)
+      setExerciseCatalog([])
+      setSessionOutcomeMessage('Buổi tập đã được huỷ và không còn là buổi tập đang diễn ra.')
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : 'Không thể huỷ buổi tập.',
+      )
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const sessionExercises = sortSessionExercises(activeSession?.exercises ?? [])
@@ -616,8 +648,11 @@ export function WorkoutPage() {
       <PageShell title="Buổi tập">
         <div className="training-action-grid">
           <EmptyState
-            title="Chưa có buổi tập đang diễn ra"
-            message="Chọn một kế hoạch tập để bắt đầu buổi tập mới."
+            title={sessionOutcomeMessage ? 'Buổi tập đã kết thúc' : 'Chưa có buổi tập đang diễn ra'}
+            message={
+              sessionOutcomeMessage ??
+              'Chọn một kế hoạch tập để bắt đầu buổi tập mới.'
+            }
             action={
               <Link className="neo-button link-button" to="/plans">
                 Chọn kế hoạch tập

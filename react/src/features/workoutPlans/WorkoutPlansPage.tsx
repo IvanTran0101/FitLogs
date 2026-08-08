@@ -108,6 +108,12 @@ export function WorkoutPlansPage() {
 
   return (
     <PageShell title="Kế hoạch">
+      <div className="plan-list-actions">
+        <Link className="neo-button link-button" to="/plans/new">
+          Tạo kế hoạch
+        </Link>
+      </div>
+
       <section className="exercise-list">
         {plans.map((plan) => (
           <Link key={plan.id} className="exercise-card-link" to={`/plans/${plan.id}`}>
