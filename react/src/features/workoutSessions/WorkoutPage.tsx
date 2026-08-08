@@ -1,11 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  getSelectableExercises,
   getExercise,
   type ExerciseDto,
 } from '../../api/exercisesApi'
 import {
   addExerciseSet,
+  cancelWorkoutSession,
+  completeWorkoutSession,
   completeExerciseSet,
   getActiveWorkoutSession,
   getCurrentWorkoutSessionExercise,
@@ -15,6 +18,11 @@ import {
   skipCurrentWorkoutSessionExercise,
   uncompleteExerciseSet,
   updateExerciseSet,
+  addWorkoutSessionExercise,
+  updateWorkoutSessionExercise,
+  removeWorkoutSessionExercise,
+  type AddWorkoutSessionExerciseDto,
+  type UpdateWorkoutSessionExerciseDto,
   type AddExerciseSetDto,
   type ExerciseSetDto,
   type UpdateExerciseSetDto,
@@ -27,6 +35,7 @@ import { LoadingState } from '../../components/LoadingState'
 import { NeoButton } from '../../components/NeoButton'
 import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
+import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
 
 type SetDraft = {
@@ -35,6 +44,40 @@ type SetDraft = {
   reps: string
   rpe: string
   note: string
+}
+
+type SessionExerciseDraft = {
+  exerciseId: string
+  targetSets: string
+  targetReps: string
+  targetWeightKg: string
+  restSeconds: string
+  note: string
+}
+
+function createSessionExerciseDraft(exerciseId = ''): SessionExerciseDraft {
+  return {
+    exerciseId,
+    targetSets: '3',
+    targetReps: '10',
+    targetWeightKg: '',
+    restSeconds: '90',
+    note: '',
+  }
+}
+
+function createSessionExerciseDraftFromExercise(
+  exercise: WorkoutSessionExerciseDto,
+): SessionExerciseDraft {
+  return {
+    exerciseId: exercise.exerciseId,
+    targetSets: String(exercise.targetSets),
+    targetReps: String(exercise.targetReps),
+    targetWeightKg:
+      exercise.targetWeightKg === null ? '' : String(exercise.targetWeightKg),
+    restSeconds: exercise.restSeconds === null ? '' : String(exercise.restSeconds),
+    note: exercise.note ?? '',
+  }
 }
 
 function createSetDraft(
@@ -81,6 +124,17 @@ function getExerciseStatusLabel(status: WorkoutSessionExerciseDto['status']) {
   }
 }
 
+function getSessionStatusLabel(status: WorkoutSessionDto['status']) {
+  switch (status) {
+    case 1:
+      return 'Đã hoàn thành'
+    case 2:
+      return 'Đã huỷ'
+    default:
+      return 'Đang tập'
+  }
+}
+
 function getSetDraftError(draft: SetDraft, mode: 'add' | 'update') {
   const setNumber = Number(draft.setNumber)
   const weightKg = Number(draft.weightKg)
@@ -105,6 +159,82 @@ function getSetDraftError(draft: SetDraft, mode: 'add' | 'update') {
   }
 
   return null
+}
+
+function getSessionExerciseDraftError(draft: SessionExerciseDraft) {
+  const targetSets = Number(draft.targetSets)
+  const targetReps = Number(draft.targetReps)
+  const targetWeightKg = draft.targetWeightKg.trim().length > 0
+    ? Number(draft.targetWeightKg)
+    : null
+  const restSeconds = draft.restSeconds.trim().length > 0
+    ? Number(draft.restSeconds)
+    : null
+
+  if (!draft.exerciseId) {
+    return 'Chọn một bài tập để thêm vào buổi tập.'
+  }
+
+  if (!Number.isInteger(targetSets) || targetSets < 1) {
+    return 'Số sets mục tiêu phải là số nguyên từ 1.'
+  }
+
+  if (!Number.isInteger(targetReps) || targetReps < 1) {
+    return 'Số reps mục tiêu phải là số nguyên từ 1.'
+  }
+
+  if (targetWeightKg !== null && (!Number.isFinite(targetWeightKg) || targetWeightKg < 0)) {
+    return 'Khối lượng mục tiêu phải lớn hơn hoặc bằng 0.'
+  }
+
+  if (restSeconds !== null || draft.restSeconds.trim().length > 0) {
+    if (restSeconds === null || !Number.isInteger(restSeconds) || restSeconds < 0) {
+      return 'Thời gian nghỉ phải là số nguyên từ 0.'
+    }
+  }
+
+  return null
+}
+
+function toSessionExerciseInput(
+  draft: SessionExerciseDraft,
+  orderIndex: number,
+): AddWorkoutSessionExerciseDto {
+  return {
+    exerciseId: draft.exerciseId,
+    orderIndex,
+    targetSets: Number(draft.targetSets),
+    targetReps: Number(draft.targetReps),
+    targetWeightKg:
+      draft.targetWeightKg.trim().length === 0
+        ? null
+        : Number(draft.targetWeightKg),
+    restSeconds:
+      draft.restSeconds.trim().length === 0
+        ? null
+        : Number(draft.restSeconds),
+    note: draft.note.trim() || null,
+  }
+}
+
+function toSessionExerciseUpdateInput(
+  draft: SessionExerciseDraft,
+  orderIndex: number,
+): UpdateWorkoutSessionExerciseDto {
+  return {
+    orderIndex,
+    targetSets: Number(draft.targetSets),
+    targetReps: Number(draft.targetReps),
+    targetWeightKg:
+      draft.targetWeightKg.trim().length === 0
+        ? null
+        : Number(draft.targetWeightKg),
+    restSeconds:
+      draft.restSeconds.trim().length === 0
+        ? null
+        : Number(draft.restSeconds),
+    note: draft.note.trim() || null,
+  }
 }
 
 function toSetInput(draft: SetDraft): AddExerciseSetDto {
@@ -143,6 +273,7 @@ export function WorkoutPage() {
   const [currentExercise, setCurrentExercise] =
     useState<WorkoutSessionExerciseDto | null>(null)
   const [exercise, setExercise] = useState<ExerciseDto | null>(null)
+  const [exerciseCatalog, setExerciseCatalog] = useState<ExerciseDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -150,12 +281,20 @@ export function WorkoutPage() {
   const [setDraft, setSetDraft] = useState<SetDraft>(createSetDraft(1))
   const [editingSetId, setEditingSetId] = useState<string | null>(null)
   const [editingSetDraft, setEditingSetDraft] = useState<SetDraft | null>(null)
+  const [sessionExerciseDraft, setSessionExerciseDraft] = useState(
+    createSessionExerciseDraft(),
+  )
+  const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null)
+  const [editingExerciseDraft, setEditingExerciseDraft] =
+    useState<SessionExerciseDraft | null>(null)
 
   async function loadCurrentExercise(session: WorkoutSessionDto | null) {
     setCurrentExercise(null)
     setExercise(null)
     setEditingSetId(null)
     setEditingSetDraft(null)
+    setEditingExerciseId(null)
+    setEditingExerciseDraft(null)
 
     if (!session?.currentWorkoutSessionExerciseId) {
       setSetDraft(createSetDraft(1))
@@ -192,6 +331,19 @@ export function WorkoutPage() {
       setActionError(null)
 
       const session = await getActiveWorkoutSession()
+      if (session) {
+        try {
+          const exerciseResult = await getSelectableExercises({
+            IsActive: true,
+            MaxResultCount: 200,
+          })
+          setExerciseCatalog(exerciseResult.items ?? [])
+        } catch {
+          setExerciseCatalog([])
+        }
+      } else {
+        setExerciseCatalog([])
+      }
       await applySession(session ?? null)
     } catch (error) {
       setActiveSession(null)
@@ -215,6 +367,11 @@ export function WorkoutPage() {
     action: (sessionId: string) => Promise<WorkoutSessionDto>,
   ): Promise<boolean> {
     if (!activeSession) {
+      return false
+    }
+
+    if (activeSession.status !== 0 && !actionName.endsWith('-session')) {
+      setActionError('Buổi tập này đã kết thúc và đang ở trạng thái chỉ đọc.')
       return false
     }
 
@@ -305,6 +462,114 @@ export function WorkoutPage() {
     )
   }
 
+  async function handleAddSessionExercise(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!activeSession) {
+      return
+    }
+
+    const validationError = getSessionExerciseDraftError(sessionExerciseDraft)
+    if (validationError) {
+      setActionError(validationError)
+      return
+    }
+
+    const sessionExercises = activeSession.exercises ?? []
+    const nextOrderIndex = sessionExercises.reduce(
+      (highest, item) => Math.max(highest, item.orderIndex),
+      0,
+    ) + 1
+
+    const didAdd = await runSessionAction('add-session-exercise', (sessionId) =>
+      addWorkoutSessionExercise(
+        sessionId,
+        toSessionExerciseInput(sessionExerciseDraft, nextOrderIndex),
+      ),
+    )
+
+    if (didAdd) {
+      setSessionExerciseDraft(createSessionExerciseDraft())
+    }
+  }
+
+  async function handleUpdateSessionExercise(
+    event: FormEvent<HTMLFormElement>,
+    sessionExercise: WorkoutSessionExerciseDto,
+  ) {
+    event.preventDefault()
+
+    if (!activeSession || !editingExerciseDraft) {
+      return
+    }
+
+    const validationError = getSessionExerciseDraftError(editingExerciseDraft)
+    if (validationError) {
+      setActionError(validationError)
+      return
+    }
+
+    const didUpdate = await runSessionAction('update-session-exercise', (sessionId) =>
+      updateWorkoutSessionExercise(
+        sessionId,
+        sessionExercise.id,
+        toSessionExerciseUpdateInput(editingExerciseDraft, sessionExercise.orderIndex),
+      ),
+    )
+
+    if (didUpdate) {
+      setEditingExerciseId(null)
+      setEditingExerciseDraft(null)
+    }
+  }
+
+  async function handleRemoveSessionExercise(sessionExercise: WorkoutSessionExerciseDto) {
+    if (!activeSession) {
+      return
+    }
+
+    if (sessionExercise.id === activeSession.currentWorkoutSessionExerciseId) {
+      setActionError('Hãy chuyển sang bài khác trước khi xoá bài hiện tại.')
+      return
+    }
+
+    if (!window.confirm('Xoá bài tập này khỏi buổi tập?')) {
+      return
+    }
+
+    await runSessionAction('remove-session-exercise', (sessionId) =>
+      removeWorkoutSessionExercise(sessionId, sessionExercise.id),
+    )
+  }
+
+  async function handleCompleteSession() {
+    if (!activeSession || activeSession.status !== 0) {
+      return
+    }
+
+    if (!window.confirm('Hoàn thành buổi tập này? Bạn sẽ không thể chỉnh sửa sau đó.')) {
+      return
+    }
+
+    await runSessionAction('complete-session', completeWorkoutSession)
+  }
+
+  async function handleCancelSession() {
+    if (!activeSession || activeSession.status !== 0) {
+      return
+    }
+
+    if (
+      !window.confirm(
+        'Huỷ buổi tập này? Buổi tập sẽ chuyển sang trạng thái chỉ đọc.',
+      )
+    ) {
+      return
+    }
+
+    await runSessionAction('cancel-session', cancelWorkoutSession)
+  }
+
   const sessionExercises = sortSessionExercises(activeSession?.exercises ?? [])
   const currentExerciseIndex = currentExercise
     ? sessionExercises.findIndex((item) => item.id === currentExercise.id)
@@ -368,6 +633,19 @@ export function WorkoutPage() {
 
   const sets = currentExercise?.sets ?? []
   const isActionLoading = actionLoading !== null
+  const isReadOnly = activeSession.status !== 0
+  const sessionExerciseIds = new Set(sessionExercises.map((item) => item.exerciseId))
+  const availableExercises = exerciseCatalog.filter(
+    (item) => !sessionExerciseIds.has(item.id),
+  )
+
+  function getSessionExerciseName(sessionExercise: WorkoutSessionExerciseDto) {
+    return (
+      exerciseCatalog.find((item) => item.id === sessionExercise.exerciseId)?.name ??
+      (sessionExercise.exerciseId === exercise?.id ? exercise.name : null) ??
+      'Bài tập chưa đặt tên'
+    )
+  }
 
   return (
     <PageShell title="Buổi tập">
@@ -378,14 +656,40 @@ export function WorkoutPage() {
           <p>Đang diễn ra từ {formatStartedAt(activeSession.startedAt)}.</p>
 
           <div className="exercise-tags">
-            <span>Đang tập</span>
+            <span>{getSessionStatusLabel(activeSession.status)}</span>
             <span>{sessionExercises.length} bài tập</span>
             <span>
               {currentExercisePosition
                 ? `Bài hiện tại ${currentExercisePosition}`
-                : 'Chưa chọn bài hiện tại'}
+              : 'Chưa chọn bài hiện tại'}
             </span>
           </div>
+
+          {isReadOnly ? (
+            <p className="read-only-notice">
+              Buổi tập đã kết thúc. Dữ liệu bên dưới chỉ có thể xem.
+            </p>
+          ) : (
+            <div className="session-lifecycle-actions">
+              <NeoButton
+                type="button"
+                disabled={isActionLoading}
+                onClick={() => void handleCompleteSession()}
+              >
+                {actionLoading === 'complete-session'
+                  ? 'Đang hoàn thành...'
+                  : 'Hoàn thành buổi'}
+              </NeoButton>
+              <NeoButton
+                className="danger-button"
+                type="button"
+                disabled={isActionLoading}
+                onClick={() => void handleCancelSession()}
+              >
+                {actionLoading === 'cancel-session' ? 'Đang huỷ...' : 'Huỷ buổi'}
+              </NeoButton>
+            </div>
+          )}
         </NeoCard>
 
         {actionError ? (
@@ -419,50 +723,50 @@ export function WorkoutPage() {
 
             {currentExercise.note ? <p>{currentExercise.note}</p> : null}
 
-            <div className="session-navigation">
-              <NeoButton
-                className="plan-exercise-action-button"
-                disabled={
-                  isActionLoading || currentExerciseIndex <= 0
-                }
-                onClick={() =>
-                  void runSessionAction(
-                    'previous-exercise',
-                    moveToPreviousWorkoutSessionExercise,
-                  )
-                }
-              >
-                ← Trước
-              </NeoButton>
-              <NeoButton
-                className="plan-exercise-action-button"
-                disabled={isActionLoading}
-                onClick={() =>
-                  void runSessionAction(
-                    'skip-exercise',
-                    skipCurrentWorkoutSessionExercise,
-                  )
-                }
-              >
-                Bỏ qua
-              </NeoButton>
-              <NeoButton
-                className="plan-exercise-action-button"
-                disabled={
-                  isActionLoading ||
-                  currentExerciseIndex < 0 ||
-                  currentExerciseIndex >= sessionExercises.length - 1
-                }
-                onClick={() =>
-                  void runSessionAction(
-                    'next-exercise',
-                    moveToNextWorkoutSessionExercise,
-                  )
-                }
-              >
-                Sau →
-              </NeoButton>
-            </div>
+            {isReadOnly ? null : (
+              <div className="session-navigation">
+                <NeoButton
+                  className="plan-exercise-action-button"
+                  disabled={isActionLoading || currentExerciseIndex <= 0}
+                  onClick={() =>
+                    void runSessionAction(
+                      'previous-exercise',
+                      moveToPreviousWorkoutSessionExercise,
+                    )
+                  }
+                >
+                  ← Trước
+                </NeoButton>
+                <NeoButton
+                  className="plan-exercise-action-button"
+                  disabled={isActionLoading}
+                  onClick={() =>
+                    void runSessionAction(
+                      'skip-exercise',
+                      skipCurrentWorkoutSessionExercise,
+                    )
+                  }
+                >
+                  Bỏ qua
+                </NeoButton>
+                <NeoButton
+                  className="plan-exercise-action-button"
+                  disabled={
+                    isActionLoading ||
+                    currentExerciseIndex < 0 ||
+                    currentExerciseIndex >= sessionExercises.length - 1
+                  }
+                  onClick={() =>
+                    void runSessionAction(
+                      'next-exercise',
+                      moveToNextWorkoutSessionExercise,
+                    )
+                  }
+                >
+                  Sau →
+                </NeoButton>
+              </div>
+            )}
 
             <section className="set-management-section">
               <div className="current-exercise-header">
@@ -481,7 +785,7 @@ export function WorkoutPage() {
                       key={set.id}
                       className={set.isCompleted ? 'set-card completed' : 'set-card'}
                     >
-                      {editingSetId === set.id && editingSetDraft ? (
+                      {!isReadOnly && editingSetId === set.id && editingSetDraft ? (
                         <form className="set-form" onSubmit={(event) => void handleUpdateSet(event)}>
                           <strong>Chỉnh sửa set {set.setNumber}</strong>
                           <div className="set-form-grid">
@@ -576,34 +880,36 @@ export function WorkoutPage() {
                             {set.rpe !== null ? <span>RPE {set.rpe}</span> : null}
                           </div>
                           {set.note ? <p>{set.note}</p> : null}
-                          <div className="set-actions">
-                            <NeoButton
-                              type="button"
-                              disabled={isActionLoading}
-                              onClick={() => void handleToggleSet(set)}
-                            >
-                              {set.isCompleted ? 'Bỏ hoàn thành' : 'Hoàn thành'}
-                            </NeoButton>
-                            <NeoButton
-                              type="button"
-                              disabled={isActionLoading}
-                              onClick={() => {
-                                setEditingSetId(set.id)
-                                setEditingSetDraft(getSetDraftFromSet(set))
-                                setActionError(null)
-                              }}
-                            >
-                              Sửa
-                            </NeoButton>
-                            <NeoButton
-                              className="danger-button"
-                              type="button"
-                              disabled={isActionLoading}
-                              onClick={() => void handleRemoveSet(set)}
-                            >
-                              Xoá
-                            </NeoButton>
-                          </div>
+                          {isReadOnly ? null : (
+                            <div className="set-actions">
+                              <NeoButton
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => void handleToggleSet(set)}
+                              >
+                                {set.isCompleted ? 'Bỏ hoàn thành' : 'Hoàn thành'}
+                              </NeoButton>
+                              <NeoButton
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => {
+                                  setEditingSetId(set.id)
+                                  setEditingSetDraft(getSetDraftFromSet(set))
+                                  setActionError(null)
+                                }}
+                              >
+                                Sửa
+                              </NeoButton>
+                              <NeoButton
+                                className="danger-button"
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => void handleRemoveSet(set)}
+                              >
+                                Xoá
+                              </NeoButton>
+                            </div>
+                          )}
                         </>
                       )}
                     </NeoCard>
@@ -611,7 +917,8 @@ export function WorkoutPage() {
                 </div>
               )}
 
-              <form className="set-form add-set-form" onSubmit={(event) => void handleAddSet(event)}>
+              {isReadOnly ? null : (
+                <form className="set-form add-set-form" onSubmit={(event) => void handleAddSet(event)}>
                 <p className="eyebrow">Add Set</p>
                 <div className="set-form-grid">
                   <NeoInput
@@ -661,7 +968,8 @@ export function WorkoutPage() {
                 <NeoButton type="submit" disabled={isActionLoading}>
                   {actionLoading === 'add-set' ? 'Đang thêm...' : 'Thêm set'}
                 </NeoButton>
-              </form>
+                </form>
+              )}
             </section>
           </NeoCard>
         ) : (
@@ -669,6 +977,277 @@ export function WorkoutPage() {
             title="Chưa có bài hiện tại"
             message="Buổi tập chưa có bài tập hiện tại để ghi set."
           />
+        )}
+
+        {isReadOnly ? null : (
+          <NeoCard className="session-exercise-manager-card">
+          <div>
+            <p className="eyebrow">Session Exercises</p>
+            <h2>Quản lý bài tập trong buổi</h2>
+            <p>Thêm bài tập hoặc chỉnh mục tiêu của từng bài trong buổi hiện tại.</p>
+          </div>
+
+          <div className="session-exercise-list">
+            {sessionExercises.map((sessionExercise) => {
+              const isCurrentExercise =
+                sessionExercise.id === activeSession.currentWorkoutSessionExerciseId
+              const isEditing = editingExerciseId === sessionExercise.id
+
+              return (
+                <NeoCard
+                  key={sessionExercise.id}
+                  className={isCurrentExercise ? 'session-exercise-row current' : 'session-exercise-row'}
+                >
+                  <div className="session-exercise-row-header">
+                    <div>
+                      <p className="eyebrow">Bài #{sessionExercise.orderIndex}</p>
+                      <h3>{getSessionExerciseName(sessionExercise)}</h3>
+                    </div>
+                    <span className="exercise-status">
+                      {isCurrentExercise ? 'Hiện tại' : getExerciseStatusLabel(sessionExercise.status)}
+                    </span>
+                  </div>
+
+                  {isEditing && editingExerciseDraft ? (
+                    <form
+                      className="set-form"
+                      onSubmit={(event) =>
+                        void handleUpdateSessionExercise(event, sessionExercise)
+                      }
+                    >
+                      <div className="set-form-grid">
+                        <NeoInput
+                          label="Sets"
+                          type="number"
+                          min="1"
+                          value={editingExerciseDraft.targetSets}
+                          onChange={(event) =>
+                            setEditingExerciseDraft({
+                              ...editingExerciseDraft,
+                              targetSets: event.target.value,
+                            })
+                          }
+                        />
+                        <NeoInput
+                          label="Reps"
+                          type="number"
+                          min="1"
+                          value={editingExerciseDraft.targetReps}
+                          onChange={(event) =>
+                            setEditingExerciseDraft({
+                              ...editingExerciseDraft,
+                              targetReps: event.target.value,
+                            })
+                          }
+                        />
+                        <NeoInput
+                          label="Kg"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={editingExerciseDraft.targetWeightKg}
+                          onChange={(event) =>
+                            setEditingExerciseDraft({
+                              ...editingExerciseDraft,
+                              targetWeightKg: event.target.value,
+                            })
+                          }
+                        />
+                        <NeoInput
+                          label="Nghỉ"
+                          type="number"
+                          min="0"
+                          value={editingExerciseDraft.restSeconds}
+                          onChange={(event) =>
+                            setEditingExerciseDraft({
+                              ...editingExerciseDraft,
+                              restSeconds: event.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <NeoInput
+                        label="Ghi chú"
+                        value={editingExerciseDraft.note}
+                        onChange={(event) =>
+                          setEditingExerciseDraft({
+                            ...editingExerciseDraft,
+                            note: event.target.value,
+                          })
+                        }
+                      />
+                      <div className="set-actions">
+                        <NeoButton type="submit" disabled={isActionLoading}>
+                          {actionLoading === 'update-session-exercise'
+                            ? 'Đang lưu...'
+                            : 'Lưu mục tiêu'}
+                        </NeoButton>
+                        <NeoButton
+                          type="button"
+                          disabled={isActionLoading}
+                          onClick={() => {
+                            setEditingExerciseId(null)
+                            setEditingExerciseDraft(null)
+                          }}
+                        >
+                          Huỷ
+                        </NeoButton>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="exercise-tags">
+                        <span>{sessionExercise.targetSets} sets</span>
+                        <span>{sessionExercise.targetReps} reps</span>
+                        <span>
+                          {sessionExercise.targetWeightKg === null
+                            ? 'Tự chọn kg'
+                            : `${sessionExercise.targetWeightKg} kg`}
+                        </span>
+                        {sessionExercise.restSeconds !== null ? (
+                          <span>Nghỉ {sessionExercise.restSeconds} giây</span>
+                        ) : null}
+                      </div>
+                      <div className="set-actions">
+                        <NeoButton
+                          type="button"
+                          disabled={isActionLoading}
+                          onClick={() => {
+                            setEditingExerciseId(sessionExercise.id)
+                            setEditingExerciseDraft(
+                              createSessionExerciseDraftFromExercise(sessionExercise),
+                            )
+                            setActionError(null)
+                          }}
+                        >
+                          Sửa mục tiêu
+                        </NeoButton>
+                        <NeoButton
+                          className="danger-button"
+                          type="button"
+                          disabled={isActionLoading || isCurrentExercise}
+                          onClick={() => void handleRemoveSessionExercise(sessionExercise)}
+                        >
+                          Xoá bài
+                        </NeoButton>
+                      </div>
+                      {isCurrentExercise ? (
+                        <p className="session-exercise-help">
+                          Chuyển sang bài khác trước khi xoá bài hiện tại.
+                        </p>
+                      ) : null}
+                    </>
+                  )}
+                </NeoCard>
+              )
+            })}
+          </div>
+
+          <form
+            className="set-form add-session-exercise-form"
+            onSubmit={(event) => void handleAddSessionExercise(event)}
+          >
+            <p className="eyebrow">Add Exercise</p>
+            {availableExercises.length === 0 ? (
+              <p className="session-exercise-help">
+                Không còn bài tập active nào để thêm, hoặc thư viện chưa tải được.
+              </p>
+            ) : (
+              <NeoSelect
+                label="Bài tập"
+                value={sessionExerciseDraft.exerciseId}
+                disabled={isActionLoading}
+                onChange={(event) =>
+                  setSessionExerciseDraft({
+                    ...sessionExerciseDraft,
+                    exerciseId: event.target.value,
+                  })
+                }
+                options={[
+                  { label: 'Chọn bài tập', value: '' },
+                  ...availableExercises.map((item) => ({
+                    label: item.name ?? 'Bài tập chưa đặt tên',
+                    value: item.id,
+                  })),
+                ]}
+              />
+            )}
+            <div className="set-form-grid">
+              <NeoInput
+                label="Sets"
+                type="number"
+                min="1"
+                value={sessionExerciseDraft.targetSets}
+                disabled={isActionLoading}
+                onChange={(event) =>
+                  setSessionExerciseDraft({
+                    ...sessionExerciseDraft,
+                    targetSets: event.target.value,
+                  })
+                }
+              />
+              <NeoInput
+                label="Reps"
+                type="number"
+                min="1"
+                value={sessionExerciseDraft.targetReps}
+                disabled={isActionLoading}
+                onChange={(event) =>
+                  setSessionExerciseDraft({
+                    ...sessionExerciseDraft,
+                    targetReps: event.target.value,
+                  })
+                }
+              />
+              <NeoInput
+                label="Kg"
+                type="number"
+                min="0"
+                step="0.1"
+                value={sessionExerciseDraft.targetWeightKg}
+                disabled={isActionLoading}
+                onChange={(event) =>
+                  setSessionExerciseDraft({
+                    ...sessionExerciseDraft,
+                    targetWeightKg: event.target.value,
+                  })
+                }
+              />
+              <NeoInput
+                label="Nghỉ"
+                type="number"
+                min="0"
+                value={sessionExerciseDraft.restSeconds}
+                disabled={isActionLoading}
+                onChange={(event) =>
+                  setSessionExerciseDraft({
+                    ...sessionExerciseDraft,
+                    restSeconds: event.target.value,
+                  })
+                }
+              />
+            </div>
+            <NeoInput
+              label="Ghi chú"
+              value={sessionExerciseDraft.note}
+              disabled={isActionLoading}
+              onChange={(event) =>
+                setSessionExerciseDraft({
+                  ...sessionExerciseDraft,
+                  note: event.target.value,
+                })
+              }
+            />
+            <NeoButton
+              type="submit"
+              disabled={isActionLoading || availableExercises.length === 0}
+            >
+              {actionLoading === 'add-session-exercise'
+                ? 'Đang thêm bài...'
+                : 'Thêm vào buổi tập'}
+            </NeoButton>
+          </form>
+          </NeoCard>
         )}
 
         {exerciseLibraryCard}

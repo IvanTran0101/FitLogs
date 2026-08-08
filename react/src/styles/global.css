@@ -628,17 +628,36 @@ button {
 }
 
 .session-navigation,
-.set-actions {
+.set-actions,
+.session-lifecycle-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .session-navigation .neo-button,
-.set-actions .neo-button {
+.set-actions .neo-button,
+.session-lifecycle-actions .neo-button {
   min-width: 0;
   padding: 10px 8px;
   font-size: 12px;
+}
+
+.session-lifecycle-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.session-lifecycle-actions .danger-button {
+  background: var(--color-pink);
+}
+
+.read-only-notice {
+  margin: 0;
+  border: 2px solid currentColor;
+  background: var(--color-yellow);
+  color: var(--color-text);
+  padding: 10px;
+  font-weight: 900;
 }
 
 .set-management-section {
@@ -689,6 +708,70 @@ button {
 
 .set-actions .danger-button {
   background: var(--color-pink);
+}
+
+.session-exercise-manager-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: var(--color-lime);
+}
+
+.session-exercise-manager-card h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.session-exercise-manager-card > div > p:last-child {
+  margin: 0;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.session-exercise-list {
+  display: grid;
+  gap: 12px;
+}
+
+.session-exercise-row {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-white);
+}
+
+.session-exercise-row.current {
+  border-color: var(--color-blue);
+  background: var(--color-yellow);
+}
+
+.session-exercise-row-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-exercise-row-header h3 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.session-exercise-help {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.add-session-exercise-form {
+  border: var(--border-thick);
+  background: var(--color-white);
+  box-shadow: var(--shadow-hard);
+  padding: 14px;
 }
 
 .exercise-detail-card {
