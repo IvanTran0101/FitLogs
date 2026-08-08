@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
@@ -42,6 +42,13 @@ function getTodayInputValue() {
   return `${year}-${month}-${day}`
 }
 
+/** Accepts only a real date-input value so an empty query parameter cannot create an invalid API date. */
+function getInitialDate(searchParam: string | null) {
+  return searchParam && /^\d{4}-\d{2}-\d{2}$/.test(searchParam)
+    ? searchParam
+    : getTodayInputValue()
+}
+
 /** Sends the selected calendar day as a date-time without silently converting its timezone. */
 function toApiDateTime(dateInputValue: string) {
   return `${dateInputValue}T00:00:00`
@@ -78,7 +85,10 @@ function groupLogsByMeal(logs: FoodLogDto[]) {
 
 /** Coordinates date selection, parallel API loading, server totals, and meal-grouped rendering. */
 export function FoodLogPage() {
-  const [selectedDate, setSelectedDate] = useState(getTodayInputValue)
+  const [searchParams] = useSearchParams()
+  const [selectedDate, setSelectedDate] = useState(
+    () => getInitialDate(searchParams.get('date')),
+  )
   const [foodLogs, setFoodLogs] = useState<FoodLogDto[]>([])
   const [summary, setSummary] = useState<DailyFoodNutritionSummaryDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -152,7 +162,10 @@ export function FoodLogPage() {
           <p className="food-date-note">
             Tổng dinh dưỡng bên dưới được lấy trực tiếp từ máy chủ.
           </p>
-          <Link className="neo-button link-button food-add-link" to="/food/add">
+          <Link
+            className="neo-button link-button food-add-link"
+            to={`/food/add?date=${selectedDate}`}
+          >
             Thêm món ăn
           </Link>
         </NeoCard>
@@ -227,6 +240,12 @@ export function FoodLogPage() {
                               {formatNutrition(log.fat, 'g')}
                             </span>
                           </div>
+                          <Link
+                            className="food-log-edit-link"
+                            to={`/food/logs/${log.id}/edit?date=${selectedDate}`}
+                          >
+                            Sửa
+                          </Link>
                         </article>
                       ))}
                     </div>

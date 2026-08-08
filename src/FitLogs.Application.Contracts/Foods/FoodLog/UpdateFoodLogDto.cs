@@ -8,7 +8,7 @@ public class UpdateFoodLogDto
     [Required]
     public Guid FoodProductId { get; set; }
 
-    [Range(typeof(decimal), "0.01", "999999")]
+    [Range(0.01, 999999, ErrorMessage = "Quantity must be between 0.01 and 999999.")]
     public decimal Quantity { get; set; }
 
     [Required]
