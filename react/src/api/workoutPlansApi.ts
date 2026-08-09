@@ -54,9 +54,7 @@ export type CreateWorkoutPlanDto = {
   difficulty: WorkoutDifficulty
 }
 
-export type UpdateWorkoutPlanDto = CreateWorkoutPlanDto & {
-  isActive: boolean
-}
+export type UpdateWorkoutPlanDto = CreateWorkoutPlanDto
 
 export type CreateWorkoutPlanExerciseDto = {
   exerciseId: string
@@ -66,6 +64,10 @@ export type CreateWorkoutPlanExerciseDto = {
   defaultWeightKg?: number | null
   restSeconds?: number | null
   note?: string | null
+}
+
+export type AddWorkoutPlanExercisesDto = {
+  exercises: CreateWorkoutPlanExerciseDto[]
 }
 
 export type UpdateWorkoutPlanExerciseDto = {
@@ -110,6 +112,18 @@ export function updateWorkoutPlan(id: string, input: UpdateWorkoutPlanDto) {
   })
 }
 
+export function activateWorkoutPlan(id: string) {
+  return apiRequest<WorkoutPlanDto>(`/api/app/workout-plan/${id}/activate`, {
+    method: 'POST',
+  })
+}
+
+export function deactivateWorkoutPlan(id: string) {
+  return apiRequest<WorkoutPlanDto>(`/api/app/workout-plan/${id}/deactivate`, {
+    method: 'POST',
+  })
+}
+
 export function deleteWorkoutPlan(id: string) {
   return apiRequest<void>(`/api/app/workout-plan/${id}`, {
     method: 'DELETE',
@@ -133,6 +147,16 @@ export function addWorkoutPlanExercise(
   input: CreateWorkoutPlanExerciseDto,
 ) {
   return apiRequest<WorkoutPlanDto>(`/api/app/workout-plan/${id}/exercise`, {
+    method: 'POST',
+    body: input,
+  })
+}
+
+export function addWorkoutPlanExercises(
+  id: string,
+  input: AddWorkoutPlanExercisesDto,
+) {
+  return apiRequest<WorkoutPlanDto>(`/api/app/workout-plan/${id}/exercises`, {
     method: 'POST',
     body: input,
   })

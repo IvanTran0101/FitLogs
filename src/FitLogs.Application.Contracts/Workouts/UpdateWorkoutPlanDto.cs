@@ -12,5 +12,4 @@ public class UpdateWorkoutPlanDto
     public string? Description { get; set; }
     public WorkoutGoal Goal { get; set; }
     public WorkoutDifficulty Difficulty { get; set; }
-    public bool IsActive { get; set; }
 }

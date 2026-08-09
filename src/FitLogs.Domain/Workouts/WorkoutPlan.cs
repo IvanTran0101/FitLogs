@@ -133,6 +133,42 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
             restSeconds,
             note));
     }
+
+    /// <summary>Validates every draft before mutating the plan, preventing partially applied batch additions.</summary>
+    public void AddExercises(IEnumerable<WorkoutPlanExerciseDraft> drafts)
+    {
+        EnsureNotArchived();
+        var items = drafts?.ToList() ?? throw new ArgumentNullException(nameof(drafts));
+
+        if (items.Count == 0 ||
+            items.GroupBy(x => x.ExerciseId).Any(group => group.Count() > 1) ||
+            items.GroupBy(x => x.OrderIndex).Any(group => group.Count() > 1))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseAlreadyExists);
+        }
+
+        if (items.Any(item => _exercises.Any(existing =>
+                existing.ExerciseId == item.ExerciseId || existing.OrderIndex == item.OrderIndex)))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanExerciseAlreadyExists);
+        }
+
+        foreach (var item in items)
+        {
+            // Validation above completes before this loop, so one invalid item cannot leave a half-updated plan.
+            _exercises.Add(new WorkoutPlanExercise(
+                Guid.NewGuid(),
+                Id,
+                item.ExerciseId,
+                item.OrderIndex,
+                item.DefaultSets,
+                item.DefaultReps,
+                item.DefaultWeightKg,
+                item.RestSeconds,
+                item.Note));
+        }
+    }
+
     public void UpdateExercise(
         Guid workoutPlanExerciseId,
         int orderIndex,

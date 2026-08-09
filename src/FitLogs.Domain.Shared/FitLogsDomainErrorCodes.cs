@@ -45,6 +45,7 @@ public static class FitLogsDomainErrorCodes
     public const string InvalidWorkoutPlanDefaultWeights = "FitLogs:Workout:InvalidWorkoutPlanDefaultWeights";
     public const string InvalidWorkoutPlanRestSeconds = "FitLogs:Workout:InvalidWorkoutPlanRestSeconds";
     public const string WorkoutPlanExerciseAlreadyExists = "FitLogs:Workout:WorkoutPlanExerciseAlreadyExists";
+    public const string WorkoutPlanBatchExerciseInvalid = "FitLogs:Workout:WorkoutPlanBatchExerciseInvalid";
     public const string WorkoutPlanExerciseOrderIndexAlreadyExists = "FitLogs:Workout:WorkoutPlanExerciseOrderIndexAlreadyExists";
     public const string WorkoutPlanExerciseNotFound = "FitLogs:Workout:WorkoutPlanExerciseNotFound";
     public const string WorkoutSessionAccessDenied = "FitLogs:Workout:WorkoutSessionAccessDenied";
@@ -62,6 +63,8 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutSessionStatusIsNotInProgress = "FitLogs:Workout:WorkoutSessionStatusIsNotInProgress";
     public const string InvalidWorkoutSessionEndedAt = "FitLogs:Workout:InvalidWorkoutSessionEndedAt";
     public const string InvalidWorkoutSessionStartedAt = "FitLogs:Workout:InvalidWorkoutSessionStartedAt";
+    public const string WorkoutSessionNameRequiredForFreeWorkout = "FitLogs:Workout:FreeWorkoutNameRequired";
+    public const string WorkoutSessionNameNotAllowedForPlanWorkout = "FitLogs:Workout:PlanWorkoutNameNotAllowed";
     public const string InvalidWorkoutSessionExerciseOrderIndex = "FitLogs:Workout:InvalidWorkoutSessionExerciseOrderIndex";
     public const string InvalidWorkoutSessionExerciseTargetSets = "FitLogs:Workout:InvalidWorkoutSessionExerciseTargetSets";
     public const string InvalidWorkoutSessionExerciseTargetReps = "FitLogs:Workout:InvalidWorkoutSessionExerciseTargetReps";

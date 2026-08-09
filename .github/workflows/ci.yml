@@ -53,5 +53,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check generated OpenAPI contract
+        run: npm run check:api
+
       - name: Type-check and build
         run: npm run build

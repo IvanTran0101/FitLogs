@@ -133,6 +133,8 @@ const BUSINESS_ERROR_MESSAGES: Record<string, string> = {
     'Kế hoạch phải có ít nhất một bài tập trước khi bắt đầu.',
   'FitLogs:Workout:WorkoutPlanNameAlreadyExists':
     'Tên kế hoạch này đã được bạn sử dụng. Hãy chọn tên khác.',
+  'FitLogs:Workout:PlanWorkoutNameNotAllowed':
+    'Buổi tập từ kế hoạch không nhận tên riêng; hãy bỏ trống tên.',
   'FitLogs:Workout:WorkoutPlanExerciseAlreadyExists':
     'Bài tập này đã có trong kế hoạch.',
   'FitLogs:Workout:WorkoutPlanNotFound':

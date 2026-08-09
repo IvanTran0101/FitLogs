@@ -15,9 +15,15 @@ public interface IWorkoutPlanAppService : IApplicationService
 
     Task<WorkoutPlanDto> UpdateAsync(Guid id, UpdateWorkoutPlanDto input);
 
+    Task<WorkoutPlanDto> ActivateAsync(Guid id);
+
+    Task<WorkoutPlanDto> DeactivateAsync(Guid id);
+
     Task DeleteAsync(Guid id);
 
     Task<WorkoutPlanDto> AddExerciseAsync(Guid id, CreateWorkoutPlanExerciseDto input);
+
+    Task<WorkoutPlanDto> AddExercisesAsync(Guid id, AddWorkoutPlanExercisesDto input);
 
     Task<WorkoutPlanDto> UpdateExerciseAsync(
 

@@ -5,6 +5,8 @@ import {
   createWorkoutPlan,
   getWorkoutPlan,
   updateWorkoutPlan,
+  activateWorkoutPlan,
+  deactivateWorkoutPlan,
   type CreateWorkoutPlanDto,
   type WorkoutDifficulty,
   type WorkoutGoal,
@@ -114,12 +116,16 @@ async function handleSubmit(
       setErrorMessage(null)
 
       const createInput = toWorkoutPlanInput(form)
-      const updateInput = { ...createInput, isActive: form.isActive }
-
-      const savedPlan =
+      let savedPlan =
         isEditMode && planId
-          ? await updateWorkoutPlan(planId, updateInput)
+          ? await updateWorkoutPlan(planId, createInput)
           : await createWorkoutPlan(createInput)
+
+      if (isEditMode && planId && savedPlan.isActive !== form.isActive) {
+        savedPlan = form.isActive
+          ? await activateWorkoutPlan(planId)
+          : await deactivateWorkoutPlan(planId)
+      }
 
       navigate(`/plans/${savedPlan.id}`)
     } catch (error) {

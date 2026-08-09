@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "generate:api": "node scripts/generate-openapi-client.mjs",
+    "check:api": "node scripts/generate-openapi-client.mjs --check",
     "preview": "vite preview"
   },
   "dependencies": {

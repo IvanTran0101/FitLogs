@@ -133,21 +133,32 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
         workoutPlan.SetGoal(input.Goal);
         workoutPlan.SetDifficulty(input.Difficulty);
 
-        if (input.IsActive)
-        {
-            workoutPlan.Activate();
-        }
-        else
-        {
-            workoutPlan.Deactivate();
-        }
-
         workoutPlan = await _workoutPlanRepository.UpdateAsync(
             workoutPlan,
             autoSave: true
         );
 
         return MapToDto(workoutPlan);
+    }
+
+    /// <summary>Activates a plan after the aggregate verifies it contains usable exercises.</summary>
+    [Authorize(FitLogsPermissions.WorkoutPlans.Update)]
+    public async Task<WorkoutPlanDto> ActivateAsync(Guid id)
+    {
+        var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
+        EnsureWorkoutPlanOwner(workoutPlan);
+        workoutPlan.Activate();
+        return MapToDto(await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true));
+    }
+
+    /// <summary>Deactivates a plan without changing its exercises or other metadata.</summary>
+    [Authorize(FitLogsPermissions.WorkoutPlans.Update)]
+    public async Task<WorkoutPlanDto> DeactivateAsync(Guid id)
+    {
+        var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
+        EnsureWorkoutPlanOwner(workoutPlan);
+        workoutPlan.Deactivate();
+        return MapToDto(await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true));
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.Delete)]
     public async Task DeleteAsync(Guid id)
@@ -192,6 +203,38 @@ public class WorkoutPlanAppService : FitLogsAppService, IWorkoutPlanAppService
         );
 
         return MapToDto(workoutPlan);
+    }
+
+    /// <summary>Validates and adds all selected exercises in one aggregate update and database transaction.</summary>
+    [Authorize(FitLogsPermissions.WorkoutPlans.ManageExercises)]
+    [Volo.Abp.Uow.UnitOfWork]
+    public async Task<WorkoutPlanDto> AddExercisesAsync(
+        Guid id,
+        AddWorkoutPlanExercisesDto input)
+    {
+        var workoutPlan = await GetWorkoutPlanWithDetailsAsync(id);
+        EnsureWorkoutPlanOwner(workoutPlan);
+
+        var exerciseIds = input.Exercises.Select(x => x.ExerciseId).ToList();
+        if (exerciseIds.Distinct().Count() != exerciseIds.Count)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutPlanBatchExerciseInvalid);
+        }
+        if (await _exerciseRepository.AnyInactiveByIdsAsync(exerciseIds))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
+        }
+
+        workoutPlan.AddExercises(input.Exercises.Select(x => new WorkoutPlanExerciseDraft(
+            x.ExerciseId,
+            x.OrderIndex,
+            x.DefaultSets,
+            x.DefaultReps,
+            x.DefaultWeightKg,
+            x.RestSeconds,
+            x.Note)));
+
+        return MapToDto(await _workoutPlanRepository.UpdateAsync(workoutPlan, autoSave: true));
     }
     [Authorize(FitLogsPermissions.WorkoutPlans.ManageExercises)]
     public async Task<WorkoutPlanDto> UpdateExerciseAsync(

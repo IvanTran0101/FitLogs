@@ -95,17 +95,28 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             dtos
         );
     }
+    /// <summary>Routes legacy session creation to a plan or free-workout command and validates mode-specific fields.</summary>
     [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     public async Task<WorkoutSessionDto> CreateAsync(CreateWorkoutSessionDto input)
     {
         if (input.WorkoutPlanId.HasValue)
         {
+            if (!string.IsNullOrWhiteSpace(input.Name))
+            {
+                throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionNameNotAllowedForPlanWorkout);
+            }
+
             return await StartFromPlanAsync(new StartWorkoutFromPlanDto
             {
                 WorkoutPlanId = input.WorkoutPlanId.Value,
                 StartedAt = input.StartedAt,
                 Note = input.Note
             });
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Name))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionNameRequiredForFreeWorkout);
         }
 
         return await StartFreeWorkoutAsync(new StartFreeWorkoutDto
@@ -116,8 +127,8 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         });
     }
 
-    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     /// <summary>Starts a session from a plan after validating that all referenced exercises are active.</summary>
+    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     public async Task<WorkoutSessionDto> StartFromPlanAsync(StartWorkoutFromPlanDto input)
     {
         var workoutPlan = await _workoutPlanRepository.FindWithDetailsAsync(input.WorkoutPlanId);
@@ -141,8 +152,8 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         return MapToDto(await _workoutSessionRepository.InsertAsync(workoutSession, autoSave: true));
     }
 
-    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     /// <summary>Starts a named session without attaching it to a workout plan.</summary>
+    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     public async Task<WorkoutSessionDto> StartFreeWorkoutAsync(StartFreeWorkoutDto input)
     {
         var workoutSession = await _workoutSessionManager.CreateFreeSessionAsync(

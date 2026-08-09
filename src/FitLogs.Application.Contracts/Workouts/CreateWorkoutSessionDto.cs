@@ -7,11 +7,8 @@ public class CreateWorkoutSessionDto
 {
     public Guid? WorkoutPlanId { get; set; }
 
-    [Required]
-
     [StringLength(WorkoutSessionConsts.MaxNameLength)]
-
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     public DateTime StartedAt { get; set; } = DateTime.Now;
 

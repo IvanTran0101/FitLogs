@@ -64,7 +64,7 @@ export type GetWorkoutSessionListQuery = {
 
 export type CreateWorkoutSessionDto = {
   workoutPlanId?: string | null
-  name: string
+  name?: string | null
   startedAt?: string
   note?: string | null
 }
