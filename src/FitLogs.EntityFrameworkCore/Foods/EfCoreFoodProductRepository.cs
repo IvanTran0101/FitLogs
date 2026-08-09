@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FitLogs.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using System.Linq.Dynamic.Core;
 using Volo.Abp.Linq;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
@@ -26,6 +27,28 @@ public class EfCoreFoodProductRepository : EfCoreRepository<FitLogsDbContext, Fo
         return await dbSet
             .FirstOrDefaultAsync(x => x.Barcode == barcode);
         
+    }
+
+    /// <summary>Inserts an imported product, or reloads the row created by a concurrent scanner.</summary>
+    public async Task<FoodProduct> InsertImportedOrGetExistingAsync(FoodProduct foodProduct)
+    {
+        try
+        {
+            return await InsertAsync(foodProduct, autoSave: true);
+        }
+        catch (DbUpdateException exception) when (IsBarcodeUniqueViolation(exception))
+        {
+            var dbContext = await GetDbContextAsync();
+            dbContext.Entry(foodProduct).State = EntityState.Detached;
+
+            var existing = await FindByBarcodeAsync(foodProduct.Barcode!);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            throw;
+        }
     }
 
     public async Task<bool> BarcodeExistsAsync(string barcode, Guid? excludedId = null)
@@ -124,5 +147,11 @@ public class EfCoreFoodProductRepository : EfCoreRepository<FitLogsDbContext, Fo
                 isVerified.HasValue,
                 x => x.IsVerified == isVerified.Value
             );
+    }
+
+    private static bool IsBarcodeUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException &&
+               postgresException.ConstraintName == "IX_AppFoodProducts_Barcode";
     }
 }

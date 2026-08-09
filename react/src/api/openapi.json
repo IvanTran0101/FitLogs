@@ -56728,7 +56728,8 @@
             "maximum": 999999,
             "minimum": 0,
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "proteinPer100g": {
             "maximum": 999999,
@@ -56785,7 +56786,8 @@
           },
           "caloriesPer100g": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "proteinPer100g": {
             "type": "number",
@@ -56819,6 +56821,9 @@
           },
           "isVerified": {
             "type": "boolean"
+          },
+          "dataQuality": {
+            "$ref": "#/components/schemas/FitLogs.Foods.FoodProductDataQuality"
           }
         },
         "additionalProperties": false
@@ -56876,6 +56881,9 @@
           "servingSize": {
             "type": "string",
             "nullable": true
+          },
+          "dataQuality": {
+            "$ref": "#/components/schemas/FitLogs.Foods.FoodProductDataQuality"
           }
         },
         "additionalProperties": false
@@ -64389,6 +64397,15 @@
           }
         },
         "additionalProperties": false
+      },
+      "FitLogs.Foods.FoodProductDataQuality": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
       }
     }
   },

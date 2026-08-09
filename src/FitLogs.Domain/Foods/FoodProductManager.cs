@@ -19,7 +19,7 @@ public class FoodProductManager : DomainService
         string name,
         string? brand,
         string? imageUrl,
-        decimal caloriesPer100g,
+        decimal? caloriesPer100g,
         decimal? proteinPer100g,
         decimal? carbPer100g,
         decimal? fatPer100g,
@@ -32,6 +32,7 @@ public class FoodProductManager : DomainService
         NutritionBasisUnit? servingUnit = null,
         decimal? pieceWeightGrams = null)
     {
+        barcode = NormalizeBarcodeOrNull(barcode);
         await CheckBarcodeAsync(barcode);
 
         return new FoodProduct(
@@ -59,6 +60,7 @@ public class FoodProductManager : DomainService
         FoodProduct foodProduct,
         string? barcode)
     {
+        barcode = NormalizeBarcodeOrNull(barcode);
         await CheckBarcodeAsync(barcode, foodProduct.Id);
 
         foodProduct.UpdateBarcode(barcode);
@@ -81,7 +83,7 @@ public class FoodProductManager : DomainService
 
     public void ChangeManualNutrition(
         FoodProduct foodProduct,
-        decimal caloriesPer100g,
+        decimal? caloriesPer100g,
         decimal? proteinPer100g,
         decimal? carbPer100g,
         decimal? fatPer100g,
@@ -109,12 +111,13 @@ public class FoodProductManager : DomainService
         string name,
         string? brand,
         string? imageUrl,
-        decimal caloriesPer100g,
+        decimal? caloriesPer100g,
         decimal? proteinPer100g,
         decimal? carbPer100g,
         decimal? fatPer100g,
         string? servingSize,
         DateTime syncedAt,
+        FoodProductDataQuality? dataQuality = null,
         decimal? nutritionBasisAmount = null,
         NutritionBasisUnit? nutritionBasisUnit = null,
         decimal? servingAmount = null,
@@ -131,6 +134,7 @@ public class FoodProductManager : DomainService
             fatPer100g,
             servingSize,
             syncedAt,
+            dataQuality,
             nutritionBasisAmount,
             nutritionBasisUnit,
             servingAmount,
@@ -167,10 +171,25 @@ public class FoodProductManager : DomainService
         {
             return;
         }
-        var normalizedBarcode = barcode.Trim();
+        if (!FoodBarcodeNormalizer.TryNormalize(barcode, out var normalizedBarcode))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductBarcodeInvalid);
+        }
         if (await _foodProductRepository.BarcodeExistsAsync(normalizedBarcode, excludedId))
         {
             throw new BusinessException(FitLogsDomainErrorCodes.FoodProductBarcodeAlreadyExists);
         }
+    }
+
+    private static string? NormalizeBarcodeOrNull(string? barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode))
+        {
+            return null;
+        }
+
+        return FoodBarcodeNormalizer.TryNormalize(barcode, out var normalizedBarcode)
+            ? normalizedBarcode
+            : throw new BusinessException(FitLogsDomainErrorCodes.FoodProductBarcodeInvalid);
     }
 }

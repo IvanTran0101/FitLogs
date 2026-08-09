@@ -43,6 +43,18 @@ const BUSINESS_ERROR_MESSAGES: Record<string, string> = {
     'Sản phẩm thực phẩm này đang bị tắt.',
   'FitLogs:FoodProduct:BarcodeInvalid':
     'Mã vạch không hợp lệ hoặc đang bị bỏ trống.',
+  'FitLogs:FoodProduct:UpstreamProductNotFound':
+    'Không tìm thấy sản phẩm với mã vạch này.',
+  'FitLogs:FoodProduct:UpstreamInvalidData':
+    'Open Food Facts trả về dữ liệu sản phẩm không hợp lệ.',
+  'FitLogs:FoodProduct:UpstreamTimeout':
+    'Open Food Facts phản hồi quá lâu. Hãy thử lại sau.',
+  'FitLogs:FoodProduct:UpstreamUnavailable':
+    'Open Food Facts hiện không khả dụng. Hãy thử lại sau.',
+  'FitLogs:FoodProduct:PersistenceFailed':
+    'Không thể lưu sản phẩm vào danh mục cục bộ. Hãy thử lại.',
+  'FitLogs:FoodProduct:NutritionUnknown':
+    'Sản phẩm chưa có dữ liệu calories nên chưa thể ghi nhật ký.',
   'FitLogs:FoodLog:001':
     'Không xác định được người dùng cho nhật ký món ăn.',
   'FitLogs:FoodLog:002':

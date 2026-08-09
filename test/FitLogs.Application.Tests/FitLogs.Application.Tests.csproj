@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FitLogs.Application\FitLogs.Application.csproj" />
+    <ProjectReference Include="..\..\src\FitLogs.ExternalServices\FitLogs.ExternalServices.csproj" />
     <ProjectReference Include="..\FitLogs.Domain.Tests\FitLogs.Domain.Tests.csproj" />
   </ItemGroup>
 

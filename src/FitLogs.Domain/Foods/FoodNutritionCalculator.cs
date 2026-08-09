@@ -23,11 +23,16 @@ public static class FoodNutritionCalculator
     {
         Check.NotNull(foodProduct, nameof(foodProduct));
 
+        if (!foodProduct.CaloriesPer100g.HasValue)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductNutritionUnknown);
+        }
+
         var (amountInBasisUnit, basisUnit) = ConvertToProductBasis(foodProduct, quantity, unit);
         var factor = amountInBasisUnit / foodProduct.NutritionBasisAmount;
 
         return new FoodNutritionCalculation(
-            foodProduct.CaloriesPer100g * factor,
+            foodProduct.CaloriesPer100g.Value * factor,
             foodProduct.ProteinPer100g * factor,
             foodProduct.CarbPer100g * factor,
             foodProduct.FatPer100g * factor,

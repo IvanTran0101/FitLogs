@@ -530,6 +530,9 @@ public class FitLogsDbContext :
             b.Property(x => x.CaloriesPer100g)
                 .HasColumnType("decimal(18,2)");
 
+            b.Property(x => x.DataQuality)
+                .IsRequired();
+
             b.Property(x => x.ProteinPer100g)
                 .HasColumnType("decimal(18,2)");
 

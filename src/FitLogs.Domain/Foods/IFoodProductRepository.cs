@@ -9,6 +9,8 @@ public interface IFoodProductRepository : IRepository<FoodProduct, Guid>
 {
     Task<FoodProduct?> FindByBarcodeAsync(string barcode);
 
+    Task<FoodProduct> InsertImportedOrGetExistingAsync(FoodProduct foodProduct);
+
     Task<bool> BarcodeExistsAsync(
         string barcode,
         Guid? excludedId = null

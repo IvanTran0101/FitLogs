@@ -9,6 +9,7 @@ export type MealType = 1 | 2 | 3 | 4 | 5 | 6
 
 /** Identifies where a food product's data came from. */
 export type FoodProductSource = 1 | 2 | 3
+export type FoodProductDataQuality = 0 | 1 | 2
 
 export type FoodProductDto = {
   id: string
@@ -16,13 +17,14 @@ export type FoodProductDto = {
   name: string
   brand: string | null
   imageUrl: string | null
-  caloriesPer100g: number
+  caloriesPer100g: number | null
   proteinPer100g: number | null
   carbPer100g: number | null
   fatPer100g: number | null
   servingSize: string | null
   source: FoodProductSource
   lastSyncedAt: string | null
+  dataQuality: FoodProductDataQuality
   isActive: boolean
   isVerified: boolean
 }
@@ -40,6 +42,7 @@ export type FoodProductLookupResultDto = {
   carbPer100g: number | null
   fatPer100g: number | null
   servingSize: string | null
+  dataQuality: FoodProductDataQuality
 }
 
 export type FoodLogDto = {

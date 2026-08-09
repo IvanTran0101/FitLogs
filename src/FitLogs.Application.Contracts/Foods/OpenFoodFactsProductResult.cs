@@ -10,7 +10,9 @@ public class OpenFoodFactsProductResult
 
     public string? ImageUrl { get; set; }
 
-    public decimal CaloriesPer100g { get; set; }
+    public decimal? CaloriesPer100g { get; set; }
+
+    public FoodProductDataQuality DataQuality { get; set; }
 
     public decimal? ProteinPer100g { get; set; }
 

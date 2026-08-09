@@ -124,6 +124,12 @@ public static class FitLogsDomainErrorCodes
     
     public const string FoodProductNotFoundFromOpenFoodFacts = "FitLogs:FoodLog:FoodProductNotFoundFromOpenFoodFacts";
     public const string FoodProductBarcodeInvalid = "FitLogs:FoodProduct:BarcodeInvalid";
+    public const string FoodProductUpstreamProductNotFound = "FitLogs:FoodProduct:UpstreamProductNotFound";
+    public const string FoodProductUpstreamInvalidData = "FitLogs:FoodProduct:UpstreamInvalidData";
+    public const string FoodProductUpstreamTimeout = "FitLogs:FoodProduct:UpstreamTimeout";
+    public const string FoodProductUpstreamUnavailable = "FitLogs:FoodProduct:UpstreamUnavailable";
+    public const string FoodProductPersistenceFailed = "FitLogs:FoodProduct:PersistenceFailed";
+    public const string FoodProductNutritionUnknown = "FitLogs:FoodProduct:NutritionUnknown";
     public const string FoodProductNutritionBasisInvalid = "FitLogs:FoodProduct:NutritionBasisInvalid";
     public const string FoodProductServingConversionRequired = "FitLogs:FoodProduct:ServingConversionRequired";
     public const string FoodProductPieceConversionRequired = "FitLogs:FoodProduct:PieceConversionRequired";

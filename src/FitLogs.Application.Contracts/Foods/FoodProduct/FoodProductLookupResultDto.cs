@@ -18,5 +18,7 @@ public class FoodProductLookupResultDto
     public decimal? CarbPer100g { get; set; }
     public decimal? FatPer100g { get; set; }
 
+    public FoodProductDataQuality DataQuality { get; set; }
+
     public string? ServingSize { get; set; }
 }

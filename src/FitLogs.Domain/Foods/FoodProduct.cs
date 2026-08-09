@@ -11,7 +11,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
     public string? Brand { get; private set; }
     public string? ImageUrl { get; private set; }
     
-    public decimal CaloriesPer100g {get; private set; }
+    public decimal? CaloriesPer100g {get; private set; }
     public decimal? ProteinPer100g { get; private set; }
     public decimal? CarbPer100g { get; private set; }
     public decimal? FatPer100g {get; private set; }
@@ -26,6 +26,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
     public string? ServingSize { get; private set; }
     public FoodProductSource Source { get; private set; }
     public DateTime? LastSyncedAt { get; private set; }
+    public FoodProductDataQuality DataQuality { get; private set; }
     public bool IsActive { get; private set; }
     public bool IsVerified { get; private set; }
     protected FoodProduct()
@@ -39,7 +40,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         string name,
         string? brand,
         string? imageUrl,
-        decimal caloriesPer100G,
+        decimal? caloriesPer100G,
         decimal? proteinPer100G,
         decimal? carbPer100G,
         decimal? fatPer100G,
@@ -61,6 +62,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         SetServingSize(servingSize);
         SetSource(source);
         LastSyncedAt = lastSyncedAt;
+        DataQuality = DetermineDataQuality(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         IsActive = true;
         SetVerifiedBySource(source);
         
@@ -84,12 +86,13 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         string name,
         string? brand,
         string? imageUrl,
-        decimal caloriesPer100G,
+        decimal? caloriesPer100G,
         decimal? proteinPer100G,
         decimal? carbPer100G,
         decimal? fatPer100G,
         string? servingSize,
         DateTime syncedAt,
+        FoodProductDataQuality? dataQuality = null,
         decimal? nutritionBasisAmount = null,
         NutritionBasisUnit? nutritionBasisUnit = null,
         decimal? servingAmount = null,
@@ -109,11 +112,12 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         SetServingSize(servingSize);
         SetSource(FoodProductSource.OpenFoodFacts);
         LastSyncedAt = syncedAt;
+        DataQuality = dataQuality ?? DetermineDataQuality(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         IsVerified = false;
     }
 
     public void UpdateManualNutrition(
-        decimal caloriesPer100G,
+        decimal? caloriesPer100G,
         decimal? proteinPer100G,
         decimal? carbPer100G,
         decimal? fatPer100G,
@@ -131,6 +135,7 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
             pieceWeightGrams ?? PieceWeightGrams);
         SetNutrition(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         SetSource(FoodProductSource.Manual);
+        DataQuality = DetermineDataQuality(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         IsVerified = false;
         
     }
@@ -174,12 +179,12 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
     }
 
     private void SetNutrition(
-        decimal caloriesPer100G,
+        decimal? caloriesPer100G,
         decimal? proteinPer100G,
         decimal? carbPer100G,
         decimal? fatPer100G)
     {
-        if (caloriesPer100G < FoodProductConsts.MinCaloriesPer100g)
+        if (caloriesPer100G.HasValue && caloriesPer100G < FoodProductConsts.MinCaloriesPer100g)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.FoodProductCaloriesCannotBeNegative);
         }
@@ -203,6 +208,17 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         ProteinPer100g = proteinPer100G;
         CarbPer100g = carbPer100G;
         FatPer100g = fatPer100G;
+    }
+
+    private static FoodProductDataQuality DetermineDataQuality(
+        decimal? caloriesPer100G,
+        decimal? proteinPer100G,
+        decimal? carbPer100G,
+        decimal? fatPer100G)
+    {
+        return caloriesPer100G.HasValue && proteinPer100G.HasValue && carbPer100G.HasValue && fatPer100G.HasValue
+            ? FoodProductDataQuality.Complete
+            : FoodProductDataQuality.Partial;
     }
 
     /// <summary>Validates and stores the physical denominator and optional serving/piece conversions.</summary>

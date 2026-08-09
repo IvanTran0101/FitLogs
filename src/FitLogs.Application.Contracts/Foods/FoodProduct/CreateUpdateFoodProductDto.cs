@@ -19,7 +19,7 @@ public class CreateUpdateFoodProductDto
 
     // Legacy field names are retained for API compatibility; the denominator is NutritionBasisAmount/NutritionBasisUnit.
     [Range(typeof(decimal), "0", "999999")]
-    public decimal CaloriesPer100g { get; set; }
+    public decimal? CaloriesPer100g { get; set; }
 
     [Range(typeof(decimal), "0", "999999")]
     public decimal? ProteinPer100g { get; set; }
