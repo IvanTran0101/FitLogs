@@ -539,6 +539,22 @@ public class FitLogsDbContext :
             b.Property(x => x.FatPer100g)
                 .HasColumnType("decimal(18,2)");
 
+            // These columns make the nutrition denominator explicit instead of assuming every product is per 100 grams.
+            b.Property(x => x.NutritionBasisAmount)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.NutritionBasisUnit)
+                .IsRequired();
+
+            b.Property(x => x.ServingAmount)
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.ServingUnit);
+
+            b.Property(x => x.PieceWeightGrams)
+                .HasColumnType("decimal(18,2)");
+
             b.HasIndex(x => x.Barcode)
                 .IsUnique()
                 .HasFilter("\"Barcode\" IS NOT NULL");
@@ -584,6 +600,21 @@ public class FitLogsDbContext :
 
             b.Property(x => x.Fat)
                 .HasColumnType("decimal(18,2)");
+
+            // A log keeps the conversion used at entry time so later catalog edits do not rewrite history.
+            b.Property(x => x.NutritionBasisAmount)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
+
+            b.Property(x => x.NutritionBasisUnit)
+                .IsRequired();
+
+            b.Property(x => x.NutritionConversionFactor)
+                .IsRequired()
+                .HasColumnType("decimal(18,6)");
+
+            b.Property(x => x.NutritionCalculationSource)
+                .IsRequired();
 
             b.Property(x => x.MealType)
                 .IsRequired();

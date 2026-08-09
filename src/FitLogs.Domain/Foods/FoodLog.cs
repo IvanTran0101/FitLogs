@@ -16,6 +16,12 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
     public decimal? Protein { get; private set; }
     public decimal? Carb { get; private set; }
     public decimal? Fat  { get; private set; }
+
+    // These fields explain how the snapshot was calculated, even if the product changes later.
+    public decimal NutritionBasisAmount { get; private set; }
+    public NutritionBasisUnit NutritionBasisUnit { get; private set; }
+    public decimal NutritionConversionFactor { get; private set; }
+    public FoodNutritionCalculationSource NutritionCalculationSource { get; private set; }
     
     public MealType MealType { get; private set; }
     public DateTime LoggedAt { get; private set; }
@@ -35,7 +41,11 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
         decimal? fat,
         MealType mealType,
         DateTime loggedAt,
-        string? note = null) : base(id)
+        string? note = null,
+        decimal nutritionBasisAmount = 100m,
+        NutritionBasisUnit nutritionBasisUnit = NutritionBasisUnit.Gram,
+        decimal nutritionConversionFactor = 1m,
+        FoodNutritionCalculationSource nutritionCalculationSource = FoodNutritionCalculationSource.Calculated) : base(id)
     {
         SetUserId(userId);
         SetFoodProductId(foodProductId);
@@ -43,6 +53,11 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
         SetQuantity(quantity);
         SetUnit(unit);
         SetNutrition(calories, protein, carb, fat);
+        SetNutritionSnapshotMetadata(
+            nutritionBasisAmount,
+            nutritionBasisUnit,
+            nutritionConversionFactor,
+            nutritionCalculationSource);
         SetMealType(mealType);
         SetLoggedAt(loggedAt);
         SetNote(note);
@@ -59,13 +74,22 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
         decimal? fat,
         MealType mealType,
         DateTime loggedAt,
-        string? note = null)
+        string? note = null,
+        decimal nutritionBasisAmount = 100m,
+        NutritionBasisUnit nutritionBasisUnit = NutritionBasisUnit.Gram,
+        decimal nutritionConversionFactor = 1m,
+        FoodNutritionCalculationSource nutritionCalculationSource = FoodNutritionCalculationSource.Calculated)
     {
         SetFoodProductId(foodProductId);
         SetFoodName(foodName);
         SetQuantity(quantity);
         SetUnit(unit);
         SetNutrition(calories, protein, carb, fat);
+        SetNutritionSnapshotMetadata(
+            nutritionBasisAmount,
+            nutritionBasisUnit,
+            nutritionConversionFactor,
+            nutritionCalculationSource);
         SetMealType(mealType);
         SetLoggedAt(loggedAt);
         SetNote(note);
@@ -78,6 +102,7 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
         decimal? fat)
     {
         SetNutrition(calories, protein, carb, fat);
+        NutritionCalculationSource = FoodNutritionCalculationSource.ManualOverride;
     }
 
     public void ChangeMealType(MealType mealType)
@@ -174,6 +199,27 @@ public class FoodLog : FullAuditedAggregateRoot<Guid>
         Protein = protein;
         Carb = carb;
         Fat = fat;
+    }
+
+    /// <summary>Validates metadata needed to explain this log's nutrition snapshot later.</summary>
+    private void SetNutritionSnapshotMetadata(
+        decimal nutritionBasisAmount,
+        NutritionBasisUnit nutritionBasisUnit,
+        decimal nutritionConversionFactor,
+        FoodNutritionCalculationSource nutritionCalculationSource)
+    {
+        if (nutritionBasisAmount < FoodProductConsts.MinNutritionBasisAmount ||
+            !Enum.IsDefined(typeof(NutritionBasisUnit), nutritionBasisUnit) ||
+            nutritionConversionFactor < FoodLogConsts.MinQuantity ||
+            !Enum.IsDefined(typeof(FoodNutritionCalculationSource), nutritionCalculationSource))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodLogInvalidNutrition);
+        }
+
+        NutritionBasisAmount = nutritionBasisAmount;
+        NutritionBasisUnit = nutritionBasisUnit;
+        NutritionConversionFactor = nutritionConversionFactor;
+        NutritionCalculationSource = nutritionCalculationSource;
     }
 
     private void SetMealType(MealType mealType)

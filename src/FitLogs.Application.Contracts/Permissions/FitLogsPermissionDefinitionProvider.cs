@@ -10,6 +10,15 @@ public class FitLogsPermissionDefinitionProvider : PermissionDefinitionProvider
     {
         var myGroup = context.AddGroup(FitLogsPermissions.GroupName, L("Permission:FitLogs"));
 
+        // This permission is the authenticated read gate for the shared food catalog.
+        var foodProducts = myGroup.AddPermission(
+            FitLogsPermissions.FoodProducts.Default,
+            L("Permission:FoodProducts"));
+        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Create, L("Permission:FoodProducts.Create"));
+        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Update, L("Permission:FoodProducts.Update"));
+        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Delete, L("Permission:FoodProducts.Delete"));
+        foodProducts.AddChild(FitLogsPermissions.FoodProducts.Verify, L("Permission:FoodProducts.Verify"));
+
 
         var userProfiles = myGroup.AddPermission(FitLogsPermissions.UserProfiles.Default, L("Permission:UserProfiles"));
         userProfiles.AddChild(FitLogsPermissions.UserProfiles.Update, L("Permission:UserProfiles.Update"));

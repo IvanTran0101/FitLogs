@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using FitLogs.Foods.FoodProducts;
+using FitLogs.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 
@@ -21,8 +23,10 @@ public class FoodProductLookupAppService : ApplicationService, IFoodProductLooku
         _openFoodFactsClient = openFoodFactsClient;
     }
 
+    [Authorize]
     public async Task<FoodProductLookupResultDto> LookupByBarcodeAsync(string barcode)
     {
+        // This method first uses the local catalog, then imports a missing product once it is found upstream.
         var normalizedBarcode = NormalizeBarcode(barcode);
         var cachedProduct = await _foodProductRepository.FindByBarcodeAsync(normalizedBarcode);
         if (cachedProduct != null)
@@ -71,6 +75,8 @@ public class FoodProductLookupAppService : ApplicationService, IFoodProductLooku
         return MapToLookupResult(foodProduct, fromCache: false);
         
     }
+    /// <summary>Refreshes an existing catalog product from Open Food Facts for authorized catalog managers.</summary>
+    [Authorize(FitLogsPermissions.FoodProducts.Update)]
     public async Task<FoodProductDto> RefreshFromOpenFoodFactsAsync(Guid foodProductId)
 
     {
@@ -126,6 +132,7 @@ public class FoodProductLookupAppService : ApplicationService, IFoodProductLooku
         return ObjectMapper.Map<FoodProduct, FoodProductDto>(foodProduct);
 
     }
+    /// <summary>Rejects blank barcodes and trims harmless surrounding whitespace.</summary>
     private static string NormalizeBarcode(string? barcode)
 
     {
@@ -142,6 +149,7 @@ public class FoodProductLookupAppService : ApplicationService, IFoodProductLooku
 
     }
 
+    /// <summary>Builds the stable API response shared by cache hits and upstream imports.</summary>
     private static FoodProductLookupResultDto MapToLookupResult(
 
         FoodProduct foodProduct,

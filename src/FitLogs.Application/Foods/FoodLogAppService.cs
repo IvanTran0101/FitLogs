@@ -119,6 +119,7 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         }
     }
 
+    /// <summary>Applies only explicitly supplied macro corrections and marks the snapshot as overridden.</summary>
     private void ApplyNutritionOverrides(
         FoodLog foodLog,
         decimal? overrideCalories,

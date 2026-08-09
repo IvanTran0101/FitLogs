@@ -12,4 +12,7 @@ public static class FoodProductConsts
     public const decimal MinProteinPer100g = 0;
     public const decimal MinCarbPer100g = 0;
     public const decimal MinFatPer100g = 0;
+    public const decimal MinNutritionBasisAmount = 0.01m;
+    public const decimal MinServingAmount = 0.01m;
+    public const decimal MinPieceWeightGrams = 0.01m;
 }

@@ -15,6 +15,12 @@ public class FoodProductDto : EntityDto<Guid>
     public decimal? CarbPer100g { get; set; }
     public decimal? FatPer100g { get; set; }
 
+    public decimal NutritionBasisAmount { get; set; }
+    public NutritionBasisUnit NutritionBasisUnit { get; set; }
+    public decimal? ServingAmount { get; set; }
+    public NutritionBasisUnit? ServingUnit { get; set; }
+    public decimal? PieceWeightGrams { get; set; }
+
     public string? ServingSize { get; set; }
     public FoodProductSource Source { get; set; }
     public DateTime? LastSyncedAt { get; set; }

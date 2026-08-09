@@ -18,5 +18,11 @@ public interface IFoodProductAppService : IApplicationService
 
     Task DeactivateAsync(Guid id);
 
+    Task ActivateAsync(Guid id);
+
+    Task DeleteAsync(Guid id);
+
     Task VerifyAsync(Guid id);
+
+    Task UnverifyAsync(Guid id);
 }

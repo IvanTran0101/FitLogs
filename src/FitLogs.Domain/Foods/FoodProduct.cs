@@ -15,6 +15,13 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
     public decimal? ProteinPer100g { get; private set; }
     public decimal? CarbPer100g { get; private set; }
     public decimal? FatPer100g {get; private set; }
+
+    // These fields describe what the nutrition numbers actually mean; the legacy property names remain API-compatible.
+    public decimal NutritionBasisAmount { get; private set; }
+    public NutritionBasisUnit NutritionBasisUnit { get; private set; }
+    public decimal? ServingAmount { get; private set; }
+    public NutritionBasisUnit? ServingUnit { get; private set; }
+    public decimal? PieceWeightGrams { get; private set; }
     
     public string? ServingSize { get; private set; }
     public FoodProductSource Source { get; private set; }
@@ -38,12 +45,18 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         decimal? fatPer100G,
         string? servingSize,
         FoodProductSource source,
-        DateTime? lastSyncedAt = null) : base(id)
+        DateTime? lastSyncedAt = null,
+        decimal nutritionBasisAmount = 100m,
+        NutritionBasisUnit nutritionBasisUnit = NutritionBasisUnit.Gram,
+        decimal? servingAmount = null,
+        NutritionBasisUnit? servingUnit = null,
+        decimal? pieceWeightGrams = null) : base(id)
     {
         SetBarcode(barcode);
         SetName(name);
         Brand = NormalizeOptionalText(brand, FoodProductConsts.MaxBrandLength, nameof(brand));
         ImageUrl = NormalizeOptionalText(imageUrl, FoodProductConsts.MaxImageUrlLength, nameof(imageUrl));
+        SetNutritionBasis(nutritionBasisAmount, nutritionBasisUnit, servingAmount, servingUnit, pieceWeightGrams);
         SetNutrition(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         SetServingSize(servingSize);
         SetSource(source);
@@ -76,11 +89,22 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         decimal? carbPer100G,
         decimal? fatPer100G,
         string? servingSize,
-        DateTime syncedAt)
+        DateTime syncedAt,
+        decimal? nutritionBasisAmount = null,
+        NutritionBasisUnit? nutritionBasisUnit = null,
+        decimal? servingAmount = null,
+        NutritionBasisUnit? servingUnit = null,
+        decimal? pieceWeightGrams = null)
     {
         SetName(name);
         Brand = NormalizeOptionalText(brand, FoodProductConsts.MaxBrandLength, nameof(brand));
         ImageUrl = NormalizeOptionalText(imageUrl, FoodProductConsts.MaxImageUrlLength, nameof(imageUrl));
+        SetNutritionBasis(
+            nutritionBasisAmount ?? NutritionBasisAmount,
+            nutritionBasisUnit ?? NutritionBasisUnit,
+            servingAmount ?? ServingAmount,
+            servingUnit ?? ServingUnit,
+            pieceWeightGrams ?? PieceWeightGrams);
         SetNutrition(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         SetServingSize(servingSize);
         SetSource(FoodProductSource.OpenFoodFacts);
@@ -92,8 +116,19 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         decimal caloriesPer100G,
         decimal? proteinPer100G,
         decimal? carbPer100G,
-        decimal? fatPer100G)
+        decimal? fatPer100G,
+        decimal? nutritionBasisAmount = null,
+        NutritionBasisUnit? nutritionBasisUnit = null,
+        decimal? servingAmount = null,
+        NutritionBasisUnit? servingUnit = null,
+        decimal? pieceWeightGrams = null)
     {
+        SetNutritionBasis(
+            nutritionBasisAmount ?? NutritionBasisAmount,
+            nutritionBasisUnit ?? NutritionBasisUnit,
+            servingAmount ?? ServingAmount,
+            servingUnit ?? ServingUnit,
+            pieceWeightGrams ?? PieceWeightGrams);
         SetNutrition(caloriesPer100G, proteinPer100G, carbPer100G, fatPer100G);
         SetSource(FoodProductSource.Manual);
         IsVerified = false;
@@ -168,6 +203,39 @@ public class FoodProduct : FullAuditedAggregateRoot<Guid>
         ProteinPer100g = proteinPer100G;
         CarbPer100g = carbPer100G;
         FatPer100g = fatPer100G;
+    }
+
+    /// <summary>Validates and stores the physical denominator and optional serving/piece conversions.</summary>
+    private void SetNutritionBasis(
+        decimal nutritionBasisAmount,
+        NutritionBasisUnit nutritionBasisUnit,
+        decimal? servingAmount,
+        NutritionBasisUnit? servingUnit,
+        decimal? pieceWeightGrams)
+    {
+        if (nutritionBasisAmount < FoodProductConsts.MinNutritionBasisAmount ||
+            !Enum.IsDefined(typeof(NutritionBasisUnit), nutritionBasisUnit))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductNutritionBasisInvalid);
+        }
+
+        if (servingAmount.HasValue != servingUnit.HasValue ||
+            (servingAmount.HasValue && servingAmount.Value < FoodProductConsts.MinServingAmount) ||
+            (servingUnit.HasValue && !Enum.IsDefined(typeof(NutritionBasisUnit), servingUnit.Value)))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductServingConversionRequired);
+        }
+
+        if (pieceWeightGrams.HasValue && pieceWeightGrams.Value < FoodProductConsts.MinPieceWeightGrams)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.FoodProductPieceConversionRequired);
+        }
+
+        NutritionBasisAmount = nutritionBasisAmount;
+        NutritionBasisUnit = nutritionBasisUnit;
+        ServingAmount = servingAmount;
+        ServingUnit = servingUnit;
+        PieceWeightGrams = pieceWeightGrams;
     }
 
     private static string? NormalizeOptionalText(string? value, int maxLength, string parameterName)

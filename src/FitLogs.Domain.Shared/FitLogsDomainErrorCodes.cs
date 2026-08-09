@@ -116,6 +116,10 @@ public static class FitLogsDomainErrorCodes
     
     public const string FoodProductNotFoundFromOpenFoodFacts = "FitLogs:FoodLog:FoodProductNotFoundFromOpenFoodFacts";
     public const string FoodProductBarcodeInvalid = "FitLogs:FoodProduct:BarcodeInvalid";
+    public const string FoodProductNutritionBasisInvalid = "FitLogs:FoodProduct:NutritionBasisInvalid";
+    public const string FoodProductServingConversionRequired = "FitLogs:FoodProduct:ServingConversionRequired";
+    public const string FoodProductPieceConversionRequired = "FitLogs:FoodProduct:PieceConversionRequired";
+    public const string FoodLogUnitConversionUnavailable = "FitLogs:FoodLog:UnitConversionUnavailable";
 
 
 }

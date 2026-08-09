@@ -25,7 +25,12 @@ public class FoodProductManager : DomainService
         decimal? fatPer100g,
         string? servingSize,
         FoodProductSource source,
-        DateTime? lastSyncedAt = null)
+        DateTime? lastSyncedAt = null,
+        decimal nutritionBasisAmount = 100m,
+        NutritionBasisUnit nutritionBasisUnit = NutritionBasisUnit.Gram,
+        decimal? servingAmount = null,
+        NutritionBasisUnit? servingUnit = null,
+        decimal? pieceWeightGrams = null)
     {
         await CheckBarcodeAsync(barcode);
 
@@ -41,7 +46,12 @@ public class FoodProductManager : DomainService
             fatPer100g,
             servingSize,
             source,
-            lastSyncedAt
+            lastSyncedAt,
+            nutritionBasisAmount,
+            nutritionBasisUnit,
+            servingAmount,
+            servingUnit,
+            pieceWeightGrams
         );
     }
 
@@ -74,13 +84,23 @@ public class FoodProductManager : DomainService
         decimal caloriesPer100g,
         decimal? proteinPer100g,
         decimal? carbPer100g,
-        decimal? fatPer100g)
+        decimal? fatPer100g,
+        decimal? nutritionBasisAmount = null,
+        NutritionBasisUnit? nutritionBasisUnit = null,
+        decimal? servingAmount = null,
+        NutritionBasisUnit? servingUnit = null,
+        decimal? pieceWeightGrams = null)
     {
         foodProduct.UpdateManualNutrition(
             caloriesPer100g,
             proteinPer100g,
             carbPer100g,
-            fatPer100g
+            fatPer100g,
+            nutritionBasisAmount,
+            nutritionBasisUnit,
+            servingAmount,
+            servingUnit,
+            pieceWeightGrams
         );
     }
 
@@ -94,7 +114,12 @@ public class FoodProductManager : DomainService
         decimal? carbPer100g,
         decimal? fatPer100g,
         string? servingSize,
-        DateTime syncedAt)
+        DateTime syncedAt,
+        decimal? nutritionBasisAmount = null,
+        NutritionBasisUnit? nutritionBasisUnit = null,
+        decimal? servingAmount = null,
+        NutritionBasisUnit? servingUnit = null,
+        decimal? pieceWeightGrams = null)
     {
         foodProduct.UpdateFromOpenFoodFacts(
             name,
@@ -105,7 +130,12 @@ public class FoodProductManager : DomainService
             carbPer100g,
             fatPer100g,
             servingSize,
-            syncedAt
+            syncedAt,
+            nutritionBasisAmount,
+            nutritionBasisUnit,
+            servingAmount,
+            servingUnit,
+            pieceWeightGrams
         );
     }
 

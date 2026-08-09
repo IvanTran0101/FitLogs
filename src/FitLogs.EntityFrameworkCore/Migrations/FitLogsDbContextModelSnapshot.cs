@@ -346,6 +346,18 @@ namespace FitLogs.Migrations
                     b.Property<decimal?>("Fat")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("NutritionBasisAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("NutritionBasisUnit")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NutritionCalculationSource")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NutritionConversionFactor")
+                        .HasColumnType("decimal(18,6)");
+
                     b.Property<string>("FoodName")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -416,6 +428,12 @@ namespace FitLogs.Migrations
 
                     b.Property<decimal>("CaloriesPer100g")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NutritionBasisAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("NutritionBasisUnit")
+                        .HasColumnType("integer");
 
                     b.Property<decimal?>("CarbPer100g")
                         .HasColumnType("decimal(18,2)");
@@ -489,6 +507,15 @@ namespace FitLogs.Migrations
                     b.Property<string>("ServingSize")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<decimal?>("ServingAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ServingUnit")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("PieceWeightGrams")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Source")
                         .HasColumnType("integer");

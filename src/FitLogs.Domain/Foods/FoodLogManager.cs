@@ -14,6 +14,7 @@ public class FoodLogManager : DomainService
         _foodProductRepository = foodProductRepository;
     }
 
+    /// <summary>Loads an active product, converts the requested quantity, and creates an explainable nutrition snapshot.</summary>
     public async Task<FoodLog> CreateFromProductAsync(
         Guid userId,
         Guid foodProductId,
@@ -28,7 +29,7 @@ public class FoodLogManager : DomainService
         CheckQuantity(quantity);
 
         var foodProduct = await GetActiveFoodProductAsync(foodProductId);
-        var nutrition = CalculateNutrition(foodProduct, quantity);
+        var nutrition = FoodNutritionCalculator.Calculate(foodProduct, quantity, unit);
 
         return new FoodLog(
             GuidGenerator.Create(),
@@ -43,10 +44,15 @@ public class FoodLogManager : DomainService
             nutrition.Fat,
             mealType,
             loggedAt,
-            note
+            note,
+            nutrition.BasisAmount,
+            nutrition.BasisUnit,
+            nutrition.ConversionFactor,
+            FoodNutritionCalculationSource.Calculated
         );
     }
 
+    /// <summary>Recalculates a log from the selected product while retaining the exact conversion used.</summary>
     public async Task UpdateFromProductAsync(
         FoodLog foodLog,
         Guid foodProductId,
@@ -61,7 +67,7 @@ public class FoodLogManager : DomainService
         CheckQuantity(quantity);
 
         var foodProduct = await GetActiveFoodProductAsync(foodProductId);
-        var nutrition = CalculateNutrition(foodProduct, quantity);
+        var nutrition = FoodNutritionCalculator.Calculate(foodProduct, quantity, unit);
 
         foodLog.Update(
             foodProduct.Id,
@@ -74,10 +80,15 @@ public class FoodLogManager : DomainService
             nutrition.Fat,
             mealType,
             loggedAt,
-            note
+            note,
+            nutrition.BasisAmount,
+            nutrition.BasisUnit,
+            nutrition.ConversionFactor,
+            FoodNutritionCalculationSource.Calculated
         );
     }
 
+    /// <summary>Replaces snapshot macros with validated user values and records the override provenance.</summary>
     public void ChangeNutrition(
         FoodLog foodLog,
         decimal calories,
@@ -87,6 +98,7 @@ public class FoodLogManager : DomainService
     {
         Check.NotNull(foodLog, nameof(foodLog));
 
+        // Marking the snapshot as overridden preserves the original calculation basis for auditability.
         foodLog.UpdateNutrition(
             calories,
             protein,
@@ -131,20 +143,6 @@ public class FoodLogManager : DomainService
         return foodProduct;
     }
 
-    private static FoodNutritionValues CalculateNutrition(
-        FoodProduct foodProduct,
-        decimal quantity)
-    {
-        var factor = quantity / 100m;
-
-        return new FoodNutritionValues(
-            foodProduct.CaloriesPer100g * factor,
-            foodProduct.ProteinPer100g * factor,
-            foodProduct.CarbPer100g * factor,
-            foodProduct.FatPer100g * factor
-        );
-    }
-
     private static void CheckUserId(Guid userId)
     {
         if (userId == Guid.Empty)
@@ -169,10 +167,4 @@ public class FoodLogManager : DomainService
         }
     }
 
-    private sealed record FoodNutritionValues(
-        decimal Calories,
-        decimal? Protein,
-        decimal? Carb,
-        decimal? Fat
-    );
 }

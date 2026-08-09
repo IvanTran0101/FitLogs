@@ -17,6 +17,11 @@ public class FoodLogDto : EntityDto<Guid>
     public decimal? Carb { get; set; }
     public decimal? Fat { get; set; }
 
+    public decimal NutritionBasisAmount { get; set; }
+    public NutritionBasisUnit NutritionBasisUnit { get; set; }
+    public decimal NutritionConversionFactor { get; set; }
+    public FoodNutritionCalculationSource NutritionCalculationSource { get; set; }
+
     public MealType MealType { get; set; }
     public DateTime LoggedAt { get; set; }
     public string? Note { get; set; }

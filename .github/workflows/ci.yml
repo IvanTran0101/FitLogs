@@ -1,0 +1,57 @@
+name: FitLogs CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  # Cancel an older run for the same branch so feedback comes from the newest commit.
+  group: fitlogs-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    name: .NET build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Restore dependencies
+        run: dotnet restore FitLogs.slnx
+
+      - name: Build solution
+        run: dotnet build FitLogs.slnx --configuration Release --no-restore /p:UseSharedCompilation=false
+
+      - name: Run tests
+        run: dotnet test FitLogs.slnx --configuration Release --no-build --no-restore /p:UseSharedCompilation=false --logger trx --results-directory TestResults
+
+  react:
+    name: React checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: react/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check and build
+        run: npm run build

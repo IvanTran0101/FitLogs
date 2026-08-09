@@ -17,6 +17,7 @@ public class CreateUpdateFoodProductDto
     [StringLength(FoodProductConsts.MaxImageUrlLength)]
     public string? ImageUrl { get; set; }
 
+    // Legacy field names are retained for API compatibility; the denominator is NutritionBasisAmount/NutritionBasisUnit.
     [Range(typeof(decimal), "0", "999999")]
     public decimal CaloriesPer100g { get; set; }
 
@@ -28,6 +29,19 @@ public class CreateUpdateFoodProductDto
 
     [Range(typeof(decimal), "0", "999999")]
     public decimal? FatPer100g { get; set; }
+
+    [Range(typeof(decimal), "0.01", "999999")]
+    public decimal NutritionBasisAmount { get; set; } = 100m;
+
+    public NutritionBasisUnit NutritionBasisUnit { get; set; } = NutritionBasisUnit.Gram;
+
+    [Range(typeof(decimal), "0.01", "999999")]
+    public decimal? ServingAmount { get; set; }
+
+    public NutritionBasisUnit? ServingUnit { get; set; }
+
+    [Range(typeof(decimal), "0.01", "999999")]
+    public decimal? PieceWeightGrams { get; set; }
 
     [StringLength(FoodProductConsts.MaxServingSizeLength)]
     public string? ServingSize { get; set; }

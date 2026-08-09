@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FitLogs.Foods.FoodProducts;
 using Microsoft.AspNetCore.Authorization;
+using FitLogs.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Linq;
@@ -27,8 +28,11 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         _foodProductManager = foodProductManager;
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Create)]
+    /// <summary>Creates a shared catalog product together with explicit nutrition conversion metadata.</summary>
     public async Task<FoodProductDto> CreateAsync(CreateUpdateFoodProductDto input)
     {
+        // This creates a shared catalog record, so only catalog managers may call it.
         var foodProduct = await _foodProductManager.CreateAsync(
             input.Barcode,
             input.Name,
@@ -39,7 +43,12 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
             input.CarbPer100g,
             input.FatPer100g,
             input.ServingSize,
-            FoodProductSource.Manual
+            FoodProductSource.Manual,
+            nutritionBasisAmount: input.NutritionBasisAmount,
+            nutritionBasisUnit: input.NutritionBasisUnit,
+            servingAmount: input.ServingAmount,
+            servingUnit: input.ServingUnit,
+            pieceWeightGrams: input.PieceWeightGrams
         );
 
         await _foodProductRepository.InsertAsync(foodProduct, autoSave: true);
@@ -47,6 +56,8 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         return ObjectMapper.Map<FoodProduct, FoodProductDto>(foodProduct);
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Update)]
+    /// <summary>Updates catalog values and keeps the nutrition denominator aligned with the submitted data.</summary>
     public async Task<FoodProductDto> UpdateAsync(Guid id, CreateUpdateFoodProductDto input)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -64,7 +75,12 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
             input.CaloriesPer100g,
             input.ProteinPer100g,
             input.CarbPer100g,
-            input.FatPer100g
+            input.FatPer100g,
+            input.NutritionBasisAmount,
+            input.NutritionBasisUnit,
+            input.ServingAmount,
+            input.ServingUnit,
+            input.PieceWeightGrams
         );
 
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
@@ -72,6 +88,8 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         return ObjectMapper.Map<FoodProduct, FoodProductDto>(foodProduct);
     }
 
+    /// <summary>Returns one food product for an authenticated user.</summary>
+    [Authorize]
     public async Task<FoodProductDto> GetAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -79,6 +97,8 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         return ObjectMapper.Map<FoodProduct, FoodProductDto>(foodProduct);
     }
 
+    /// <summary>Searches and pages the shared catalog without allowing client-controlled sort expressions.</summary>
+    [Authorize]
     public async Task<PagedResultDto<FoodProductDto>> GetListAsync(GetFoodProductListInput input)
     {
         var queryable = await _foodProductRepository.GetQueryableAsync();
@@ -114,6 +134,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         );
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Update)]
     public async Task DeactivateAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -123,6 +144,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Update)]
     public async Task ActivateAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -132,6 +154,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Verify)]
     public async Task VerifyAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -141,6 +164,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Verify)]
     public async Task UnverifyAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -150,6 +174,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         await _foodProductRepository.UpdateAsync(foodProduct, autoSave: true);
     }
 
+    [Authorize(FitLogsPermissions.FoodProducts.Delete)]
     public async Task DeleteAsync(Guid id)
     {
         var foodProduct = await _foodProductRepository.GetAsync(id);
@@ -166,6 +191,7 @@ public class FoodProductAppService : ApplicationService, IFoodProductAppService
         await _foodProductRepository.DeleteAsync(foodProduct, autoSave: true);
     }
 
+    /// <summary>Applies the small, allow-listed set of catalog sorts exposed by the API.</summary>
     private static IQueryable<FoodProduct> ApplySorting(
         IQueryable<FoodProduct> query,
         GetFoodProductListInput input)
