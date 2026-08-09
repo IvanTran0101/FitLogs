@@ -53,7 +53,6 @@ function toWorkoutPlanInput(form: WorkoutPlanFormState): CreateWorkoutPlanDto {
     description: form.description.trim() || null,
     goal: Number(form.goal) as WorkoutGoal,
     difficulty: Number(form.difficulty) as WorkoutDifficulty,
-    isActive: form.isActive,
   }
 }
 
@@ -114,12 +113,13 @@ async function handleSubmit(
       setIsSubmitting(true)
       setErrorMessage(null)
 
-      const input = toWorkoutPlanInput(form)
+      const createInput = toWorkoutPlanInput(form)
+      const updateInput = { ...createInput, isActive: form.isActive }
 
       const savedPlan =
         isEditMode && planId
-          ? await updateWorkoutPlan(planId, input)
-          : await createWorkoutPlan(input)
+          ? await updateWorkoutPlan(planId, updateInput)
+          : await createWorkoutPlan(createInput)
 
       navigate(`/plans/${savedPlan.id}`)
     } catch (error) {
@@ -192,10 +192,10 @@ async function handleSubmit(
             }
             options={[
               { label: 'General', value: '0' },
-              { label: 'Strength', value: '1' },
-              { label: 'Hypertrophy', value: '2' },
-              { label: 'Endurance', value: '3' },
-              { label: 'Weight Loss', value: '4' },
+              { label: 'Tăng cơ', value: '1' },
+              { label: 'Giảm mỡ', value: '2' },
+              { label: 'Sức mạnh', value: '3' },
+              { label: 'Sức bền', value: '4' },
             ]}
           />
 
@@ -215,7 +215,7 @@ async function handleSubmit(
             ]}
           />
 
-          <label className="neo-checkbox-row">
+          {isEditMode && <label className="neo-checkbox-row">
             <input
               type="checkbox"
               checked={form.isActive}
@@ -227,7 +227,7 @@ async function handleSubmit(
               }
             />
             <span>Plan đang active</span>
-          </label>
+          </label>}
 
           <NeoButton type="submit" className="full-width-button" disabled={isSubmitting}>
             {isSubmitting ? 'Đang lưu...' : 'Lưu kế hoạch'}

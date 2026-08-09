@@ -13,6 +13,8 @@ public static class FitLogsDomainErrorCodes
         "FitLogs:UserProfile:NotFound";
     public const string ForbiddenProfileAccess =
         "FitLogs:UserProfile:ForbiddenProfileAccess";
+    public const string InvalidGender = "FitLogs:UserProfile:InvalidGender";
+    public const string InvalidFitnessGoal = "FitLogs:UserProfile:InvalidFitnessGoal";
 
     // Exercise
     public const string ExerciseNameAlreadyExists = "FitLogs:Exercise:NameAlreadyExists";
@@ -74,6 +76,8 @@ public static class FitLogsDomainErrorCodes
     public const string WorkoutPlanMustHaveAtLeastOneExercise = "FitLogs:Workout:WorkoutPlanMustHaveAtLeastOneExercise";
     public const string WorkoutPlanNotBelongToUser = "FitLogs:Workout:WorkoutPlanNotBelongToUser";
     public const string WorkoutPlanIsInactive = "FitLogs:Workout:WorkoutPlanIsInactive";
+    public const string InvalidWorkoutGoal = "FitLogs:Workout:InvalidWorkoutGoal";
+    public const string InvalidWorkoutDifficulty = "FitLogs:Workout:InvalidWorkoutDifficulty";
     public const string ExerciseIsInactive = "FitLogs:Workout:ExerciseIsInactive";
 
     public const string InvalidExerciseSetNumber = "FitLogs:Workout:InvalidExerciseSetNumber";
@@ -85,6 +89,7 @@ public static class FitLogsDomainErrorCodes
 
     public const string ExerciseSetNumberAlreadyExists = "FitLogs:Workout:ExerciseSetNumberAlreadyExists";
     public const string ExerciseSetNotFound = "FitLogs:Workout:ExerciseSetNotFound";
+    public const string WorkoutSessionCannotCompleteWithoutCompletedExercise = "FitLogs:Workout:SessionRequiresCompletedExercise";
 
 
     // Food

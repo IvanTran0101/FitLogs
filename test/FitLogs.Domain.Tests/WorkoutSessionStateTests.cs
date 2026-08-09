@@ -1,0 +1,64 @@
+using System;
+using System.Linq;
+using Shouldly;
+using Volo.Abp;
+using Xunit;
+
+namespace FitLogs.Workouts;
+
+public class WorkoutSessionStateTests
+{
+    [Fact]
+    public void Completing_the_target_sets_marks_the_exercise_and_advances_the_pointer()
+    {
+        var session = CreateSession();
+        var firstExerciseId = Guid.NewGuid();
+        var secondExerciseId = Guid.NewGuid();
+        session.AddExercise(Guid.NewGuid(), firstExerciseId, 0, 1, 8);
+        session.AddExercise(Guid.NewGuid(), secondExerciseId, 1, 1, 8);
+        var firstSessionExercise = session.Exercises.First(x => x.ExerciseId == firstExerciseId);
+        var secondSessionExercise = session.Exercises.First(x => x.ExerciseId == secondExerciseId);
+
+        session.AddSetToExercise(firstSessionExercise.Id, Guid.NewGuid(), 1, 20, 8);
+        session.CompleteSetInExercise(firstSessionExercise.Id, firstSessionExercise.Sets.Single().Id, DateTime.UtcNow);
+
+        firstSessionExercise.Status.ShouldBe(WorkoutSessionExerciseStatus.Completed);
+        session.CurrentWorkoutSessionExerciseId.ShouldBe(secondSessionExercise.Id);
+        secondSessionExercise.Status.ShouldBe(WorkoutSessionExerciseStatus.InProgress);
+    }
+
+    [Fact]
+    public void Removing_current_exercise_selects_the_next_available_exercise()
+    {
+        var session = CreateSession();
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 0, 1, 8);
+        var currentId = session.CurrentWorkoutSessionExerciseId!.Value;
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 1, 1, 8);
+        var nextId = session.Exercises.OrderBy(x => x.OrderIndex).Last().Id;
+
+        session.RemoveExercise(currentId);
+
+        session.CurrentWorkoutSessionExerciseId.ShouldBe(nextId);
+    }
+
+    [Fact]
+    public void A_session_cannot_complete_without_a_completed_exercise()
+    {
+        var session = CreateSession();
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 0, 1, 8);
+
+        var exception = Should.Throw<BusinessException>(() => session.Complete(DateTime.UtcNow));
+
+        exception.Code.ShouldBe(FitLogsDomainErrorCodes.WorkoutSessionCannotCompleteWithoutCompletedExercise);
+    }
+
+    private static WorkoutSession CreateSession()
+    {
+        return new WorkoutSession(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            null,
+            "Morning workout",
+            DateTime.UtcNow);
+    }
+}

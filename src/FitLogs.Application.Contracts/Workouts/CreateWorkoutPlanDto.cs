@@ -13,5 +13,4 @@ public class CreateWorkoutPlanDto
     
     public WorkoutGoal Goal { get; set; }
     public WorkoutDifficulty Difficulty { get; set; }
-    public bool IsActive { get; set; }
 }

@@ -18,9 +18,9 @@ export function ProfilePage() {
           />
 
           <NeoInput
-            label="Protein"
-            type="number"
-            placeholder="150"
+            label="Tên hiển thị"
+            type="text"
+            placeholder="Tên của bạn"
           />
 
           <NeoInput
@@ -41,12 +41,13 @@ export function ProfilePage() {
           />
 
           <NeoSelect
-            label="Mức độ hoạt động"
-            defaultValue="moderate"
+            label="Mục tiêu"
+            defaultValue="4"
             options={[
-              { label: 'Ít vận động', value: 'low' },
-              { label: 'Trung bình', value: 'moderate' },
-              { label: 'Năng động', value: 'high' },
+              { label: 'Giảm cân', value: '1' },
+              { label: 'Duy trì cân nặng', value: '2' },
+              { label: 'Tăng cơ', value: '3' },
+              { label: 'Cải thiện thể lực', value: '4' },
             ]}
           />
         </div>

@@ -13,6 +13,10 @@ public interface IWorkoutSessionAppService : IApplicationService
 
     Task<WorkoutSessionDto> CreateAsync(CreateWorkoutSessionDto input);
 
+    Task<WorkoutSessionDto> StartFromPlanAsync(StartWorkoutFromPlanDto input);
+
+    Task<WorkoutSessionDto> StartFreeWorkoutAsync(StartFreeWorkoutDto input);
+
     Task<WorkoutSessionDto> AddExerciseAsync(Guid id, AddWorkoutSessionExerciseDto input);
 
     Task<WorkoutSessionDto> UpdateExerciseAsync(

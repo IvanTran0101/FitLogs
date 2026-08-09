@@ -98,45 +98,60 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
     [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
     public async Task<WorkoutSessionDto> CreateAsync(CreateWorkoutSessionDto input)
     {
-        var userId = GetCurrentUserId();
-        WorkoutSession workoutSession;
         if (input.WorkoutPlanId.HasValue)
         {
-            var workoutPlan = await _workoutPlanRepository.FindWithDetailsAsync(input.WorkoutPlanId.Value);
-            if (workoutPlan == null)
+            return await StartFromPlanAsync(new StartWorkoutFromPlanDto
             {
-                throw new EntityNotFoundException(typeof(WorkoutPlan), input.WorkoutPlanId.Value);
-            }
-            var exerciseIds = workoutPlan.Exercises
-                .Select(x => x.ExerciseId)
-                .ToList();
-
-            if (await _exerciseRepository.AnyInactiveByIdsAsync(exerciseIds))
-            {
-                throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
-            }
-
-            workoutSession = await _workoutSessionManager.CreateFromPlanAsync(
-                userId,
-                workoutPlan,
-                input.StartedAt,
-                input.Note
-            );
+                WorkoutPlanId = input.WorkoutPlanId.Value,
+                StartedAt = input.StartedAt,
+                Note = input.Note
+            });
         }
-        else
+
+        return await StartFreeWorkoutAsync(new StartFreeWorkoutDto
         {
-            workoutSession = await _workoutSessionManager.CreateFreeSessionAsync(
-                userId,
-                input.Name,
-                input.StartedAt,
-                input.Note
-            );
+            Name = input.Name,
+            StartedAt = input.StartedAt,
+            Note = input.Note
+        });
+    }
+
+    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
+    /// <summary>Starts a session from a plan after validating that all referenced exercises are active.</summary>
+    public async Task<WorkoutSessionDto> StartFromPlanAsync(StartWorkoutFromPlanDto input)
+    {
+        var workoutPlan = await _workoutPlanRepository.FindWithDetailsAsync(input.WorkoutPlanId);
+        if (workoutPlan == null)
+        {
+            throw new EntityNotFoundException(typeof(WorkoutPlan), input.WorkoutPlanId);
         }
-        workoutSession = await _workoutSessionRepository.InsertAsync(
-            workoutSession,
-            autoSave: true
-        );
-        return MapToDto(workoutSession);
+
+        var exerciseIds = workoutPlan.Exercises.Select(x => x.ExerciseId).ToList();
+        if (await _exerciseRepository.AnyInactiveByIdsAsync(exerciseIds))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.ExerciseIsInactive);
+        }
+
+        var workoutSession = await _workoutSessionManager.CreateFromPlanAsync(
+            GetCurrentUserId(),
+            workoutPlan,
+            input.StartedAt ?? Clock.Now,
+            input.Note);
+
+        return MapToDto(await _workoutSessionRepository.InsertAsync(workoutSession, autoSave: true));
+    }
+
+    [Authorize(FitLogsPermissions.WorkoutSessions.Create)]
+    /// <summary>Starts a named session without attaching it to a workout plan.</summary>
+    public async Task<WorkoutSessionDto> StartFreeWorkoutAsync(StartFreeWorkoutDto input)
+    {
+        var workoutSession = await _workoutSessionManager.CreateFreeSessionAsync(
+            GetCurrentUserId(),
+            input.Name,
+            input.StartedAt ?? Clock.Now,
+            input.Note);
+
+        return MapToDto(await _workoutSessionRepository.InsertAsync(workoutSession, autoSave: true));
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> AddExerciseAsync(

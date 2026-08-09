@@ -69,6 +69,18 @@ export type CreateWorkoutSessionDto = {
   note?: string | null
 }
 
+export type StartWorkoutFromPlanDto = {
+  workoutPlanId: string
+  startedAt?: string | null
+  note?: string | null
+}
+
+export type StartFreeWorkoutDto = {
+  name: string
+  startedAt?: string | null
+  note?: string | null
+}
+
 export type AddWorkoutSessionExerciseDto = {
   exerciseId: string
   orderIndex: number
@@ -116,6 +128,20 @@ export function getWorkoutSession(id: string) {
 
 export function createWorkoutSession(input: CreateWorkoutSessionDto) {
   return apiRequest<WorkoutSessionDto>('/api/app/workout-session', {
+    method: 'POST',
+    body: input,
+  })
+}
+
+export function startWorkoutFromPlan(input: StartWorkoutFromPlanDto) {
+  return apiRequest<WorkoutSessionDto>('/api/app/workout-session/start-from-plan', {
+    method: 'POST',
+    body: input,
+  })
+}
+
+export function startFreeWorkout(input: StartFreeWorkoutDto) {
+  return apiRequest<WorkoutSessionDto>('/api/app/workout-session/start-free-workout', {
     method: 'POST',
     body: input,
   })

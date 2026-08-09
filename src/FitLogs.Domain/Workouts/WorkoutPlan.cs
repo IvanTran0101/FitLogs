@@ -54,12 +54,20 @@ public class WorkoutPlan : FullAuditedAggregateRoot<Guid>
 
     public void SetGoal(WorkoutGoal goal)
     {
+        if (!Enum.IsDefined(typeof(WorkoutGoal), goal))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutGoal);
+        }
         Goal = goal;
 
     }
 
     public void SetDifficulty(WorkoutDifficulty difficulty)
     {
+        if (!Enum.IsDefined(typeof(WorkoutDifficulty), difficulty))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutDifficulty);
+        }
         Difficulty = difficulty;
     }
 

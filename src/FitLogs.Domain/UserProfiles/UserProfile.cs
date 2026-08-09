@@ -36,6 +36,10 @@ public class UserProfile : FullAuditedAggregateRoot<Guid>
 
     public void SetGender(Gender gender)
     {
+        if (!Enum.IsDefined(typeof(Gender), gender))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidGender);
+        }
         Gender = gender;
     }
 
@@ -68,6 +72,10 @@ public class UserProfile : FullAuditedAggregateRoot<Guid>
 
     public void SetFitnessGoal(FitnessGoal fitnessGoal)
     {
+        if (!Enum.IsDefined(typeof(FitnessGoal), fitnessGoal))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidFitnessGoal);
+        }
         FitnessGoal = fitnessGoal;
     }
 

@@ -52,10 +52,11 @@ export type CreateWorkoutPlanDto = {
   description?: string | null
   goal: WorkoutGoal
   difficulty: WorkoutDifficulty
-  isActive: boolean
 }
 
-export type UpdateWorkoutPlanDto = CreateWorkoutPlanDto
+export type UpdateWorkoutPlanDto = CreateWorkoutPlanDto & {
+  isActive: boolean
+}
 
 export type CreateWorkoutPlanExerciseDto = {
   exerciseId: string

@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
@@ -10,30 +11,24 @@ namespace FitLogs.UserProfiles;
 public class UserProfileAppService : ApplicationService, IUserProfileAppService
 {
     private readonly IUserProfileRepository _userProfileRepository;
-
+    private readonly UserProfileManager _userProfileManager;
     private readonly UserProfileMapper _userProfileMapper;
 
     public UserProfileAppService(
         IUserProfileRepository userProfileRepository,
+        UserProfileManager userProfileManager,
         UserProfileMapper userProfileMapper)
     {
         _userProfileRepository = userProfileRepository;
+        _userProfileManager = userProfileManager;
         _userProfileMapper = userProfileMapper;
     }
 
-
+    /// <summary>Returns the current profile, creating the legacy-missing profile on first access.</summary>
     public async Task<UserProfileDto> GetMyProfileAsync()
     {
         var userId = CurrentUser.GetId();
-        var userProfile = await _userProfileRepository.FindByUserIdAsync(userId);
-        if (userProfile == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.UserProfileNotFound);
-        }
-        if (userProfile.UserId != CurrentUser.GetId())
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.ForbiddenProfileAccess);
-        }
+        var userProfile = await GetOrCreateProfileAsync(userId);
         return _userProfileMapper.Map(userProfile);
     }
 
@@ -41,15 +36,7 @@ public class UserProfileAppService : ApplicationService, IUserProfileAppService
     public async Task<UserProfileDto> UpdateMyProfileAsync(UpdateUserProfileDto input)
     {
         var userId = CurrentUser.GetId();
-        var userProfile = await _userProfileRepository.FindByUserIdAsync(userId);
-        if (userProfile == null)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.UserProfileNotFound);
-        }
-        if (userProfile.UserId != CurrentUser.GetId())
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.ForbiddenProfileAccess);
-        }
+        var userProfile = await GetOrCreateProfileAsync(userId);
         userProfile.SetDisplayName(input.DisplayName);
         userProfile.SetGender(input.Gender);
         userProfile.SetDateOfBirth(input.DateOfBirth);
@@ -59,6 +46,19 @@ public class UserProfileAppService : ApplicationService, IUserProfileAppService
         userProfile.SetDailyTargetCalories(input.DailyTargetCalories);
         await _userProfileRepository.UpdateAsync(userProfile);
         return _userProfileMapper.Map(userProfile);
-        
+    }
+
+    /// <summary>Loads the current profile or persists a default profile so older users can use the app safely.</summary>
+    private async Task<UserProfile> GetOrCreateProfileAsync(Guid userId)
+    {
+        var existingProfile = await _userProfileRepository.FindByUserIdAsync(userId);
+        if (existingProfile != null)
+        {
+            return existingProfile;
+        }
+
+        var displayName = CurrentUser.Name ?? CurrentUser.UserName ?? "FitLogs user";
+        var profile = await _userProfileManager.CreateAsync(userId, displayName);
+        return await _userProfileRepository.InsertAsync(profile, autoSave: true);
     }
 }

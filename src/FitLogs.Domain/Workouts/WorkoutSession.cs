@@ -64,6 +64,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         
     }
 
+    /// <summary>Completes the session only after at least one exercise reaches its target sets.</summary>
     public void Complete(DateTime endedAt)
     {
         if (Status != WorkoutSessionStatus.InProgress)
@@ -74,6 +75,10 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         if (endedAt < StartedAt)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutSessionEndedAt);
+        }
+        if (!_exercises.Any(x => x.Status == WorkoutSessionExerciseStatus.Completed))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionCannotCompleteWithoutCompletedExercise);
         }
         EndedAt = endedAt;
         Status = WorkoutSessionStatus.Completed;
@@ -94,6 +99,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         Status = WorkoutSessionStatus.Cancelled;
     }
 
+    /// <summary>Adds an exercise and assigns the first available exercise as the current pointer.</summary>
     public void AddExercise(
         Guid id,
         Guid exerciseId,
@@ -124,6 +130,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         if (CurrentWorkoutSessionExerciseId == null)
         {
             CurrentWorkoutSessionExerciseId = sessionExercise.Id;
+            sessionExercise.MarkInProgress();
         }
 
     }
@@ -148,13 +155,22 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         exercise.SetRestSeconds(restSeconds);
         exercise.SetNote(note);
     }
+    /// <summary>Removes an exercise and repairs the current pointer to the nearest available item.</summary>
     public void RemoveExercise(Guid workoutSessionExerciseId)
     {
         EnsureInProgress();
 
         var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
 
+        var wasCurrent = CurrentWorkoutSessionExerciseId == exercise.Id;
         _exercises.Remove(exercise);
+
+        if (wasCurrent)
+        {
+            CurrentWorkoutSessionExerciseId = FindNextAvailableExercise(exercise.OrderIndex)?.Id
+                ?? FindPreviousAvailableExercise(exercise.OrderIndex)?.Id;
+            MarkCurrentExerciseInProgress();
+        }
     }
     public void AddSetToExercise(
         Guid workoutSessionExerciseId,
@@ -215,6 +231,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         exercise.RemoveSet(exerciseSetId);
     }
 
+    /// <summary>Completes a set, marks the exercise complete at its target, and advances the pointer.</summary>
     public void CompleteSetInExercise(
         Guid workoutSessionExerciseId,
         Guid exerciseSetId,
@@ -228,8 +245,16 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
             exerciseSetId,
             completedAt
         );
+
+        if (CurrentWorkoutSessionExerciseId == workoutSessionExerciseId &&
+            exercise.Status == WorkoutSessionExerciseStatus.Completed)
+        {
+            CurrentWorkoutSessionExerciseId = FindNextAvailableExercise(exercise.OrderIndex)?.Id;
+            MarkCurrentExerciseInProgress();
+        }
     }
 
+    /// <summary>Moves forward to the next pending or in-progress exercise.</summary>
     public void MoveToNextExercise()
     {
         EnsureInProgress();
@@ -241,24 +266,23 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
 
         if (CurrentWorkoutSessionExerciseId is not Guid currentExerciseId)
         {
-            CurrentWorkoutSessionExerciseId = _exercises
-                .OrderBy(x => x.OrderIndex)
-                .First()
-                .Id;
+            CurrentWorkoutSessionExerciseId = FindFirstAvailableExercise()?.Id;
+            MarkCurrentExerciseInProgress();
+            if (CurrentWorkoutSessionExerciseId == null)
+                throw new BusinessException(FitLogsDomainErrorCodes.NextWorkoutSessionExerciseNotFound);
             return;
         }
         var currentExercise = GetExerciseOrThrow(currentExerciseId);
-        var nextExercise = _exercises
-            .Where(x => x.OrderIndex > currentExercise.OrderIndex)
-            .OrderBy(x => x.OrderIndex)
-            .FirstOrDefault();
+        var nextExercise = FindNextAvailableExercise(currentExercise.OrderIndex);
         if (nextExercise == null)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.NextWorkoutSessionExerciseNotFound);
         }
         CurrentWorkoutSessionExerciseId = nextExercise.Id;
+        MarkCurrentExerciseInProgress();
     }
 
+    /// <summary>Moves backward to the previous pending or in-progress exercise.</summary>
     public void MoveToPreviousExercise()
     {
         EnsureInProgress();
@@ -269,22 +293,20 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
 
         if (CurrentWorkoutSessionExerciseId is not Guid currentExerciseId)
         {
-            CurrentWorkoutSessionExerciseId = _exercises
-                .OrderBy(x=>x.OrderIndex)
-                .First()
-                .Id;
+            CurrentWorkoutSessionExerciseId = FindFirstAvailableExercise()?.Id;
+            MarkCurrentExerciseInProgress();
+            if (CurrentWorkoutSessionExerciseId == null)
+                throw new BusinessException(FitLogsDomainErrorCodes.PreviousWorkoutSessionExerciseNotFound);
             return;
         }
         var currentExercise = GetExerciseOrThrow(currentExerciseId);
-        var previousExercise = _exercises
-            .Where(x => x.OrderIndex < currentExercise.OrderIndex)
-            .OrderByDescending(x => x.OrderIndex)
-            .FirstOrDefault();
+        var previousExercise = FindPreviousAvailableExercise(currentExercise.OrderIndex);
         if (previousExercise == null)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.PreviousWorkoutSessionExerciseNotFound);
         }
         CurrentWorkoutSessionExerciseId = previousExercise.Id;
+        MarkCurrentExerciseInProgress();
     }
     
     public void UncompleteSetInExercise(
@@ -296,6 +318,7 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
 
         exercise.UncompleteSet(exerciseSetId);
+        CurrentWorkoutSessionExerciseId = exercise.Id;
     }
 
     public WorkoutSessionExercise GetCurrentExercise()
@@ -308,18 +331,16 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         return GetExerciseOrThrow(CurrentWorkoutSessionExerciseId.Value);
     }
 
+    /// <summary>Skips the current exercise and chooses the next or previous exercise still available.</summary>
     public void SkipCurrentExercise()
     {
         EnsureInProgress();
         var currentExercise = GetCurrentExercise();
         currentExercise.Skip();
-        var nextExercise = _exercises
-            .Where(x=>
-                x.OrderIndex > currentExercise.OrderIndex &&
-                x.Status !=WorkoutSessionExerciseStatus.Skipped)
-            .OrderBy(x=>x.OrderIndex)
-            .FirstOrDefault();
+        var nextExercise = FindNextAvailableExercise(currentExercise.OrderIndex)
+            ?? FindPreviousAvailableExercise(currentExercise.OrderIndex);
         CurrentWorkoutSessionExerciseId = nextExercise?.Id;
+        MarkCurrentExerciseInProgress();
     }
     private void EnsureInProgress()
     {
@@ -339,6 +360,49 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         }
 
         return exercise;
+    }
+
+    /// <summary>Finds the next exercise that can still be performed, skipping completed and skipped items.</summary>
+    private WorkoutSessionExercise? FindNextAvailableExercise(int orderIndex)
+    {
+        return _exercises
+            .Where(x => x.OrderIndex > orderIndex && IsAvailable(x))
+            .OrderBy(x => x.OrderIndex)
+            .FirstOrDefault();
+    }
+
+    /// <summary>Finds the previous exercise that can still be performed, skipping completed and skipped items.</summary>
+    private WorkoutSessionExercise? FindPreviousAvailableExercise(int orderIndex)
+    {
+        return _exercises
+            .Where(x => x.OrderIndex < orderIndex && IsAvailable(x))
+            .OrderByDescending(x => x.OrderIndex)
+            .FirstOrDefault();
+    }
+
+    private WorkoutSessionExercise? FindFirstAvailableExercise()
+    {
+        return _exercises
+            .Where(IsAvailable)
+            .OrderBy(x => x.OrderIndex)
+            .FirstOrDefault();
+    }
+
+    private static bool IsAvailable(WorkoutSessionExercise exercise)
+    {
+        return exercise.Status is WorkoutSessionExerciseStatus.Pending or WorkoutSessionExerciseStatus.InProgress;
+    }
+
+    private void MarkCurrentExerciseInProgress()
+    {
+        if (CurrentWorkoutSessionExerciseId is Guid currentId)
+        {
+            var current = _exercises.FirstOrDefault(x => x.Id == currentId);
+            if (current != null && current.Status == WorkoutSessionExerciseStatus.Pending)
+            {
+                current.MarkInProgress();
+            }
+        }
     }
 
     private void EnsureExerciseDoesNotExist(Guid exerciseId)
