@@ -31,4 +31,11 @@ public interface IWorkoutSessionRepository : IRepository<WorkoutSession, Guid>
         DateTime endDate,
         CancellationToken cancellationToken = default
     );
+
+    Task<List<CompletedWorkoutSessionMetric>> GetCompletedMetricsByUserAndDateRangeAsync(
+        Guid userId,
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken cancellationToken = default
+    );
 }

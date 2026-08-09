@@ -30,16 +30,19 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     public async Task<DailyDashboardDto> GetTodayAsync()
     {
+        var profile = await _userProfileRepository.FindByUserIdAsync(CurrentUser.GetId());
+        var timeZoneId = profile?.TimeZoneId ?? UserProfileConsts.DefaultTimeZoneId;
         return await GetDailyAsync(new GetDailyDashboardInput
         {
-            Date = DateOnly.FromDateTime(_clock.Now)
+            Date = UserTimeZone.GetLocalDate(_clock.Now, timeZoneId)
         });
         
     }
 
     public async Task<DailyDashboardDto> GetDailyAsync(GetDailyDashboardInput input)
     {
-        var selectedDate = ResolveSelectedDate(input.Date);
+        var profile = await _userProfileRepository.FindByUserIdAsync(CurrentUser.GetId());
+        var selectedDate = ResolveSelectedDate(input.Date, profile?.TimeZoneId);
         var nutrition = await GetDailyNutritionAsync(new GetDailyDashboardInput
         {
             Date = selectedDate
@@ -59,10 +62,9 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     public async Task<DailyNutritionSummaryDto> GetDailyNutritionAsync(GetDailyDashboardInput input)
     {
         var userId = CurrentUser.GetId();
-        var selectedDate = ResolveSelectedDate(input.Date);
-        var (startDate, endDate) = GetDateRange(selectedDate);
-        
         var userProfile = await _userProfileRepository.FindByUserIdAsync(userId);
+        var selectedDate = ResolveSelectedDate(input.Date, userProfile?.TimeZoneId);
+        var (startDate, endDate) = GetDateRange(selectedDate, userProfile?.TimeZoneId);
         var foodLogs = await _foodLogRepository.GetListByUserAndDateRangeAsync(
             userId,
             startDate,
@@ -74,14 +76,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     public async Task<DailyWorkoutSummaryDto> GetDailyWorkoutAsync(GetDailyDashboardInput input)
     {
         var userId = CurrentUser.GetId();
-        var selectedDate = ResolveSelectedDate(input.Date);
-        var (startDate, endDate) = GetDateRange(selectedDate);
-        
-        var workoutSessions = await _workoutSessionRepository.GetCompletedListByUserAndDateRangeAsync(
+        var userProfile = await _userProfileRepository.FindByUserIdAsync(userId);
+        var selectedDate = ResolveSelectedDate(input.Date, userProfile?.TimeZoneId);
+        var (startDate, endDate) = GetDateRange(selectedDate, userProfile?.TimeZoneId);
+        var workoutMetrics = await _workoutSessionRepository.GetCompletedMetricsByUserAndDateRangeAsync(
             userId,
             startDate,
             endDate);
-        return BuildWorkoutSummary(workoutSessions);
+        return BuildWorkoutSummary(workoutMetrics);
         
     }
 
@@ -122,36 +124,36 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     private static DailyWorkoutSummaryDto BuildWorkoutSummary(
-        List<WorkoutSession> workoutSessions)
+        List<CompletedWorkoutSessionMetric> workoutSessions)
     {
-        var workoutExercises = workoutSessions.SelectMany(x => x.Exercises).ToList();
-        
-        var exerciseSets = workoutExercises.SelectMany(x=> x.Sets).ToList();
-
         return new DailyWorkoutSummaryDto
         {
             HasWorkout = workoutSessions.Any(),
-            CompletedSessions = workoutSessions.Count(),
-            TotalExercises = workoutExercises.Count(),
-            TotalSets = exerciseSets.Count(),
+            CompletedSessions = workoutSessions.Count,
+            TotalExercises = workoutSessions.Sum(x => x.CompletedExercises),
+            TotalSets = workoutSessions.Sum(x => x.CompletedSets),
             TotalDurationMinutes = workoutSessions
-                .Where(x => x.EndedAt.HasValue)
-                .Sum(x => (x.EndedAt!.Value - x.StartedAt).TotalMinutes),
-            TotalWeightVolume = exerciseSets.Where(x => x.WeightKg > 0 && x.Reps > 0)
-                .Sum(x => (decimal)x.WeightKg * x.Reps)
+                .Sum(x => (x.CompletedAt - x.StartedAt).TotalMinutes),
+            TotalWeightVolume = workoutSessions.Sum(x => x.CompletedVolume)
         };
     }
 
-    private DateOnly ResolveSelectedDate(DateOnly? date)
+    /// <summary>Uses the user's local date when the caller does not provide an explicit calendar date.</summary>
+    private DateOnly ResolveSelectedDate(DateOnly? date, string? timeZoneId)
     {
-        return date ?? DateOnly.FromDateTime(_clock.Now);
+        return date ?? UserTimeZone.GetLocalDate(
+            _clock.Now,
+            string.IsNullOrWhiteSpace(timeZoneId)
+                ? UserProfileConsts.DefaultTimeZoneId
+                : timeZoneId);
     }
 
-    private static (DateTime StartDate, DateTime EndDate) GetDateRange(DateOnly selectedDate)
+    private static (DateTime StartDate, DateTime EndDate) GetDateRange(DateOnly selectedDate, string? timeZoneId)
     {
-        var startDate = selectedDate.ToDateTime(TimeOnly.MinValue);
-        var endDate = startDate.AddDays(1);
-        
-        return (startDate, endDate);
+        return UserTimeZone.GetUtcDateRange(
+            selectedDate,
+            string.IsNullOrWhiteSpace(timeZoneId)
+                ? UserProfileConsts.DefaultTimeZoneId
+                : timeZoneId);
     }
 }

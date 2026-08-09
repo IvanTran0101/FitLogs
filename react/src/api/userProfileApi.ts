@@ -13,6 +13,7 @@ export type UserProfileDto = {
   weightKg: number | null
   fitnessGoal: FitnessGoal
   dailyTargetCalories: number | null
+  timeZoneId: string
 }
 
 export type UpdateUserProfileDto = Omit<UserProfileDto, 'id' | 'userId'>

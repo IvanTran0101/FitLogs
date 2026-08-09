@@ -44,6 +44,7 @@ public class UserProfileAppService : ApplicationService, IUserProfileAppService
         userProfile.SetWeightKg(input.WeightKg);
         userProfile.SetFitnessGoal(input.FitnessGoal);
         userProfile.SetDailyTargetCalories(input.DailyTargetCalories);
+        userProfile.SetTimeZoneId(input.TimeZoneId);
         await _userProfileRepository.UpdateAsync(userProfile);
         return _userProfileMapper.Map(userProfile);
     }

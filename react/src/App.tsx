@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {ExercisePickerPage} from './features/exercises/ExercisePickerPage'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -14,7 +15,41 @@ import { WorkoutPlanEditorPage } from './features/workoutPlans/WorkoutPlanEditor
 import { WorkoutPlanExerciseEditorPage } from './features/workoutPlans/WorkoutPlanExerciseEditorPage'
 import { AuthCallbackPage } from './auth/AuthCallbackPage'
 import { AuthLogoutCallbackPage } from './auth/AuthLogoutCallbackPage'
+import { getCurrentUser } from './auth/authService'
+import { getMyProfile, updateMyProfile } from './api/userProfileApi'
+
 function App() {
+  useEffect(() => {
+    let cancelled = false
+
+    async function synchronizeTimeZone() {
+      const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (!browserTimeZone) {
+        return
+      }
+
+      try {
+        if (!await getCurrentUser()) {
+          return
+        }
+
+        const profile = await getMyProfile()
+        if (cancelled || profile.timeZoneId === browserTimeZone) {
+          return
+        }
+
+        await updateMyProfile({ ...profile, timeZoneId: browserTimeZone })
+      } catch {
+        // Time-zone synchronization is opportunistic; dashboard requests still use the stored default if it fails.
+      }
+    }
+
+    void synchronizeTimeZone()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />

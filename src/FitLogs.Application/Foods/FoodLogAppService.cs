@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FitLogs.Foods.FoodLogs;
+using FitLogs.UserProfiles;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -15,13 +16,16 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
 {
     private readonly IFoodLogRepository _foodLogRepository;
     private readonly FoodLogManager _foodLogManager;
+    private readonly IUserProfileRepository _userProfileRepository;
 
     public FoodLogAppService(
         IFoodLogRepository foodLogRepository,
-        FoodLogManager foodLogManager)
+        FoodLogManager foodLogManager,
+        IUserProfileRepository userProfileRepository)
     {
         _foodLogRepository = foodLogRepository;
         _foodLogManager = foodLogManager;
+        _userProfileRepository = userProfileRepository;
     }
 
     public async Task<FoodLogDto> CreateAsync(CreateFoodLogDto input)
@@ -86,20 +90,18 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
 
     public async Task<List<FoodLogDto>> GetListByDateAsync(GetFoodLogListInput input)
     {
-        var foodLogs = await _foodLogRepository.GetListByUserAndDateAsync(
-            CurrentUser.GetId(),
-            input.Date
-        );
+        var (startDate, endDate) = await GetUserDateRangeAsync(input.Date);
+        var foodLogs = await _foodLogRepository.GetListByUserAndDateRangeAsync(
+            CurrentUser.GetId(), startDate, endDate);
 
         return ObjectMapper.Map<List<FoodLog>, List<FoodLogDto>>(foodLogs);
     }
 
     public async Task<DailyFoodNutritionSummaryDto> GetDailySummaryAsync(GetFoodLogListInput input)
     {
-        var foodLogs = await _foodLogRepository.GetListByUserAndDateAsync(
-            CurrentUser.GetId(),
-            input.Date
-        );
+        var (startDate, endDate) = await GetUserDateRangeAsync(input.Date);
+        var foodLogs = await _foodLogRepository.GetListByUserAndDateRangeAsync(
+            CurrentUser.GetId(), startDate, endDate);
 
         return new DailyFoodNutritionSummaryDto
         {
@@ -117,6 +119,14 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         {
             throw new BusinessException(FitLogsDomainErrorCodes.FoodLogAccessDenied);
         }
+    }
+
+    /// <summary>Interprets the requested date as the user's local calendar day, then queries UTC storage.</summary>
+    private async Task<(DateTime StartUtc, DateTime EndUtc)> GetUserDateRangeAsync(DateTime requestedDate)
+    {
+        var profile = await _userProfileRepository.FindByUserIdAsync(CurrentUser.GetId());
+        var timeZoneId = profile?.TimeZoneId ?? UserProfileConsts.DefaultTimeZoneId;
+        return UserTimeZone.GetUtcDateRange(DateOnly.FromDateTime(requestedDate), timeZoneId);
     }
 
     /// <summary>Applies only explicitly supplied macro corrections and marks the snapshot as overridden.</summary>

@@ -56931,7 +56931,8 @@
       },
       "FitLogs.UserProfiles.UpdateUserProfileDto": {
         "required": [
-          "displayName"
+          "displayName",
+          "timeZoneId"
         ],
         "type": "object",
         "properties": {
@@ -56971,6 +56972,11 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "timeZoneId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -57015,6 +57021,9 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "timeZoneId": {
+            "type": "string"
           }
         },
         "additionalProperties": false

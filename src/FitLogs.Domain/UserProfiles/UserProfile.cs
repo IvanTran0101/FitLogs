@@ -14,6 +14,7 @@ public class UserProfile : FullAuditedAggregateRoot<Guid>
     public decimal? WeightKg { get; private set; }
     public FitnessGoal FitnessGoal { get; private set; }
     public int? DailyTargetCalories { get; private set; }
+    public string TimeZoneId { get; private set; } = UserProfileConsts.DefaultTimeZoneId;
     
     protected UserProfile()
     {
@@ -26,6 +27,7 @@ public class UserProfile : FullAuditedAggregateRoot<Guid>
         SetDisplayName(displayName);
         Gender = UserProfiles.Gender.Private;
         FitnessGoal = FitnessGoal.ImproveFitness;
+        TimeZoneId = UserProfileConsts.DefaultTimeZoneId;
     }
 
     public void SetDisplayName(string displayName)
@@ -86,6 +88,22 @@ public class UserProfile : FullAuditedAggregateRoot<Guid>
             throw new BusinessException(FitLogsDomainErrorCodes.InvalidDailyTargetCalories);
         }
         DailyTargetCalories = dailyTargetCalories;
+    }
+
+    /// <summary>Stores the IANA zone used to translate a user's calendar day into UTC boundaries.</summary>
+    public void SetTimeZoneId(string? timeZoneId)
+    {
+        var normalized = string.IsNullOrWhiteSpace(timeZoneId)
+            ? UserProfileConsts.DefaultTimeZoneId
+            : timeZoneId.Trim();
+
+        if (normalized.Length > UserProfileConsts.MaxTimeZoneIdLength ||
+            !UserTimeZone.IsValid(normalized))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.InvalidTimeZoneId);
+        }
+
+        TimeZoneId = normalized;
     }
     
 }

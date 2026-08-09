@@ -129,6 +129,10 @@ public class FitLogsDbContext :
             b.Property(x => x.FitnessGoal)
                 .IsRequired();
 
+            b.Property(x => x.TimeZoneId)
+                .IsRequired()
+                .HasMaxLength(UserProfileConsts.MaxTimeZoneIdLength);
+
             b.HasIndex(x => x.UserId)
                 .IsUnique();
         });

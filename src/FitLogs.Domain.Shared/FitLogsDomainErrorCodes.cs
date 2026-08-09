@@ -15,6 +15,7 @@ public static class FitLogsDomainErrorCodes
         "FitLogs:UserProfile:ForbiddenProfileAccess";
     public const string InvalidGender = "FitLogs:UserProfile:InvalidGender";
     public const string InvalidFitnessGoal = "FitLogs:UserProfile:InvalidFitnessGoal";
+    public const string InvalidTimeZoneId = "FitLogs:UserProfile:InvalidTimeZoneId";
 
     // Exercise
     public const string ExerciseNameAlreadyExists = "FitLogs:Exercise:NameAlreadyExists";

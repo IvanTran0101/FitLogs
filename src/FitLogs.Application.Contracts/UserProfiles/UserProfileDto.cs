@@ -21,5 +21,6 @@ public class UserProfileDto
     public FitnessGoal FitnessGoal { get; set; }
 
     public int? DailyTargetCalories { get; set; }
+    public string TimeZoneId { get; set; } = UserProfileConsts.DefaultTimeZoneId;
 
 }

@@ -23,4 +23,8 @@ public class UpdateUserProfileDto
 
     [Range(800, 6000)]
     public int? DailyTargetCalories { get; set; }
+
+    [Required]
+    [MaxLength(UserProfileConsts.MaxTimeZoneIdLength)]
+    public string TimeZoneId { get; set; } = UserProfileConsts.DefaultTimeZoneId;
 }
