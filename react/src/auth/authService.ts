@@ -29,6 +29,11 @@ export function logout() {
   return userManager.signoutRedirect()
 }
 
+// Removes the locally stored OIDC user after an unauthorized API response so protected routes can react.
+export function clearUserSession() {
+  return userManager.removeUser()
+}
+
 export function handleLoginCallback() {
   return userManager.signinRedirectCallback()
 }

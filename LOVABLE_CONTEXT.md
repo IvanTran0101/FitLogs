@@ -265,6 +265,7 @@ Protected routes:
 
 - `react/src/auth/ProtectedRoute.tsx` displays an auth-loading state, login CTA, or the protected page.
 - The requested internal path is carried through OIDC login and restored safely after the callback.
+- `httpClient.ts` clears the local OIDC user when an API returns `401` or redirects to `/Login`.
 - Unauthorized API calls show backend/API error messages through page-level `ErrorState` where implemented.
 
 HTTP 401/login handling:
@@ -277,9 +278,8 @@ Current limitations:
 
 - Login/logout buttons are only on `ProfilePage`.
 - No user display name, account menu, or auth state UI.
-- No route-level auth protection.
 - No token refresh/silent renew configured.
-- No frontend permission checks.
+- `useAuth().hasRole()` exposes role claims for UX hints, but no backend permission names are guessed or enforced in React.
 
 ---
 
@@ -296,7 +296,6 @@ Not implemented:
 
 - No frontend permission API calls.
 - No ABP permission names are imported or checked in React.
-- No role checks.
 - No route-level permission guard.
 - No component-level permission guard.
 
@@ -1089,7 +1088,7 @@ Do not fix these as part of context/handover documentation unless explicitly ask
 | --- | --- | --- |
 | App shell | Implemented | `PageShell`, fixed bottom nav, scrollable content. |
 | Routing | Implemented/Partial | Routes and `ProtectedRoute` exist; no nested layouts. |
-| Authentication | Implemented/Partial | OIDC redirect flow, shared auth state, and protected routes exist; renewal and permission UX remain. |
+| Authentication | Implemented/Partial | OIDC redirect flow, shared auth state, protected routes, and centralized 401 clearing exist; renewal and permission UX remain. |
 | Authorization | Backend only | No frontend permission checks. |
 | API client | Implemented/Partial | `apiRequest()` handles fetch, bearer token, ABP errors; no generated client. |
 | OpenAPI | Available | `src/api/openapi.json` exists as reference only. |
@@ -1777,7 +1776,7 @@ Risks:
 
 Status:
 
-- Phase 7.1–7.3 completed; Phase 7.4 expired-token and permission handling is next.
+- Phase 7.1–7.4 completed; silent renewal and backend permission-aware UX remain for the final auth hardening pass.
 
 ## Current authentication state
 
@@ -1790,10 +1789,12 @@ Status:
 - `apiRequest()` also uses `credentials: 'include'`.
 - `ProfilePage` uses `useAuth()` for login/logout actions.
 - `AuthProvider` wraps the React application and exposes `user`, `isLoading`, `isAuthenticated`, login/logout, and `refreshUser`.
+- `useAuth().hasRole(role)` reads standard `role`/`roles` claims for optional presentation hints only.
 - The provider synchronizes persisted users and listens for OIDC user-loaded, user-unloaded, signed-out, and access-token-expired events.
 - `ProtectedRoute` gates user-specific routes and preserves the requested internal path through login.
+- `apiRequest()` clears the local user session on `401` or an ABP login redirect; `403` remains a backend permission error.
 - No silent renew/refresh handling is implemented.
-- No permission/role checks are implemented in frontend.
+- No ABP permission names are checked in frontend.
 
 ## Phase 7.1 verification findings
 
@@ -1852,7 +1853,7 @@ Target improvements:
 - Keep token lookup and attachment centralized in `httpClient.ts` / auth layer.
 - Use `AuthProvider`/`useAuth` for shared auth state; keep token attachment in `httpClient.ts`.
 - Keep protected-route decisions centralized in `ProtectedRoute` rather than duplicating checks in pages.
-- Handle expired tokens centrally instead of adding token checks in every page.
+- Handle expired tokens centrally instead of adding token checks in every page. **Implemented for `401`/login redirects; silent renewal remains unverified.**
 - Avoid custom username/password forms unless backend explicitly provides and requires them.
 
 ## Route protection
@@ -2264,7 +2265,7 @@ Partial:
 
 Missing:
 
-- Protected routes, silent renewal/refresh handling, and permission-aware UI.
+- Silent renewal/refresh handling and backend permission-aware UI.
 
 ---
 
@@ -2652,7 +2653,7 @@ CURRENT STATE
 - Current API modules: `exercisesApi.ts`, `workoutPlansApi.ts`; planned modules must follow this pattern.
 - `src/api/openapi.json` exists as a local Swagger/OpenAPI reference, not generated TypeScript code.
 - Auth: `authService.ts` uses `oidc-client-ts`, localStorage user store, OIDC code flow, bearer token attachment in `httpClient.ts`.
-- Missing auth pieces: auth context, protected routes, expired-token/silent-renew handling, permission checks.
+- Missing auth pieces: silent-renew/refresh handling and backend permission-aware UI; auth context, protected routes, and centralized `401` clearing are implemented.
 - Design: mobile-first Neo-Brutalism in `src/styles/global.css`; preserve `min(100%, 430px)` shell, black borders, hard shadows, bold colors.
 - Implemented most: Exercise Library and Workout Plan aggregate.
 - Partial/static: Dashboard, FoodLog, Profile, Workout Session.

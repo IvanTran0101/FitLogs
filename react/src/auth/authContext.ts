@@ -5,6 +5,7 @@ export type AuthContextValue = {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
+  hasRole: (role: string) => boolean
   login: (returnUrl?: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<User | null>

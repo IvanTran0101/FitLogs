@@ -92,6 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isLoading,
       isAuthenticated: user !== null && !user.expired,
+      // Role claims are UI hints only; backend permissions remain the security boundary.
+      hasRole: (role: string) => {
+        const claims = user?.profile as Record<string, unknown> | undefined
+        const roleClaim = claims?.role ?? claims?.roles
+        if (typeof roleClaim === 'string') {
+          return roleClaim === role
+        }
+
+        return Array.isArray(roleClaim) && roleClaim.some((value) => value === role)
+      },
       login: startLogin,
       logout: startLogout,
       refreshUser,

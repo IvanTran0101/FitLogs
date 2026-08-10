@@ -1,5 +1,5 @@
 import { API_BASE_URL } from './config'
-import { getAccessToken } from '../auth/authService'
+import { clearUserSession, getAccessToken } from '../auth/authService'
 type QueryValue = string | number | boolean | null | undefined
 
 type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -207,6 +207,20 @@ function buildUrl(path: string, query?: RequestOptions['query']) {
   return url.toString()
 }
 
+/** Detects an expired/unauthorized API response, including ABP redirects to its login page. */
+function isUnauthorizedResponse(response: Response) {
+  return response.status === 401 || (response.redirected && response.url.includes('/Login'))
+}
+
+/** Clears the local session without hiding the original API error if storage cleanup fails. */
+async function clearSessionAfterUnauthorized() {
+  try {
+    await clearUserSession()
+  } catch {
+    // The caller still needs the original 401/login-redirect error for its UI state.
+  }
+}
+
 // This function turns an ABP error response into a clear user message while preserving its backend code.
 async function readErrorInfo(response: Response) {
   const contentType = response.headers.get('content-type') ?? ''
@@ -281,6 +295,10 @@ export async function apiRequest<TResponse>(
   })
 
   if (!response.ok || (response.redirected && response.url.includes('/Login'))) {
+    if (isUnauthorizedResponse(response)) {
+      await clearSessionAfterUnauthorized()
+    }
+
     const errorInfo = await readErrorInfo(response)
     throw new ApiError(errorInfo.message, response.status, errorInfo.code)
   }
