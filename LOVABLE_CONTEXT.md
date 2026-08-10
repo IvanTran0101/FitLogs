@@ -23,7 +23,7 @@ Current frontend role:
 Current frontend maturity:
 
 - Exercise Library and Workout Plan flows are the most developed.
-- Authentication wiring exists but has no app-wide auth context or route guard yet.
+- Authentication wiring includes an app-wide auth context/provider; route guards and renewal hardening remain.
 - Food Log, Dashboard, and Workout Session pages are mostly placeholders or static UI; Profile now loads and saves real backend data.
 - API integration is handwritten, not generated.
 - The app uses a consistent Neo-Brutalist visual style with shared components and a mobile shell.
@@ -258,7 +258,7 @@ Refresh token handling:
 
 Authentication context/provider:
 
-- No React auth context exists.
+- `react/src/auth/AuthProvider.tsx`, `authContext.ts`, and `useAuth.ts` provide shared auth state.
 - No `useAuth` hook exists.
 - Components do not subscribe to login state.
 
@@ -1090,7 +1090,7 @@ Do not fix these as part of context/handover documentation unless explicitly ask
 | --- | --- | --- |
 | App shell | Implemented | `PageShell`, fixed bottom nav, scrollable content. |
 | Routing | Implemented/Partial | Routes exist; no nested layouts or guards. |
-| Authentication | Partial | OIDC redirect flow exists; no auth context/guard/refresh. |
+| Authentication | Implemented/Partial | OIDC redirect flow and shared auth state exist; route guards, renewal, and permission UX remain. |
 | Authorization | Backend only | No frontend permission checks. |
 | API client | Implemented/Partial | `apiRequest()` handles fetch, bearer token, ABP errors; no generated client. |
 | OpenAPI | Available | `src/api/openapi.json` exists as reference only. |
@@ -1131,7 +1131,7 @@ P1 — important:
 P2 — polish/improvements:
 
 - Extract repeated formatter/helper functions.
-- Consider a small auth context after auth UX requirements stabilize.
+- Add protected routes after the Phase 7.1 contract findings are resolved.
 - Consider a server-state library only when repeated fetching/cache invalidation becomes painful.
 - Split `global.css` into organized sections or files if it becomes hard to maintain.
 - Add a toast system if mutation success/error feedback becomes common.
@@ -1778,7 +1778,7 @@ Risks:
 
 Status:
 
-- In Progress / Planned hardening.
+- Phase 7.1–7.2 completed; Phase 7.3 protected-route work is next.
 
 ## Current authentication state
 
@@ -1789,11 +1789,32 @@ Status:
 - `AuthCallbackPage` and `AuthLogoutCallbackPage` exist and are routed.
 - `apiRequest()` attaches `Authorization: Bearer <token>` when `getAccessToken()` returns a non-expired token.
 - `apiRequest()` also uses `credentials: 'include'`.
-- `ProfilePage` has login/logout buttons.
-- No React auth context/provider exists.
+- `ProfilePage` uses `useAuth()` for login/logout actions.
+- `AuthProvider` wraps the React application and exposes `user`, `isLoading`, `isAuthenticated`, login/logout, and `refreshUser`.
+- The provider synchronizes persisted users and listens for OIDC user-loaded, user-unloaded, signed-out, and access-token-expired events.
 - No route guard exists.
 - No silent renew/refresh handling is implemented.
 - No permission/role checks are implemented in frontend.
+
+## Phase 7.1 verification findings
+
+Confirmed locally:
+
+- React uses `FitLogs_App` from `react/.env.local`.
+- Development login callback is `http://localhost:5173/auth/callback`.
+- Development logout callback is `http://localhost:5173/auth/logout-callback`.
+- Requested scopes are `openid profile email roles FitLogs`.
+- The backend seed reads the same client ID/root URL and creates callback/logout URI variants.
+- The backend CORS policy allows `http://localhost:5173` and `https://localhost:5173` with credentials.
+- The backend validates the `FitLogs` audience locally, and the frontend sends bearer tokens through `apiRequest()`.
+
+Still requiring runtime/backend confirmation:
+
+- The OpenIddict seed does not explicitly set `ForcePkce`; verify the persisted `FitLogs_App` record and authorization-code request behavior before calling PKCE production-ready.
+- The public client is seeded with authorization-code, password, client-credentials, and refresh-token grants; confirm that this broader grant set is intentional and safe for the SPA.
+- Verify the real database has been seeded with the current redirect URIs/scopes; changing seed code does not automatically update an existing application record in every environment.
+- Verify production HTTPS authority, redirect URIs, CORS origins, token lifetimes, and refresh/silent-renew support separately from localhost.
+- Verify exact runtime `401`/`403` behavior for an expired token and a missing permission.
 
 ## Target authentication state
 
@@ -1822,7 +1843,7 @@ Preserve the current architecture:
 
 ```text
 React pages/routes
-→ auth layer (`authService.ts`, future auth context if needed)
+→ auth layer (`authService.ts` + `AuthProvider`/`useAuth`)
 → `apiRequest()` centralized token attachment
 → ABP REST API
 ```
@@ -1830,7 +1851,7 @@ React pages/routes
 Target improvements:
 
 - Keep token lookup and attachment centralized in `httpClient.ts` / auth layer.
-- Add auth state access through a small provider/hook only when UI/route guards require it.
+- Use `AuthProvider`/`useAuth` for shared auth state; keep token attachment in `httpClient.ts`.
 - Add a protected route wrapper only after deciding which routes should require login.
 - Handle expired tokens centrally instead of adding token checks in every page.
 - Avoid custom username/password forms unless backend explicitly provides and requires them.
@@ -2230,7 +2251,7 @@ Missing:
 
 Implemented:
 
-- OIDC redirect login/logout and bearer token attachment.
+- OIDC redirect login/logout, bearer token attachment, and shared React auth state.
 
 Partial:
 
@@ -2238,7 +2259,7 @@ Partial:
 
 Missing:
 
-- Auth context, protected routes, expired-token handling, user state UI.
+- Protected routes, silent renewal/refresh handling, and permission-aware UI.
 
 ---
 

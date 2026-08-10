@@ -7,7 +7,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
-import { login, logout } from '../../auth/authService'
+import { useAuth } from '../../auth/useAuth'
 import {
   getMyProfile,
   updateMyProfile,
@@ -88,6 +88,7 @@ function toUpdateDto(form: ProfileFormState): UpdateUserProfileDto {
 
 /** Coordinates profile loading, editable form state, validation, and backend persistence. */
 export function ProfilePage() {
+  const { login, logout } = useAuth()
   const [form, setForm] = useState<ProfileFormState | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
