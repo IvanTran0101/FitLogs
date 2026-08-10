@@ -87,7 +87,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         var workoutSessions = await AsyncExecuter.ToListAsync(queryable);
 
         var dtos = workoutSessions
-            .Select(ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>)
+            .Select(MapToListDto)
             .ToList();
 
         return new PagedResultDto<WorkoutSessionDto>(
@@ -193,7 +193,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
 
-        return ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        return MapToDto(workoutSession);
     }
     [Authorize(FitLogsPermissions.WorkoutSessions.ManageExercises)]
     public async Task<WorkoutSessionDto> UpdateExerciseAsync(
@@ -418,7 +418,7 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
             autoSave: true
         );
     }
-
+    [Authorize(FitLogsPermissions.WorkoutSessions.Default)]
     public async Task<WorkoutSessionDto?> GetActiveAsync()
     {
         var userId = GetCurrentUserId();
@@ -473,6 +473,30 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         
     }
 
+    [Authorize(FitLogsPermissions.WorkoutSessions.Default)]
+    public async Task<WorkoutSummaryDto> GetSummaryAsync(Guid id)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+        EnsureWorkoutSessionOwner(workoutSession);
+        return BuildSummaryDto(workoutSession);
+        
+    }
+    [Authorize(FitLogsPermissions.WorkoutSessions.Complete)]
+    public async Task<WorkoutSummaryDto> CompleteAndGetSummaryAsync(Guid id)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+
+        EnsureWorkoutSessionOwner(workoutSession);
+
+        workoutSession.Complete(Clock.Now);
+
+        workoutSession = await _workoutSessionRepository.UpdateAsync(
+            workoutSession,
+            autoSave: true
+        );
+
+        return BuildSummaryDto(workoutSession);
+    }
 
     //helpers
     private Guid GetCurrentUserId()
@@ -480,6 +504,31 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         return CurrentUser.GetId();
     }
 
+    private WorkoutSummaryDto BuildSummaryDto(WorkoutSession workoutSession)
+    {
+        var exercises = workoutSession.Exercises;
+        var sets = exercises.SelectMany(x => x.Sets).ToList();
+        return new WorkoutSummaryDto
+        {
+            WorkoutSessionId = workoutSession.Id,
+            Name = workoutSession.Name,
+            StartedAt = workoutSession.StartedAt,
+            EndedAt = workoutSession.EndedAt,
+            DurationInMinutes = workoutSession.EndedAt.HasValue
+                ? (int)(workoutSession.EndedAt.Value - workoutSession.StartedAt).TotalMinutes
+                : (int)(Clock.Now - workoutSession.StartedAt).TotalMinutes,
+            TotalExercises = exercises.Count,
+            CompletedExercises = exercises.Count(x => x.Status == WorkoutSessionExerciseStatus.Completed),
+            SkippedExercises = exercises.Count(x => x.Status == WorkoutSessionExerciseStatus.Skipped),
+
+            TotalSets = sets.Count,
+            CompletedSets = sets.Count(x=>x.IsCompleted),
+            
+            TotalVolume = sets
+                .Where(x=> x.IsCompleted)
+                .Sum(x=> (decimal)x.WeightKg * x.Reps)
+        };
+    }
     private async Task<WorkoutSession> GetWorkoutSessionWithDetailsAsync(Guid id)
     {
         var workoutSession = await _workoutSessionRepository.FindWithDetailsAsync(id);
@@ -516,6 +565,13 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         
         return dto;
         
+    }
+
+    private WorkoutSessionDto MapToListDto(WorkoutSession workoutSession)
+    {
+        var dto = ObjectMapper.Map<WorkoutSession, WorkoutSessionDto>(workoutSession);
+        dto.Exercises = [];
+        return dto;
     }
 
 

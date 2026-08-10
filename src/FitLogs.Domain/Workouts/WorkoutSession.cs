@@ -67,6 +67,15 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
     /// <summary>Completes the session only after at least one exercise reaches its target sets.</summary>
     public void Complete(DateTime endedAt)
     {
+        if (!_exercises.Any())
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionMustHaveAtLeastOneExercise);
+        }
+
+        if (!_exercises.SelectMany(x => x.Sets).Any(x => x.IsCompleted))
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionMustHaveAtLeastOneCompletedSet);
+        }
         if (Status != WorkoutSessionStatus.InProgress)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);

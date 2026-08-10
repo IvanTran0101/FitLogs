@@ -94,6 +94,8 @@ public static class FitLogsDomainErrorCodes
     public const string ExerciseSetNumberAlreadyExists = "FitLogs:Workout:ExerciseSetNumberAlreadyExists";
     public const string ExerciseSetNotFound = "FitLogs:Workout:ExerciseSetNotFound";
     public const string WorkoutSessionCannotCompleteWithoutCompletedExercise = "FitLogs:Workout:SessionRequiresCompletedExercise";
+    public const string WorkoutSessionMustHaveAtLeastOneExercise = "FitLogs:Workout:WorkoutSessionMustHaveAtLeastOneExercise";
+    public const string WorkoutSessionMustHaveAtLeastOneCompletedSet = "FitLogs:Workout:WorkoutSessionMustHaveAtLeastOneCompletedSet";
 
 
     // Food

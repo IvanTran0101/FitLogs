@@ -21,7 +21,6 @@ public class WorkoutSessionExercise : Entity<Guid>
     public WorkoutSessionExerciseStatus Status { get; private set; }
     private readonly List<ExerciseSet> _sets = new();
     public IReadOnlyCollection<ExerciseSet> Sets => _sets.AsReadOnly();
-    public bool HasCompletedSet => _sets.Any(x => x.IsCompleted);
     protected WorkoutSessionExercise()
     {
         // For ORM
@@ -115,8 +114,6 @@ public class WorkoutSessionExercise : Entity<Guid>
         string? note = null
     )
     {
-        EnsureNotSkipped();
-        MarkInProgress();
         if (_sets.Any(x => x.SetNumber == setNumber))
         {
             throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNumberAlreadyExists);
@@ -142,8 +139,6 @@ public class WorkoutSessionExercise : Entity<Guid>
         string? note = null
     )
     {
-        EnsureNotSkipped();
-        MarkInProgress();
         var set = GetSetOrThrow(exerciseSetId);
 
         if (_sets.Any(x => x.Id != exerciseSetId && x.SetNumber == setNumber))
@@ -160,72 +155,33 @@ public class WorkoutSessionExercise : Entity<Guid>
 
     public void RemoveSet(Guid exerciseSetId)
     {
-        EnsureNotSkipped();
-        MarkInProgress();
         var set = GetSetOrThrow(exerciseSetId);
 
         _sets.Remove(set);
     }
 
-    /// <summary>Completes a set and transitions the exercise when its target set count is reached.</summary>
     public void CompleteSet(Guid exerciseSetId, DateTime completedAt)
     {
-        EnsureNotSkipped();
-        MarkInProgress();
         var set = GetSetOrThrow(exerciseSetId);
 
         set.Complete(completedAt);
-        if (_sets.Count(x => x.IsCompleted) >= TargetSets)
-        {
-            Status = WorkoutSessionExerciseStatus.Completed;
-        }
     }
 
     public void UncompleteSet(Guid exerciseSetId)
     {
-        EnsureNotSkipped();
         var set = GetSetOrThrow(exerciseSetId);
 
         set.Uncomplete();
-        MarkInProgress();
     }
 
-    /// <summary>Marks an unfinished exercise as skipped so navigation will not select it again.</summary>
     public void Skip()
     {
-        if (Status == WorkoutSessionExerciseStatus.Completed)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
-        }
         Status = WorkoutSessionExerciseStatus.Skipped;
     }
 
     public void MarkInProgress()
     {
-        if (Status == WorkoutSessionExerciseStatus.Skipped)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
-        }
         Status = WorkoutSessionExerciseStatus.InProgress;
-    }
-
-    /// <summary>Marks an exercise complete when its target number of sets has been completed.</summary>
-    public void MarkCompleted()
-    {
-        if (!HasCompletedSet)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionCannotCompleteWithoutCompletedExercise);
-        }
-
-        Status = WorkoutSessionExerciseStatus.Completed;
-    }
-
-    private void EnsureNotSkipped()
-    {
-        if (Status == WorkoutSessionExerciseStatus.Skipped)
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
-        }
     }
     
 

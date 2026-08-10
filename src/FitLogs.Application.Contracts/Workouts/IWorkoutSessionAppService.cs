@@ -96,5 +96,8 @@ public interface IWorkoutSessionAppService : IApplicationService
     Task<WorkoutSessionDto> MoveToPreviousExerciseAsync(Guid id);
     
     Task<WorkoutSessionDto> SkipCurrentExerciseAsync(Guid id);
+    
+    Task<WorkoutSummaryDto> GetSummaryAsync(Guid id);
+    Task<WorkoutSummaryDto> CompleteAndGetSummaryAsync(Guid id);
 
 }
