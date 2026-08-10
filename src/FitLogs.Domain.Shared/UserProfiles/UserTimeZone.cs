@@ -46,6 +46,7 @@ public static class UserTimeZone
         return (ConvertBoundary(localStart, zone), ConvertBoundary(localEnd, zone));
     }
 
+    /// <summary>Converts a local boundary to UTC while skipping a rare invalid midnight.</summary>
     private static DateTime ConvertBoundary(DateTime localBoundary, TimeZoneInfo zone)
     {
         // Rare zones can skip midnight; move forward to the first representable instant.

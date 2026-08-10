@@ -24,7 +24,7 @@ Current frontend maturity:
 
 - Exercise Library and Workout Plan flows are the most developed.
 - Authentication wiring exists but has no app-wide auth context or route guard yet.
-- Food Log, Profile, Dashboard, and Workout Session pages are mostly placeholders or static UI.
+- Food Log, Dashboard, and Workout Session pages are mostly placeholders or static UI; Profile now loads and saves real backend data.
 - API integration is handwritten, not generated.
 - The app uses a consistent Neo-Brutalist visual style with shared components and a mobile shell.
 
@@ -1068,7 +1068,7 @@ Actual technical debt observed:
 - No auth context/provider; UI cannot easily react to login state.
 - No protected routes or permission guards.
 - No token refresh/silent renew flow.
-- `ProfilePage`, `FoodLogPage`, `WorkoutPage`, and `DashboardPage` are mostly placeholders/static.
+- `FoodLogPage`, `WorkoutPage`, and `DashboardPage` remain mostly placeholders/static; `ProfilePage` and the dashboard API layer are connected to backend contracts.
 - `ExercisePickerPage` has a standalone route that only logs selected exercise IDs when no `planId` exists.
 - Some code formatting/indentation is inconsistent.
 - Some repeated helper functions exist, such as exercise name lookup in multiple files.
@@ -1106,7 +1106,7 @@ Do not fix these as part of context/handover documentation unless explicitly ask
 | Workout Sessions | Not implemented | Placeholder UI; OpenAPI endpoints exist. |
 | Food Logs | Not implemented | Placeholder UI; OpenAPI endpoints exist. |
 | Food Products | Not implemented | OpenAPI endpoints exist; no frontend module/page. |
-| User Profile | Partial | Static form + auth buttons; no profile API. |
+| User Profile | Implemented/Partial | `profileApi.ts` powers real load/save form; auth hardening and route protection remain. |
 | Testing | Not implemented | No test tooling beyond TypeScript build and lint. |
 
 ---
@@ -1122,7 +1122,7 @@ P0 — required to make core flows work:
 
 P1 — important:
 
-- Implement `userProfilesApi.ts` and wire `ProfilePage` to `/api/app/user-profile/my-profile`.
+- Verify dashboard DTO behavior and implement `dashboardApi.ts`/DashboardPage.
 - Implement food log/product API layer and replace `FoodLogPage` placeholder.
 - Improve `ExercisePickerPage` validation for target fields before submit.
 - Add plan filtering/search/pagination if plan count grows.
@@ -1707,27 +1707,28 @@ Requirements:
 
 Status:
 
-- Planned.
+- Phase 6.1–6.4 completed; dashboard page integration and missing-data handling are next.
 
 Current ProfilePage state:
 
-- `react/src/features/userProfile/ProfilePage.tsx` contains static form fields and login/logout buttons.
-- No `profileApi.ts` exists.
-- The form is not loaded from or saved to backend.
-- Current displayed fields include Calories, Protein, height, weight, date of birth, activity level, but these are UI placeholders and must not be treated as backend-confirmed fields.
+- `react/src/features/userProfile/ProfilePage.tsx` loads the signed-in profile, validates basic UX ranges, and saves through the backend.
+- `react/src/api/profileApi.ts` contains the verified profile DTOs, enum types, and GET/PUT operations.
+- The form uses only backend-supported fields: display name, gender, date of birth, height, weight, fitness goal, daily calories, and IANA timezone.
+- Complex profile mapping, validation, loading, and persistence functions include simple explanatory comments.
 
 Current DashboardPage state:
 
 - `react/src/features/dashboard/DashboardPage.tsx` contains static/hardcoded calories, macros, workout, streak, progress, and weight cards.
-- No `dashboardApi.ts` exists.
+- `react/src/api/dashboardApi.ts` contains the verified dashboard DTOs and four read operations.
 - No dashboard route protection exists.
 
 Current profile API availability:
 
 - Local OpenAPI contains `GET /api/app/user-profile/my-profile` and `PUT /api/app/user-profile/my-profile`.
 - Local OpenAPI schemas include `UserProfileDto` and `UpdateUserProfileDto`.
-- Fields observed locally: displayName, gender, dateOfBirth, heightCm, weightKg, fitnessGoal, dailyTargetCalories.
-- Enum meanings for `Gender` and `FitnessGoal` must be verified before labels are finalized.
+- Fields observed locally: displayName, gender, dateOfBirth, heightCm, weightKg, fitnessGoal, dailyTargetCalories, and timeZoneId.
+- `Gender`: 0 Male, 1 Female, 2 Private. `FitnessGoal`: 1 LoseWeight, 2 MaintainWeight, 3 GainMuscle, 4 ImproveFitness.
+- `GetMyProfileAsync` creates a default profile when one does not exist, so the frontend can render the returned profile instead of treating a missing profile as a 404.
 
 Current dashboard API availability:
 
@@ -1737,13 +1738,13 @@ Current dashboard API availability:
   - `GET /api/app/dashboard/daily-nutrition?Date=...`
   - `GET /api/app/dashboard/daily-workout?Date=...`
 - Local OpenAPI schemas include `DailyDashboardDto`, `DailyNutritionSummaryDto`, `DailyWorkoutSummaryDto`, and `MealCaloriesBreakdownDto`.
-- No frontend API module consumes these yet.
+- `dashboardApi.ts` consumes these endpoints through the shared `apiRequest` client.
 
 Missing-profile behavior:
 
-- Must be confirmed from backend: missing profile may return `404`, create-on-read, or nullable fields.
-- Frontend must not crash when profile fields are absent/null.
-- If backend indicates missing/incomplete profile, Profile/Dashboard should show a CTA to complete profile.
+- Confirmed create-on-read: `GET /my-profile` creates and returns a default profile when needed.
+- Nullable optional fields are rendered as blank inputs and sent back as `null` when left blank.
+- Dashboard still needs an explicit incomplete-profile/empty-data experience once its DTO behavior is verified.
 
 Dependency between profile and dashboard:
 
@@ -1753,14 +1754,12 @@ Dependency between profile and dashboard:
 
 Planned frontend areas:
 
-- Add `react/src/api/profileApi.ts` after verifying DTOs.
-- Add `react/src/api/dashboardApi.ts` only after confirming local/live OpenAPI contracts.
-- Replace placeholder ProfilePage form with real API load/save.
 - Replace static DashboardPage cards with real dashboard API data.
 
 Definition of done:
 
-- Profile page loads current profile, handles missing profile/null fields, validates only basic UX constraints, and saves through backend API.
+- Profile page loads current profile, handles create-on-read/null fields, validates only basic UX constraints, and saves through backend API. **Completed in Phase 6.3.**
+- Dashboard API layer exposes combined, nutrition-only, workout-only, and optional-date reads. **Completed in Phase 6.4.**
 - Dashboard page loads real dashboard data, handles missing nutrition/workout/profile data, and shows loading/error/empty states.
 - No dashboard values remain hardcoded as production data.
 - Dashboard does not crash when profile or daily logs are missing.
@@ -1968,12 +1967,12 @@ Where Phase 7 authentication can be deferred:
 - Phase 4.2: create `workoutSessionsApi.ts` after verification.
 - Phase 4.3–4.6: active workout, start workout, current exercise, and set management using real APIs.
 - Phase 5.1–5.5: verify food contracts, create `foodsApi.ts`, implement real FoodLog page/search/add/edit.
-- Phase 6.1–6.3: verify profile contracts, create `profileApi.ts`, implement real ProfilePage if profile is needed by dashboard/user flows.
+- Phase 6.1–6.3: completed profile verification, `profileApi.ts`, and real ProfilePage integration.
 
 ## P1 — Production readiness
 
 - Phase 4.7–4.9: session exercise management, finish/cancel, business-rule error handling.
-- Phase 6.4–6.6: dashboard API/page and missing-profile fallback.
+- Phase 6.4: dashboard API contract/module completed. Phase 6.5–6.6: dashboard page and missing-profile/empty-data fallback.
 - Phase 7: OIDC hardening, auth state UX, protected routes, expired-token handling, backend auth/CORS/OpenIddict verification.
 - Consistent handling of backend business errors for user-specific aggregates.
 
@@ -1997,7 +1996,7 @@ Where Phase 7 authentication can be deferred:
 | ExerciseSet | `ExerciseSetDto`, `AddExerciseSetDto`, `UpdateExerciseSetDto`, complete/uncomplete endpoints and supported fields | Required before rendering set forms; local OpenAPI supports reps/weight/rpe/note, not duration/distance. |
 | FoodProduct | `FoodProductDto`, search query fields, barcode lookup behavior, product source/verified/active semantics | Required before product search and barcode UI. |
 | FoodLog | `FoodLogDto`, create/update DTOs, `FoodUnit`, `MealType`, date filtering, daily summary behavior | Required before real food log page and editor. |
-| UserProfile | `UserProfileDto`, `UpdateUserProfileDto`, `Gender`, `FitnessGoal`, missing-profile behavior | Required before replacing ProfilePage placeholder. |
+| UserProfile | `UserProfileDto`, `UpdateUserProfileDto`, `Gender`, `FitnessGoal`, missing-profile behavior | Verified and implemented in Phase 6.1–6.3. |
 | Dashboard | `DailyDashboardDto`, nutrition/workout summary DTOs, date query behavior, missing profile/log behavior | Required before replacing hardcoded DashboardPage. |
 | Authentication/OpenIddict | SPA client, redirect/logout URIs, scopes, code+PKCE, CORS, catalog authorization decision | Required before production-grade React route protection and reliable user-specific flows. |
 
@@ -2070,7 +2069,7 @@ Existing equivalent:
 
 Backend verification:
 
-- Required for profile fields, enum labels, and missing-profile behavior.
+- Completed for profile fields, enum labels, timezone support, and create-on-read missing-profile behavior.
 
 Consumers:
 
@@ -2078,7 +2077,7 @@ Consumers:
 
 Notes:
 
-- Current ProfilePage UI fields do not fully match local OpenAPI; do not reuse placeholders blindly.
+- ProfilePage now matches the verified local profile contract; keep dashboard implementation driven by its own DTOs.
 
 ## `dashboardApi.ts`
 
@@ -2092,7 +2091,7 @@ Existing equivalent:
 
 Backend verification:
 
-- Required for daily dashboard DTOs, date query format, and missing-data semantics.
+- Completed for daily dashboard DTOs, date query format, and endpoint operations. Missing-data UI semantics remain for DashboardPage integration.
 
 Consumers:
 
@@ -2100,7 +2099,7 @@ Consumers:
 
 Notes:
 
-- Create this only when replacing hardcoded dashboard data with real backend data.
+- The API module is implemented; DashboardPage should consume backend summaries instead of reproducing business calculations.
 
 ---
 

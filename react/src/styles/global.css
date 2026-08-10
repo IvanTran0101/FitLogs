@@ -887,6 +887,41 @@ button {
   background: var(--color-lime);
 }
 
+.profile-form-card h2 {
+  margin: 0;
+  font-size: 30px;
+  text-transform: uppercase;
+}
+
+.profile-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.profile-timezone-help {
+  margin: -4px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.profile-form-error {
+  margin: 0;
+  border: 2px solid var(--color-border);
+  background: var(--color-pink);
+  padding: 10px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.profile-auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+
 .form-grid {
   display: grid;
   gap: 14px;

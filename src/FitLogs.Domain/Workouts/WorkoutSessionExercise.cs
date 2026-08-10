@@ -160,6 +160,7 @@ public class WorkoutSessionExercise : Entity<Guid>
         _sets.Remove(set);
     }
 
+    /// <summary>Marks one set complete so session-level metrics can count the performed work.</summary>
     public void CompleteSet(Guid exerciseSetId, DateTime completedAt)
     {
         var set = GetSetOrThrow(exerciseSetId);

@@ -20,6 +20,7 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
     {
     }
 
+    /// <summary>Loads one workout session and optionally includes its exercises and sets.</summary>
     public async Task<WorkoutSession?> FindWithDetailsAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default)
     {
         var queryable = await GetQueryableAsync();
@@ -35,6 +36,7 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
         
     }
 
+    /// <summary>Finds the user's active workout session together with its exercise and set details.</summary>
     public async Task<WorkoutSession?> FindCurrentInProgressAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var dbSet = await GetDbSetAsync();
@@ -46,6 +48,7 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
                                       GetCancellationToken(cancellationToken));
     }
 
+    /// <summary>Checks whether the user has another in-progress session, optionally excluding one session.</summary>
     public async Task<bool> HasInProgressSessionAsync(Guid userId, Guid? excludedId = null, CancellationToken cancellationToken = default)
     {
         var dbSet = await GetDbSetAsync();
@@ -57,6 +60,7 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
         
     }
 
+    /// <summary>Loads completed sessions whose completion time falls inside the supplied UTC range.</summary>
     public async Task<List<WorkoutSession>> GetCompletedListByUserAndDateRangeAsync(Guid userId, DateTime startDate, DateTime endDate,
         CancellationToken cancellationToken = default)
     {
@@ -114,6 +118,7 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
             .ToList();
     }
 
+    /// <summary>Inserts a session and translates the database uniqueness conflict into a domain error.</summary>
     public override async Task<WorkoutSession> InsertAsync(
         WorkoutSession entity,
         bool autoSave = false,
@@ -129,6 +134,7 @@ public class EfCoreWorkoutSessionRepository : EfCoreRepository<FitLogsDbContext,
         }
     }
 
+    /// <summary>Identifies the PostgreSQL constraint that prevents multiple active sessions per user.</summary>
     private static bool IsInProgressSessionUniqueViolation(DbUpdateException exception)
     {
         return exception.InnerException is PostgresException postgresException

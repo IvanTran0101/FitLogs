@@ -28,6 +28,7 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         _userProfileRepository = userProfileRepository;
     }
 
+    /// <summary>Creates a food log, applies optional nutrition corrections, and persists it for the current user.</summary>
     public async Task<FoodLogDto> CreateAsync(CreateFoodLogDto input)
     {
         var foodLog = await _foodLogManager.CreateFromProductAsync(
@@ -47,6 +48,7 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         return ObjectMapper.Map<FoodLog, FoodLogDto>(foodLog);
     }
 
+    /// <summary>Updates an owned food log and refreshes its nutrition snapshot from the selected product.</summary>
     public async Task<FoodLogDto> UpdateAsync(Guid id, UpdateFoodLogDto input)
     {
         var foodLog = await _foodLogRepository.GetAsync(id);
@@ -88,6 +90,7 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         return ObjectMapper.Map<FoodLog, FoodLogDto>(foodLog);
     }
 
+    /// <summary>Returns the current user's food logs for one local day converted into UTC boundaries.</summary>
     public async Task<List<FoodLogDto>> GetListByDateAsync(GetFoodLogListInput input)
     {
         var (startDate, endDate) = await GetUserDateRangeAsync(input.Date);
@@ -97,6 +100,7 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         return ObjectMapper.Map<List<FoodLog>, List<FoodLogDto>>(foodLogs);
     }
 
+    /// <summary>Totals calories and macros for food logs that fall within one user's local day.</summary>
     public async Task<DailyFoodNutritionSummaryDto> GetDailySummaryAsync(GetFoodLogListInput input)
     {
         var (startDate, endDate) = await GetUserDateRangeAsync(input.Date);

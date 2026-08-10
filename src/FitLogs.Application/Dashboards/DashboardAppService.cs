@@ -28,6 +28,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _clock = clock;
     }
 
+    /// <summary>Builds the dashboard for the user's current local calendar day.</summary>
     public async Task<DailyDashboardDto> GetTodayAsync()
     {
         var profile = await _userProfileRepository.FindByUserIdAsync(CurrentUser.GetId());
@@ -39,6 +40,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         
     }
 
+    /// <summary>Combines nutrition and workout summaries for the requested local calendar day.</summary>
     public async Task<DailyDashboardDto> GetDailyAsync(GetDailyDashboardInput input)
     {
         var profile = await _userProfileRepository.FindByUserIdAsync(CurrentUser.GetId());
@@ -59,6 +61,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         };
     }
 
+    /// <summary>Queries food logs inside the user's UTC day range and calculates nutrition totals.</summary>
     public async Task<DailyNutritionSummaryDto> GetDailyNutritionAsync(GetDailyDashboardInput input)
     {
         var userId = CurrentUser.GetId();
@@ -73,6 +76,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         
     }
 
+    /// <summary>Queries completed workout metrics inside the user's UTC day range.</summary>
     public async Task<DailyWorkoutSummaryDto> GetDailyWorkoutAsync(GetDailyDashboardInput input)
     {
         var userId = CurrentUser.GetId();
@@ -87,6 +91,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         
     }
 
+    /// <summary>Calculates calories, macros, meal breakdowns, and target status from food logs.</summary>
     private DailyNutritionSummaryDto BuildNutritionSummary(
         UserProfile? userProfile,
         List<FoodLog> foodLogs)
@@ -123,6 +128,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         };
     }
 
+    /// <summary>Aggregates completed-session duration, exercises, sets, and volume for the dashboard.</summary>
     private static DailyWorkoutSummaryDto BuildWorkoutSummary(
         List<CompletedWorkoutSessionMetric> workoutSessions)
     {
@@ -148,6 +154,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 : timeZoneId);
     }
 
+    /// <summary>Converts a user's local date into a half-open UTC query range.</summary>
     private static (DateTime StartDate, DateTime EndDate) GetDateRange(DateOnly selectedDate, string? timeZoneId)
     {
         return UserTimeZone.GetUtcDateRange(

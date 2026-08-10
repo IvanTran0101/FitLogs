@@ -22,6 +22,7 @@ function App() {
   useEffect(() => {
     let cancelled = false
 
+    // Synchronize the browser's IANA timezone so backend local-day queries match the user's device.
     async function synchronizeTimeZone() {
       const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
       if (!browserTimeZone) {

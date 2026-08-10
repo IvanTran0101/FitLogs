@@ -23,6 +23,26 @@ type AbpErrorResponse = {
 }
 
 const BUSINESS_ERROR_MESSAGES: Record<string, string> = {
+  'FitLogs:UserProfile:InvalidDateOfBirth':
+    'Ngày sinh không hợp lệ.',
+  'FitLogs:UserProfile:InvalidHeightCm':
+    'Chiều cao phải nằm trong khoảng hợp lệ.',
+  'FitLogs:UserProfile:InvalidWeightKg':
+    'Cân nặng phải nằm trong khoảng hợp lệ.',
+  'FitLogs:UserProfile:InvalidDailyTargetCalories':
+    'Calories mục tiêu phải nằm trong khoảng hợp lệ.',
+  'FitLogs:UserProfile:InvalidGender':
+    'Giới tính không hợp lệ.',
+  'FitLogs:UserProfile:InvalidFitnessGoal':
+    'Mục tiêu thể chất không hợp lệ.',
+  'FitLogs:UserProfile:InvalidTimeZoneId':
+    'Múi giờ không hợp lệ.',
+  'FitLogs:UserProfile:AlreadyExists':
+    'Hồ sơ người dùng đã tồn tại.',
+  'FitLogs:UserProfile:NotFound':
+    'Không tìm thấy hồ sơ người dùng.',
+  'FitLogs:UserProfile:ForbiddenProfileAccess':
+    'Bạn không có quyền truy cập hồ sơ này.',
   'FitLogs:Food:InvalidQuantity':
     'Số lượng món ăn không hợp lệ. Hãy nhập giá trị lớn hơn 0.',
   'FitLogs:Food:ProductNotFound':
