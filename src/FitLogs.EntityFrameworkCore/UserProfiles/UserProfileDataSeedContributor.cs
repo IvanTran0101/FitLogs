@@ -9,7 +9,7 @@ using Volo.Abp.Identity;
 namespace FitLogs.UserProfiles;
 
 /// <summary>Backfills profiles for identity users created before the profile lifecycle handler existed.</summary>
-public sealed class UserProfileDataSeedContributor : IDataSeedContributor, ITransientDependency
+public class UserProfileDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
     private readonly FitLogs.EntityFrameworkCore.FitLogsDbContext _dbContext;
     private readonly IUserProfileRepository _userProfileRepository;

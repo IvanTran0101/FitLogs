@@ -26,7 +26,7 @@ The recommended evolution is incremental: establish a contract/test/security bas
 
 ## Access result
 
-| Check | Result | Evidence / limitation |
+| Check | Result | Evidence / limitation 
 |---|---|---|
 | Repository accessible | **Partially accessible but sufficient for read audit** | Direct file and commit reads succeeded through the connected GitHub source. Repository listing/search-index results were empty, so files were discovered through commit history and targeted reads. |
 | Requested branch `main` | **Does not exist** | GitHub returned `No commit found for the ref main`. |

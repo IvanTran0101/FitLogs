@@ -11,13 +11,14 @@ import {
   type WorkoutPlanDto,
   type WorkoutPlanExerciseDto,
 } from '../../api/workoutPlansApi'
-import { createWorkoutSession } from '../../api/workoutSessionsApi'
+import { startWorkoutFromPlan } from '../../api/workoutSessionsApi'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
 import { NeoCard } from '../../components/NeoCard'
 import { NeoButton } from '../../components/NeoButton'
 import { PageShell } from '../../components/PageShell'
+
 
 function getExerciseName(exercises: ExerciseDto[], exerciseId: string) {
     return (
@@ -140,10 +141,9 @@ export function WorkoutPlanDetailPage() {
       setIsStartingWorkout(true)
       setStartWorkoutError(null)
 
-      await createWorkoutSession({
-        workoutPlanId: plan.id,
-        name: plan.name ?? 'Buổi tập',
-      })
+        await startWorkoutFromPlan({
+            workoutPlanId: plan.id,
+        })
 
       navigate('/workout')
     } catch (error) {
