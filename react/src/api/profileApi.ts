@@ -30,6 +30,38 @@ export type UpdateUserProfileDto = {
   timeZoneId: string
 }
 
+/** Identifies optional profile values needed for useful dashboard targets and summaries. */
+export type ProfileCompletionField = 'heightCm' | 'weightKg' | 'dailyTargetCalories'
+
+/** Finds the dashboard-relevant profile values that are still blank in a server response. */
+export function getProfileCompletionMissingFields(
+  profile: UserProfileDto,
+): ProfileCompletionField[] {
+  const missingFields: ProfileCompletionField[] = []
+
+  if (profile.heightCm === null || profile.heightCm === undefined) {
+    missingFields.push('heightCm')
+  }
+
+  if (profile.weightKg === null || profile.weightKg === undefined) {
+    missingFields.push('weightKg')
+  }
+
+  if (
+    profile.dailyTargetCalories === null ||
+    profile.dailyTargetCalories === undefined
+  ) {
+    missingFields.push('dailyTargetCalories')
+  }
+
+  return missingFields
+}
+
+/** Returns true when all dashboard-relevant optional profile values have been provided. */
+export function isUserProfileComplete(profile: UserProfileDto) {
+  return getProfileCompletionMissingFields(profile).length === 0
+}
+
 /** Loads the signed-in user's profile; the backend creates a default profile when it is missing. */
 export function getMyProfile() {
   return apiRequest<UserProfileDto>('/api/app/user-profile/my-profile')

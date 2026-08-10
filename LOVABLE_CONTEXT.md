@@ -1095,7 +1095,7 @@ Do not fix these as part of context/handover documentation unless explicitly ask
 | API client | Implemented/Partial | `apiRequest()` handles fetch, bearer token, ABP errors; no generated client. |
 | OpenAPI | Available | `src/api/openapi.json` exists as reference only. |
 | Design system | Implemented/Partial | Neo-Brutalist global CSS and reusable components. |
-| Dashboard | Partial | Static UI only. |
+| Dashboard | Implemented/Partial | Real API integration with date selection, loading/error/empty states, and incomplete-profile CTA; route protection remains. |
 | Exercise Library | Implemented | Real API read integration and filters. |
 | Exercise Detail | Implemented/Partial | Real read integration; action buttons not fully wired. |
 | Exercise Picker | Implemented/Partial | Real add-to-plan integration; standalone route incomplete. |
@@ -1122,7 +1122,7 @@ P0 — required to make core flows work:
 
 P1 — important:
 
-- Verify dashboard DTO behavior and implement `dashboardApi.ts`/DashboardPage.
+- Harden authentication and add protected-route behavior for user-specific pages.
 - Implement food log/product API layer and replace `FoodLogPage` placeholder.
 - Improve `ExercisePickerPage` validation for target fields before submit.
 - Add plan filtering/search/pagination if plan count grows.
@@ -1707,7 +1707,7 @@ Requirements:
 
 Status:
 
-- Phase 6.1–6.4 completed; dashboard page integration and missing-data handling are next.
+- Phase 6.1–6.6 completed; Phase 7 authentication hardening is next.
 
 Current ProfilePage state:
 
@@ -1718,7 +1718,9 @@ Current ProfilePage state:
 
 Current DashboardPage state:
 
-- `react/src/features/dashboard/DashboardPage.tsx` contains static/hardcoded calories, macros, workout, streak, progress, and weight cards.
+- `react/src/features/dashboard/DashboardPage.tsx` loads real combined dashboard summaries, supports an optional selected date, and shows loading/error/empty states.
+- Nutrition, macro, meal, and completed-workout cards use only backend DTO values; unsupported placeholder streak, progress, weight, and plan-name cards were removed.
+- The dashboard loads the profile independently and shows a `/profile` CTA when height, weight, or daily calorie target is missing.
 - `react/src/api/dashboardApi.ts` contains the verified dashboard DTOs and four read operations.
 - No dashboard route protection exists.
 
@@ -1744,7 +1746,8 @@ Missing-profile behavior:
 
 - Confirmed create-on-read: `GET /my-profile` creates and returns a default profile when needed.
 - Nullable optional fields are rendered as blank inputs and sent back as `null` when left blank.
-- Dashboard still needs an explicit incomplete-profile/empty-data experience once its DTO behavior is verified.
+- Dashboard renders an explicit no-data state when both summaries are empty.
+- Because the dashboard DTO has no profile-completeness flag, the frontend derives a narrow CTA from missing height, weight, or daily target values without replacing backend validation.
 
 Dependency between profile and dashboard:
 
@@ -1760,14 +1763,13 @@ Definition of done:
 
 - Profile page loads current profile, handles create-on-read/null fields, validates only basic UX constraints, and saves through backend API. **Completed in Phase 6.3.**
 - Dashboard API layer exposes combined, nutrition-only, workout-only, and optional-date reads. **Completed in Phase 6.4.**
-- Dashboard page loads real dashboard data, handles missing nutrition/workout/profile data, and shows loading/error/empty states.
-- No dashboard values remain hardcoded as production data.
-- Dashboard does not crash when profile or daily logs are missing.
+- Dashboard page loads real dashboard data, handles missing nutrition/workout data, and shows loading/error/empty states. **Completed in Phase 6.5.**
+- No dashboard values remain hardcoded as production data. **Completed in Phase 6.5.**
+- Dashboard does not crash when profile or daily logs are missing, and incomplete profiles receive a profile CTA. **Completed in Phase 6.6.**
 
 Risks:
 
-- Current ProfilePage placeholders do not exactly match backend fields; Protein and activity level are not confirmed in local `UserProfileDto`.
-- Dashboard card design may need to adapt to actual dashboard DTOs rather than current static layout.
+- Dashboard route protection remains unresolved and belongs to Phase 7 authentication hardening.
 - Auth route protection becomes more important as these pages become user-specific.
 
 ---
@@ -1972,7 +1974,7 @@ Where Phase 7 authentication can be deferred:
 ## P1 — Production readiness
 
 - Phase 4.7–4.9: session exercise management, finish/cancel, business-rule error handling.
-- Phase 6.4: dashboard API contract/module completed. Phase 6.5–6.6: dashboard page and missing-profile/empty-data fallback.
+- Phase 6.4: dashboard API contract/module completed. Phase 6.5: real DashboardPage completed. Phase 6.6: missing-profile/incomplete-profile fallback completed. Phase 7 is next.
 - Phase 7: OIDC hardening, auth state UX, protected routes, expired-token handling, backend auth/CORS/OpenIddict verification.
 - Consistent handling of backend business errors for user-specific aggregates.
 
@@ -1997,7 +1999,7 @@ Where Phase 7 authentication can be deferred:
 | FoodProduct | `FoodProductDto`, search query fields, barcode lookup behavior, product source/verified/active semantics | Required before product search and barcode UI. |
 | FoodLog | `FoodLogDto`, create/update DTOs, `FoodUnit`, `MealType`, date filtering, daily summary behavior | Required before real food log page and editor. |
 | UserProfile | `UserProfileDto`, `UpdateUserProfileDto`, `Gender`, `FitnessGoal`, missing-profile behavior | Verified and implemented in Phase 6.1–6.3. |
-| Dashboard | `DailyDashboardDto`, nutrition/workout summary DTOs, date query behavior, missing profile/log behavior | Required before replacing hardcoded DashboardPage. |
+| Dashboard | `DailyDashboardDto`, nutrition/workout summary DTOs, date query behavior, missing profile/log behavior | Verified and implemented in Phase 6.4–6.6. |
 | Authentication/OpenIddict | SPA client, redirect/logout URIs, scopes, code+PKCE, CORS, catalog authorization decision | Required before production-grade React route protection and reliable user-specific flows. |
 
 Actual local references available:
@@ -2116,8 +2118,8 @@ Notes:
 | User can operate only own workout sessions, plans, food logs, and profile. | NEEDS BACKEND VERIFICATION for each aggregate, expected ABP behavior | Route/UI guards are UX only; backend authorization must enforce. |
 | FoodProduct is catalog/source nutrition data. | CONFIRMED by local OpenAPI shape | Do not treat product records as user-specific logs. |
 | FoodLog is user-specific logged consumption. | CONFIRMED by local OpenAPI `FoodLogDto.userId` | Food log UI should require authenticated user-specific API calls. |
-| Dashboard values should come from backend summaries. | NEEDS BACKEND VERIFICATION for exact semantics | Do not recompute business summaries unless backend contract requires it. |
-| Profile may be missing/incomplete. | NEEDS BACKEND VERIFICATION | Show fallback/CTA; do not crash on null/missing fields. |
+| Dashboard values should come from backend summaries. | CONFIRMED by dashboard contracts | Display backend totals; only derive presentation-only percentage/labels in the UI. |
+| Profile may be missing/incomplete. | CONFIRMED create-on-read; completeness is inferred from nullable fields | Show the dashboard profile CTA and keep null fields safe; backend remains authoritative. |
 
 ---
 
@@ -2198,30 +2200,31 @@ Missing:
 
 Implemented:
 
-- Profile page shell and placeholder form.
-- Login/logout buttons.
+- Real profile load/save form using the verified API contract.
+- Login/logout buttons and null-safe optional fields.
 
 Partial:
 
-- Local OpenAPI contains current profile get/update.
+- Authentication route protection remains a Phase 7 concern.
 
 Missing:
 
-- `profileApi.ts`, real form binding, save behavior, missing profile fallback.
+- None for Phase 6; profile completeness CTA is surfaced from the dashboard.
 
 ## View dashboard
 
 Implemented:
 
-- Static dashboard UI.
+- Real dashboard summaries with selected-date loading.
+- Loading, API error, no-data, and incomplete-profile states.
 
 Partial:
 
-- Local OpenAPI contains dashboard endpoints.
+- Authentication route protection remains.
 
 Missing:
 
-- `dashboardApi.ts`, real data loading, missing-profile/no-data states.
+- None for Phase 6.
 
 ## Login and access protected page
 
