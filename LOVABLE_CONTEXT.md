@@ -23,7 +23,7 @@ Current frontend role:
 Current frontend maturity:
 
 - Exercise Library and Workout Plan flows are the most developed.
-- Authentication wiring includes an app-wide auth context/provider; route guards and renewal hardening remain.
+- Authentication wiring includes an app-wide auth context/provider and protected-route guard; renewal and permission hardening remain.
 - Food Log, Dashboard, and Workout Session pages are mostly placeholders or static UI; Profile now loads and saves real backend data.
 - API integration is handwritten, not generated.
 - The app uses a consistent Neo-Brutalist visual style with shared components and a mobile shell.
@@ -181,28 +181,28 @@ Routes are declared in `/react/src/App.tsx`.
 
 | Route | Page | Auth Required | Status | Notes |
 | --- | --- | --- | --- | --- |
-| `/` | `DashboardPage` | Not enforced | Partial | Static/mock dashboard data. |
-| `/food` | `FoodLogPage` | Not enforced | Partial | Placeholder UI only. |
-| `/workout` | `WorkoutPage` | Not enforced | Partial | Static cards linking to exercise library/picker. Workout session integration not implemented. |
-| `/plans` | `WorkoutPlansPage` | Backend-enforced only | Implemented/Partial | Loads workout plans from API, handles loading/error/empty. |
-| `/profile` | `ProfilePage` | Not enforced | Partial | Static profile form plus login/logout buttons. No profile API integration. |
+| `/` | `DashboardPage` | ProtectedRoute + backend | Implemented/Partial | Real dashboard data with loading/error/empty/profile states. |
+| `/food` | `FoodLogPage` | ProtectedRoute + backend | Partial | Placeholder UI only. |
+| `/workout` | `WorkoutPage` | ProtectedRoute + backend | Partial | Static cards linking to exercise library/picker. Workout session integration not implemented. |
+| `/plans` | `WorkoutPlansPage` | ProtectedRoute + backend | Implemented/Partial | Loads workout plans from API, handles loading/error/empty. |
+| `/profile` | `ProfilePage` | ProtectedRoute + backend | Implemented/Partial | Real profile form plus shared login/logout actions. |
 | `/exercises` | `ExerciseLibraryPage` | Backend-enforced only | Implemented | Loads exercises, muscle groups, equipment from API and filters locally. |
 | `/exercises/:exerciseId` | `ExerciseDetailPage` | Backend-enforced only | Implemented/Partial | Uses `getExerciseBySlug(exerciseId)`. Detail actions mostly links/placeholders. |
 | `/exercise-picker` | `ExercisePickerPage` | Not enforced | Partial | Standalone picker logs selection to console when no `planId`. |
-| `/plans/new` | `WorkoutPlanEditorPage` | Backend-enforced only | Implemented/Partial | Create plan form and submit. |
-| `/plans/:planId` | `WorkoutPlanDetailPage` | Backend-enforced only | Implemented/Partial | Loads plan detail, shows exercises, remove/reorder actions. |
-| `/plans/:planId/edit` | `WorkoutPlanEditorPage` | Backend-enforced only | Implemented/Partial | Edit plan form and submit. |
-| `/plans/:planId/add-exercises` | `ExercisePickerPage` | Backend-enforced only | Implemented/Partial | Adds selected exercises to plan with target inputs. |
-| `/plans/:planId/exercises/:workoutPlanExerciseId/edit` | `WorkoutPlanExerciseEditorPage` | Backend-enforced only | Implemented/Partial | Edits target sets/reps/kg/rest/note/orderIndex. |
+| `/plans/new` | `WorkoutPlanEditorPage` | ProtectedRoute + backend | Implemented/Partial | Create plan form and submit. |
+| `/plans/:planId` | `WorkoutPlanDetailPage` | ProtectedRoute + backend | Implemented/Partial | Loads plan detail, shows exercises, remove/reorder actions. |
+| `/plans/:planId/edit` | `WorkoutPlanEditorPage` | ProtectedRoute + backend | Implemented/Partial | Edit plan form and submit. |
+| `/plans/:planId/add-exercises` | `ExercisePickerPage` | ProtectedRoute + backend | Implemented/Partial | Adds selected exercises to plan with target inputs. |
+| `/plans/:planId/exercises/:workoutPlanExerciseId/edit` | `WorkoutPlanExerciseEditorPage` | ProtectedRoute + backend | Implemented/Partial | Edits target sets/reps/kg/rest/note/orderIndex. |
 | `/auth/callback` | `AuthCallbackPage` | Public callback | Implemented/Partial | Completes OIDC login and navigates home. |
 | `/auth/logout-callback` | `AuthLogoutCallbackPage` | Public callback | Implemented/Partial | Completes OIDC logout and navigates home. |
 | `*` | `Navigate to /` | Public | Implemented | Catch-all redirect. |
 
 Route guards:
 
-- No frontend route guard component exists.
-- Auth/authorization is currently enforced by backend responses.
-- Routes are public from React's perspective.
+- `ProtectedRoute` gates user-specific routes before their page components render.
+- Auth/authorization remains enforced by the backend; the guard is a UX boundary, not a security replacement.
+- Public catalog routes remain available without the guard.
 
 Layouts:
 
@@ -259,12 +259,12 @@ Refresh token handling:
 Authentication context/provider:
 
 - `react/src/auth/AuthProvider.tsx`, `authContext.ts`, and `useAuth.ts` provide shared auth state.
-- No `useAuth` hook exists.
-- Components do not subscribe to login state.
+- `ProfilePage` consumes `useAuth()` for login/logout actions.
 
 Protected routes:
 
-- No protected-route implementation exists.
+- `react/src/auth/ProtectedRoute.tsx` displays an auth-loading state, login CTA, or the protected page.
+- The requested internal path is carried through OIDC login and restored safely after the callback.
 - Unauthorized API calls show backend/API error messages through page-level `ErrorState` where implemented.
 
 HTTP 401/login handling:
@@ -1065,8 +1065,7 @@ Actual technical debt observed:
 
 - No generated API client; DTO types are handwritten and can drift from backend.
 - `openapi.json` is large and checked into `src/api`, but no generation workflow exists.
-- No auth context/provider; UI cannot easily react to login state.
-- No protected routes or permission guards.
+- Auth context/provider and protected routes are implemented; UI permission checks are not.
 - No token refresh/silent renew flow.
 - `FoodLogPage`, `WorkoutPage`, and `DashboardPage` remain mostly placeholders/static; `ProfilePage` and the dashboard API layer are connected to backend contracts.
 - `ExercisePickerPage` has a standalone route that only logs selected exercise IDs when no `planId` exists.
@@ -1089,8 +1088,8 @@ Do not fix these as part of context/handover documentation unless explicitly ask
 | Area | Status | Notes |
 | --- | --- | --- |
 | App shell | Implemented | `PageShell`, fixed bottom nav, scrollable content. |
-| Routing | Implemented/Partial | Routes exist; no nested layouts or guards. |
-| Authentication | Implemented/Partial | OIDC redirect flow and shared auth state exist; route guards, renewal, and permission UX remain. |
+| Routing | Implemented/Partial | Routes and `ProtectedRoute` exist; no nested layouts. |
+| Authentication | Implemented/Partial | OIDC redirect flow, shared auth state, and protected routes exist; renewal and permission UX remain. |
 | Authorization | Backend only | No frontend permission checks. |
 | API client | Implemented/Partial | `apiRequest()` handles fetch, bearer token, ABP errors; no generated client. |
 | OpenAPI | Available | `src/api/openapi.json` exists as reference only. |
@@ -1778,7 +1777,7 @@ Risks:
 
 Status:
 
-- Phase 7.1–7.2 completed; Phase 7.3 protected-route work is next.
+- Phase 7.1–7.3 completed; Phase 7.4 expired-token and permission handling is next.
 
 ## Current authentication state
 
@@ -1792,7 +1791,7 @@ Status:
 - `ProfilePage` uses `useAuth()` for login/logout actions.
 - `AuthProvider` wraps the React application and exposes `user`, `isLoading`, `isAuthenticated`, login/logout, and `refreshUser`.
 - The provider synchronizes persisted users and listens for OIDC user-loaded, user-unloaded, signed-out, and access-token-expired events.
-- No route guard exists.
+- `ProtectedRoute` gates user-specific routes and preserves the requested internal path through login.
 - No silent renew/refresh handling is implemented.
 - No permission/role checks are implemented in frontend.
 
@@ -1852,7 +1851,7 @@ Target improvements:
 
 - Keep token lookup and attachment centralized in `httpClient.ts` / auth layer.
 - Use `AuthProvider`/`useAuth` for shared auth state; keep token attachment in `httpClient.ts`.
-- Add a protected route wrapper only after deciding which routes should require login.
+- Keep protected-route decisions centralized in `ProtectedRoute` rather than duplicating checks in pages.
 - Handle expired tokens centrally instead of adding token checks in every page.
 - Avoid custom username/password forms unless backend explicitly provides and requires them.
 
@@ -1871,6 +1870,12 @@ Likely user-specific routes based on current app and roadmap:
 - `/workout`
 - future active workout/session routes
 - `/` dashboard if it shows user-specific data
+
+Implementation status:
+
+- The routes above are wrapped by `react/src/auth/ProtectedRoute.tsx`.
+- `/exercises`, `/exercises/:exerciseId`, and the standalone `/exercise-picker` remain public catalog routes.
+- Login callback navigation accepts only internal paths and falls back to `/` to prevent open redirects.
 
 Potentially public routes:
 

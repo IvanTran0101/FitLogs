@@ -18,8 +18,11 @@ export const userManager = new UserManager({
   }),
 })
 
-export function login() {
-  return userManager.signinRedirect()
+// Starts OIDC login and optionally carries the protected path to the callback for safe return navigation.
+export function login(returnUrl?: string) {
+  return userManager.signinRedirect({
+    state: returnUrl ? { returnUrl } : undefined,
+  })
 }
 
 export function logout() {

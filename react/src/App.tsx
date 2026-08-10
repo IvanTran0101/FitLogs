@@ -15,6 +15,7 @@ import { WorkoutPlanEditorPage } from './features/workoutPlans/WorkoutPlanEditor
 import { WorkoutPlanExerciseEditorPage } from './features/workoutPlans/WorkoutPlanExerciseEditorPage'
 import { AuthCallbackPage } from './auth/AuthCallbackPage'
 import { AuthLogoutCallbackPage } from './auth/AuthLogoutCallbackPage'
+import { ProtectedRoute } from './auth/ProtectedRoute'
 import { getCurrentUser } from './auth/authService'
 import { getMyProfile, updateMyProfile } from './api/userProfileApi'
 
@@ -53,23 +54,23 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<DashboardPage />} />
-      <Route path="/food" element={<FoodLogPage />} />
-      <Route path="/food/add" element={<FoodAddPage />} />
-      <Route path="/food/logs/:foodLogId/edit" element={<FoodLogEditPage />} />
-      <Route path="/workout" element={<WorkoutPage />} />
-      <Route path="/plans" element={<WorkoutPlansPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/food" element={<ProtectedRoute><FoodLogPage /></ProtectedRoute>} />
+      <Route path="/food/add" element={<ProtectedRoute><FoodAddPage /></ProtectedRoute>} />
+      <Route path="/food/logs/:foodLogId/edit" element={<ProtectedRoute><FoodLogEditPage /></ProtectedRoute>} />
+      <Route path="/workout" element={<ProtectedRoute><WorkoutPage /></ProtectedRoute>} />
+      <Route path="/plans" element={<ProtectedRoute><WorkoutPlansPage /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/exercises" element={<ExerciseLibraryPage />} />
       <Route path="/exercises/:exerciseId" element={<ExerciseDetailPage />} />
       <Route path="/exercise-picker" element={<ExercisePickerPage />} />
-      <Route path="/plans/new" element={<WorkoutPlanEditorPage />} />
-      <Route path="/plans/:planId" element={<WorkoutPlanDetailPage />} />
-      <Route path="/plans/:planId/edit" element={<WorkoutPlanEditorPage />} />
-      <Route path="/plans/:planId/add-exercises" element={<ExercisePickerPage />} />
+      <Route path="/plans/new" element={<ProtectedRoute><WorkoutPlanEditorPage /></ProtectedRoute>} />
+      <Route path="/plans/:planId" element={<ProtectedRoute><WorkoutPlanDetailPage /></ProtectedRoute>} />
+      <Route path="/plans/:planId/edit" element={<ProtectedRoute><WorkoutPlanEditorPage /></ProtectedRoute>} />
+      <Route path="/plans/:planId/add-exercises" element={<ProtectedRoute><ExercisePickerPage /></ProtectedRoute>} />
       <Route
         path="/plans/:planId/exercises/:workoutPlanExerciseId/edit"
-        element={<WorkoutPlanExerciseEditorPage />}
+        element={<ProtectedRoute><WorkoutPlanExerciseEditorPage /></ProtectedRoute>}
       />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/auth/logout-callback" element={<AuthLogoutCallbackPage />} />
