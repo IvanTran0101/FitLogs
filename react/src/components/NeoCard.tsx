@@ -1,13 +1,13 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 type NeoCardProps = {
     children: ReactNode;
     className?: string;
-};
+} & HTMLAttributes<HTMLDivElement>;
 
-export function NeoCard({ children, className = '' }: NeoCardProps) {
+export function NeoCard({ children, className = '', ...props }: NeoCardProps) {
     return (
-        <div className={`neo-card ${className}`}>
+        <div className={`neo-card ${className}`} {...props}>
             {children}
         </div>
     )

@@ -52,6 +52,22 @@ public class WorkoutSessionStateTests
         exception.Code.ShouldBe(FitLogsDomainErrorCodes.WorkoutSessionCannotCompleteWithoutCompletedExercise);
     }
 
+    [Fact]
+    public void Completing_a_session_reconciles_an_exercise_with_completed_target_sets()
+    {
+        var session = CreateSession();
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 0, 1, 8);
+        var exercise = session.Exercises.Single();
+        session.AddSetToExercise(exercise.Id, Guid.NewGuid(), 1, 20, 8);
+        session.CompleteSetInExercise(exercise.Id, exercise.Sets.Single().Id, DateTime.UtcNow);
+        exercise.MarkInProgress();
+
+        session.Complete(DateTime.UtcNow);
+
+        session.Status.ShouldBe(WorkoutSessionStatus.Completed);
+        exercise.Status.ShouldBe(WorkoutSessionExerciseStatus.Completed);
+    }
+
     private static WorkoutSession CreateSession()
     {
         return new WorkoutSession(

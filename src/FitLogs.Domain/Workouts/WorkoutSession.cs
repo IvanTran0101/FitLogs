@@ -72,10 +72,6 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionMustHaveAtLeastOneExercise);
         }
 
-        if (!_exercises.SelectMany(x => x.Sets).Any(x => x.IsCompleted))
-        {
-            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionMustHaveAtLeastOneCompletedSet);
-        }
         if (Status != WorkoutSessionStatus.InProgress)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
@@ -85,10 +81,19 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         {
             throw new BusinessException(FitLogsDomainErrorCodes.InvalidWorkoutSessionEndedAt);
         }
-        if (!_exercises.Any(x => x.Status == WorkoutSessionExerciseStatus.Completed))
+        var completedExercises = _exercises
+            .Where(x => x.HasReachedTargetSets)
+            .ToList();
+        if (completedExercises.Count == 0)
         {
             throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionCannotCompleteWithoutCompletedExercise);
         }
+
+        foreach (var exercise in completedExercises)
+        {
+            exercise.MarkCompletedIfTargetReached();
+        }
+
         EndedAt = endedAt;
         Status = WorkoutSessionStatus.Completed;
     }

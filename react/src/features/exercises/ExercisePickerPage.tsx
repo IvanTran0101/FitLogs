@@ -16,7 +16,7 @@ import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
 import { getNameById } from './exerciseFormatters'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   addWorkoutPlanExercise,
   getWorkoutPlan,
@@ -54,9 +54,16 @@ export function ExercisePickerPage() {
   const { planId } = useParams()
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   
   async function handleAddExercisesToPlan() {
+  if (isSubmitting) {
+    return
+  }
+
   if (!planId) {
     console.log('Selected exercise ids:', selectedExerciseIds)
     return
@@ -93,7 +100,7 @@ export function ExercisePickerPage() {
         })
     }
 
-    navigate(`/plans/${planId}`)
+    navigate(`/plans/${planId}`, { replace: true })
   } catch (error) {
     setErrorMessage(
       error instanceof Error ? error.message : 'Không thể thêm bài tập vào plan.',
@@ -140,15 +147,18 @@ export function ExercisePickerPage() {
       }
 
       void loadPickerData()
-    }, [planId])
+    }, [planId, reloadToken])
 
-    const [isLoading, setIsLoading] = useState(true)
-    const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [filterText, setFilterText] = useState('')
     const [muscleGroupFilter, setMuscleGroupFilter] = useState('')
     const [equipmentFilter, setEquipmentFilter] = useState('')
+
+    // Re-runs the picker data requests after a transient backend or network failure.
+    function retryLoad() {
+      setReloadToken((currentToken) => currentToken + 1)
+    }
     function toggleExercise(exerciseId: string) {
-      if (existingExerciseIds.includes(exerciseId)) {
+      if (isSubmitting || existingExerciseIds.includes(exerciseId)) {
         return
       }
 
@@ -173,6 +183,10 @@ export function ExercisePickerPage() {
       field: keyof SelectedExerciseTarget,
       value: string,
     ) {
+      if (isSubmitting) {
+        return
+      }
+
       setSelectedExerciseTargets({
         ...selectedExerciseTargets,
         [exerciseId]: {
@@ -205,11 +219,16 @@ const filteredExercises = exercises.filter((exercise) => {
 })
 return (
     <PageShell title="Chọn bài tập">
+      <Link className="back-link" to={planId ? `/plans/${planId}` : '/workout'}>
+        ← {planId ? 'Quay lại kế hoạch' : 'Quay lại buổi tập'}
+      </Link>
+
       <section className="exercise-filter-panel">
         <NeoInput
         label="Tìm bài tập"
         placeholder="Bench press, squat..."
         value={filterText}
+        disabled={isLoading || isSubmitting}
         onChange={(event) => setFilterText(event.target.value)}
         />
 
@@ -217,6 +236,7 @@ return (
           <NeoSelect
             label="Nhóm cơ"
             value={muscleGroupFilter}
+            disabled={isLoading || isSubmitting}
             onChange={(event) => setMuscleGroupFilter(event.target.value)}
             options={[
               { label: 'Tất cả', value: '' },
@@ -230,6 +250,7 @@ return (
           <NeoSelect
             label="Thiết bị"
             value={equipmentFilter}
+            disabled={isLoading || isSubmitting}
             onChange={(event) => setEquipmentFilter(event.target.value)}
             options={[
               { label: 'Tất cả', value: '' },
@@ -245,7 +266,10 @@ return (
       {isLoading ? (
           <LoadingState message="Đang tải danh sách bài tập..." />
         ) : errorMessage ? (
-          <ErrorState message={errorMessage} />
+          <ErrorState
+            message={errorMessage}
+            action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+          />
         ) : filteredExercises.length === 0 ? (
           <EmptyState
             title={hasActiveFilters ? 'Không tìm thấy bài' : 'Chưa có bài tập để chọn'}
@@ -307,6 +331,7 @@ return (
                       type="number"
                       min={1}
                       value={selectedExerciseTargets[exercise.id].defaultSets}
+                      disabled={isSubmitting}
                       onChange={(event) =>
                         updateExerciseTarget(exercise.id, 'defaultSets', event.target.value)
                       }
@@ -317,6 +342,7 @@ return (
                       type="number"
                       min={1}
                       value={selectedExerciseTargets[exercise.id].defaultReps}
+                      disabled={isSubmitting}
                       onChange={(event) =>
                         updateExerciseTarget(exercise.id, 'defaultReps', event.target.value)
                       }
@@ -328,6 +354,7 @@ return (
                       min={0}
                       placeholder="Tuỳ chọn"
                       value={selectedExerciseTargets[exercise.id].defaultWeightKg}
+                      disabled={isSubmitting}
                       onChange={(event) =>
                         updateExerciseTarget(exercise.id, 'defaultWeightKg', event.target.value)
                       }
@@ -339,6 +366,7 @@ return (
                       min={0}
                       placeholder="Giây"
                       value={selectedExerciseTargets[exercise.id].restSeconds}
+                      disabled={isSubmitting}
                       onChange={(event) =>
                         updateExerciseTarget(exercise.id, 'restSeconds', event.target.value)
                       }
@@ -348,6 +376,7 @@ return (
                       label="Ghi chú"
                       placeholder="Tempo, form cue..."
                       value={selectedExerciseTargets[exercise.id].note}
+                      disabled={isSubmitting}
                       onChange={(event) =>
                         updateExerciseTarget(exercise.id, 'note', event.target.value)
                       }
@@ -361,7 +390,7 @@ return (
         )}
 
       
-      <div className="picker-footer">
+      <div className="picker-footer" aria-busy={isSubmitting}>
         <NeoButton
           className="full-width-button"
           disabled={selectedExerciseIds.length === 0 || isSubmitting}

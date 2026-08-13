@@ -21,6 +21,8 @@ public class WorkoutSessionExercise : Entity<Guid>
     public WorkoutSessionExerciseStatus Status { get; private set; }
     private readonly List<ExerciseSet> _sets = new();
     public IReadOnlyCollection<ExerciseSet> Sets => _sets.AsReadOnly();
+    public bool HasCompletedSet => _sets.Any(x => x.IsCompleted);
+    public bool HasReachedTargetSets => _sets.Count(x => x.IsCompleted) >= TargetSets;
     protected WorkoutSessionExercise()
     {
         // For ORM
@@ -114,6 +116,8 @@ public class WorkoutSessionExercise : Entity<Guid>
         string? note = null
     )
     {
+        EnsureNotSkipped();
+        MarkInProgress();
         if (_sets.Any(x => x.SetNumber == setNumber))
         {
             throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetNumberAlreadyExists);
@@ -139,6 +143,8 @@ public class WorkoutSessionExercise : Entity<Guid>
         string? note = null
     )
     {
+        EnsureNotSkipped();
+        MarkInProgress();
         var set = GetSetOrThrow(exerciseSetId);
 
         if (_sets.Any(x => x.Id != exerciseSetId && x.SetNumber == setNumber))
@@ -155,36 +161,73 @@ public class WorkoutSessionExercise : Entity<Guid>
 
     public void RemoveSet(Guid exerciseSetId)
     {
+        EnsureNotSkipped();
+        MarkInProgress();
         var set = GetSetOrThrow(exerciseSetId);
 
         _sets.Remove(set);
     }
 
-    /// <summary>Marks one set complete so session-level metrics can count the performed work.</summary>
+    /// <summary>Marks a set complete and marks this exercise complete when its target set count is reached.</summary>
     public void CompleteSet(Guid exerciseSetId, DateTime completedAt)
     {
+        EnsureNotSkipped();
+        MarkInProgress();
         var set = GetSetOrThrow(exerciseSetId);
 
         set.Complete(completedAt);
+        if (_sets.Count(x => x.IsCompleted) >= TargetSets)
+        {
+            Status = WorkoutSessionExerciseStatus.Completed;
+        }
     }
 
+    /// <summary>Synchronizes the exercise status from completed sets, including records saved before this rule existed.</summary>
+    public void MarkCompletedIfTargetReached()
+    {
+        if (HasReachedTargetSets)
+        {
+            Status = WorkoutSessionExerciseStatus.Completed;
+        }
+    }
+
+    /// <summary>Reopens an exercise after one of its completed sets is marked unfinished.</summary>
     public void UncompleteSet(Guid exerciseSetId)
     {
+        EnsureNotSkipped();
         var set = GetSetOrThrow(exerciseSetId);
 
         set.Uncomplete();
+        MarkInProgress();
     }
 
+    /// <summary>Marks this exercise skipped so it is excluded from normal exercise navigation.</summary>
     public void Skip()
     {
+        if (Status == WorkoutSessionExerciseStatus.Completed)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
+        }
         Status = WorkoutSessionExerciseStatus.Skipped;
     }
 
+    /// <summary>Marks a pending exercise active unless it has already been skipped.</summary>
     public void MarkInProgress()
     {
+        if (Status == WorkoutSessionExerciseStatus.Skipped)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
+        }
         Status = WorkoutSessionExerciseStatus.InProgress;
     }
-    
+
+    private void EnsureNotSkipped()
+    {
+        if (Status == WorkoutSessionExerciseStatus.Skipped)
+        {
+            throw new BusinessException(FitLogsDomainErrorCodes.WorkoutSessionStatusIsNotInProgress);
+        }
+    }
 
     private ExerciseSet GetSetOrThrow(Guid exerciseSetId)
     {

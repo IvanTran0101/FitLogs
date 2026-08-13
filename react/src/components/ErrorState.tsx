@@ -13,7 +13,7 @@ export function ErrorState({
   action,
 }: ErrorStateProps) {
   return (
-    <NeoCard className="state-card error-state">
+    <NeoCard className="state-card error-state" role="alert" aria-live="assertive">
       <div className="state-icon">!</div>
       <h2>{title}</h2>
       <p>{message}</p>

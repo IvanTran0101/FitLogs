@@ -6,7 +6,7 @@ type LoadingStateProps = {
 
 export function LoadingState({ message = 'Đang tải dữ liệu...' }: LoadingStateProps) {
   return (
-    <NeoCard className="state-card loading-state">
+    <NeoCard className="state-card loading-state" role="status" aria-live="polite" aria-busy="true">
       <div className="loading-block" />
       <div className="loading-lines">
         <span />

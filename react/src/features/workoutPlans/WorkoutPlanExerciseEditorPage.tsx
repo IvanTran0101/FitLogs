@@ -96,6 +96,7 @@ export function WorkoutPlanExerciseEditorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     async function loadEditorData() {
@@ -133,7 +134,12 @@ export function WorkoutPlanExerciseEditorPage() {
     }
 
     void loadEditorData()
-  }, [planId, workoutPlanExerciseId])
+  }, [planId, workoutPlanExerciseId, reloadToken])
+
+  // Re-runs the target request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
 
   async function handleSubmit(
     event: SyntheticEvent<HTMLFormElement, SubmitEvent>,
@@ -161,7 +167,7 @@ export function WorkoutPlanExerciseEditorPage() {
         toUpdateInput(form),
       )
 
-      navigate(`/plans/${planId}`)
+      navigate(`/plans/${planId}`, { replace: true })
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Không thể cập nhật target bài tập.',
@@ -182,7 +188,10 @@ export function WorkoutPlanExerciseEditorPage() {
   if (errorMessage) {
     return (
       <PageShell title="Sửa target">
-        <ErrorState message={errorMessage} />
+        <ErrorState
+          message={errorMessage}
+          action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+        />
       </PageShell>
     )
   }
@@ -222,12 +231,13 @@ export function WorkoutPlanExerciseEditorPage() {
             />
           }
         >
-          <form className="form-stack" onSubmit={handleSubmit}>
+          <form className="form-stack" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <NeoInput
             label="Thứ tự"
             type="number"
             min={1}
             value={form.orderIndex}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -242,6 +252,7 @@ export function WorkoutPlanExerciseEditorPage() {
             min={1}
             value={form.defaultSets}
             error={errors.defaultSets}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -256,6 +267,7 @@ export function WorkoutPlanExerciseEditorPage() {
             min={1}
             value={form.defaultReps}
             error={errors.defaultReps}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -272,6 +284,7 @@ export function WorkoutPlanExerciseEditorPage() {
             placeholder="Bỏ trống nếu không dùng kg"
             value={form.defaultWeightKg}
             error={errors.defaultWeightKg}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -287,6 +300,7 @@ export function WorkoutPlanExerciseEditorPage() {
             placeholder="Ví dụ 90"
             value={form.restSeconds}
             error={errors.restSeconds}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -301,6 +315,7 @@ export function WorkoutPlanExerciseEditorPage() {
               className="neo-input"
               rows={4}
               value={form.note}
+              disabled={isSubmitting}
               onChange={(event) =>
                 setForm({
                   ...form,

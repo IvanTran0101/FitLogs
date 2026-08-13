@@ -72,6 +72,7 @@ export function WorkoutPlanDetailPage() {
   const [mutatingExerciseId, setMutatingExerciseId] = useState<string | null>(null)
   const [isStartingWorkout, setIsStartingWorkout] = useState(false)
   const [startWorkoutError, setStartWorkoutError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
   useEffect(() => {
     async function loadPlanDetail() {
       if (!planId) {
@@ -105,7 +106,12 @@ export function WorkoutPlanDetailPage() {
     }
 
     void loadPlanDetail()
-  }, [planId])
+  }, [planId, reloadToken])
+
+  // Re-runs the plan detail request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
 
   async function handleRemoveExercise(planExerciseId: string) {
     if (!plan) {
@@ -168,7 +174,10 @@ export function WorkoutPlanDetailPage() {
   if (errorMessage) {
     return (
       <PageShell title="Chi tiết kế hoạch">
-        <ErrorState message={errorMessage} />
+        <ErrorState
+          message={errorMessage}
+          action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+        />
       </PageShell>
     )
   }

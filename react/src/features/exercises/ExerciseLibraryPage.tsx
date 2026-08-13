@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../../components/EmptyState'
 import { NeoCard } from '../../components/NeoCard'
+import { NeoButton } from '../../components/NeoButton'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
@@ -26,6 +27,7 @@ export function ExerciseLibraryPage() {
   const [equipments, setEquipments] = useState<EquipmentDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
   async function loadExercises() {
@@ -53,7 +55,12 @@ export function ExerciseLibraryPage() {
   }
 
   void loadExercises()
-}, [])
+}, [reloadToken])
+
+  // Re-runs the same catalog request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
   
     const [filterText, setFilterText] = useState('')
     const [muscleGroupFilter, setMuscleGroupFilter] = useState('')
@@ -122,7 +129,10 @@ export function ExerciseLibraryPage() {
       {isLoading ? (
         <LoadingState message="Đang tải thư viện bài tập..." />
       ) : errorMessage ? (
-        <ErrorState message={errorMessage} />
+        <ErrorState
+          message={errorMessage}
+          action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+        />
       ) : filteredExercises.length === 0 ? (
         <EmptyState
           title={hasActiveFilters ? 'Không tìm thấy bài' : 'Chưa có bài tập'}

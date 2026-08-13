@@ -97,6 +97,7 @@ export function ProfilePage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     let isCurrentRequest = true
@@ -131,7 +132,12 @@ export function ProfilePage() {
     return () => {
       isCurrentRequest = false
     }
-  }, [])
+  }, [reloadToken])
+
+  // Re-runs the profile request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
 
   // Validates frontend-friendly ranges before sending the exact backend update contract.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -224,19 +230,24 @@ export function ProfilePage() {
     <PageShell title="Hồ sơ">
       {isLoading ? <LoadingState message="Đang tải hồ sơ..." /> : null}
       {!isLoading && loadError ? (
-        <ErrorState title="Không tải được hồ sơ" message={loadError} />
+        <ErrorState
+          title="Không tải được hồ sơ"
+          message={loadError}
+          action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+        />
       ) : null}
       {!isLoading && !loadError && form ? (
         <NeoCard className="profile-form-card">
           <p className="eyebrow">Thông tin cá nhân</p>
           <h2>Hồ sơ của bạn</h2>
 
-          <form className="form-grid" onSubmit={handleSubmit}>
+          <form className="form-grid" onSubmit={handleSubmit} aria-busy={isSaving}>
             <NeoInput
               label="Tên hiển thị"
               type="text"
               maxLength={100}
               value={form.displayName}
+              disabled={isSaving}
               onChange={(event) => updateField('displayName', event.target.value)}
             />
 
@@ -244,6 +255,7 @@ export function ProfilePage() {
               label="Giới tính"
               value={String(form.gender)}
               options={GENDER_OPTIONS}
+              disabled={isSaving}
               onChange={(event) => updateField('gender', Number(event.target.value) as Gender)}
             />
 
@@ -251,6 +263,7 @@ export function ProfilePage() {
               label="Ngày sinh"
               type="date"
               value={form.dateOfBirth}
+              disabled={isSaving}
               onChange={(event) => updateField('dateOfBirth', event.target.value)}
             />
 
@@ -262,6 +275,7 @@ export function ProfilePage() {
                 max={250}
                 step="0.1"
                 value={form.heightCm}
+                disabled={isSaving}
                 onChange={(event) => updateField('heightCm', event.target.value)}
               />
               <NeoInput
@@ -271,6 +285,7 @@ export function ProfilePage() {
                 max={300}
                 step="0.1"
                 value={form.weightKg}
+                disabled={isSaving}
                 onChange={(event) => updateField('weightKg', event.target.value)}
               />
             </div>
@@ -279,6 +294,7 @@ export function ProfilePage() {
               label="Mục tiêu"
               value={String(form.fitnessGoal)}
               options={FITNESS_GOAL_OPTIONS}
+              disabled={isSaving}
               onChange={(event) =>
                 updateField('fitnessGoal', Number(event.target.value) as FitnessGoal)
               }
@@ -291,6 +307,7 @@ export function ProfilePage() {
               max={6000}
               step={1}
               value={form.dailyTargetCalories}
+              disabled={isSaving}
               onChange={(event) => updateField('dailyTargetCalories', event.target.value)}
             />
 
@@ -300,6 +317,7 @@ export function ProfilePage() {
               maxLength={64}
               placeholder="Asia/Ho_Chi_Minh hoặc UTC"
               value={form.timeZoneId}
+              disabled={isSaving}
               onChange={(event) => updateField('timeZoneId', event.target.value)}
             />
 

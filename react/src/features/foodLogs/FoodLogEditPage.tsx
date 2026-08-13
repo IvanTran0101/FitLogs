@@ -61,6 +61,7 @@ export function FoodLogEditPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [quantityError, setQuantityError] = useState<string | undefined>()
+  const [reloadToken, setReloadToken] = useState(0)
   const returnDate = searchParams.get('date')
 
   // Loads the owned log once and copies only editable backend fields into the form state.
@@ -111,7 +112,12 @@ export function FoodLogEditPage() {
     return () => {
       isCurrentRequest = false
     }
-  }, [foodLogId])
+  }, [foodLogId, reloadToken])
+
+  // Re-runs the food-log request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
 
   // Validates the exact DTO range before updating so recoverable errors keep the user's input visible.
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -140,7 +146,7 @@ export function FoodLogEditPage() {
       })
 
       const selectedDay = loggedAt.slice(0, 10) || searchParams.get('date') || ''
-      navigate(selectedDay ? `/food?date=${selectedDay}` : '/food')
+      navigate(selectedDay ? `/food?date=${selectedDay}` : '/food', { replace: true })
     } catch (error) {
       setFormError(
         error instanceof Error
@@ -167,7 +173,7 @@ export function FoodLogEditPage() {
     try {
       await deleteFoodLog(foodLogId)
       const selectedDay = loggedAt.slice(0, 10) || searchParams.get('date') || ''
-      navigate(selectedDay ? `/food?date=${selectedDay}` : '/food')
+      navigate(selectedDay ? `/food?date=${selectedDay}` : '/food', { replace: true })
     } catch (error) {
       setFormError(
         error instanceof Error
@@ -188,7 +194,11 @@ export function FoodLogEditPage() {
 
         {isLoading ? <LoadingState message="Đang tải nhật ký món ăn..." /> : null}
         {!isLoading && errorMessage ? (
-          <ErrorState title="Không tải được nhật ký" message={errorMessage} />
+          <ErrorState
+            title="Không tải được nhật ký"
+            message={errorMessage}
+            action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+          />
         ) : null}
         {!isLoading && !errorMessage && foodLog ? (
           <NeoCard className="food-add-card food-log-form-card">
@@ -197,7 +207,7 @@ export function FoodLogEditPage() {
             <p className="food-add-help">
               Calories và macro sẽ được tính lại ở máy chủ khi bạn lưu.
             </p>
-            <form className="food-log-form" onSubmit={handleSave}>
+            <form className="food-log-form" onSubmit={handleSave} aria-busy={isSaving || isDeleting}>
               <NeoInput
                 label="Số lượng"
                 type="number"
@@ -205,6 +215,7 @@ export function FoodLogEditPage() {
                 max="999999"
                 step="0.01"
                 value={quantity}
+                disabled={isSaving || isDeleting}
                 onChange={(event) => setQuantity(event.target.value)}
                 error={quantityError}
               />
@@ -212,12 +223,14 @@ export function FoodLogEditPage() {
                 <NeoSelect
                   label="Đơn vị"
                   value={String(unit)}
+                  disabled={isSaving || isDeleting}
                   onChange={(event) => setUnit(Number(event.target.value) as FoodUnit)}
                   options={FOOD_UNIT_OPTIONS}
                 />
                 <NeoSelect
                   label="Bữa ăn"
                   value={String(mealType)}
+                  disabled={isSaving || isDeleting}
                   onChange={(event) => setMealType(Number(event.target.value) as MealType)}
                   options={MEAL_TYPE_OPTIONS}
                 />
@@ -226,12 +239,14 @@ export function FoodLogEditPage() {
                 label="Thời điểm"
                 type="datetime-local"
                 value={loggedAt}
+                disabled={isSaving || isDeleting}
                 onChange={(event) => setLoggedAt(event.target.value)}
               />
               <NeoInput
                 label="Ghi chú (tuỳ chọn)"
                 maxLength={512}
                 value={note}
+                disabled={isSaving || isDeleting}
                 onChange={(event) => setNote(event.target.value)}
               />
               <div className="food-edit-actions">

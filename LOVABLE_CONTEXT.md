@@ -1920,7 +1920,7 @@ Lovable MUST NOT:
 
 Status:
 
-- Planned, ongoing polish only after core flows are functional.
+- Phase 8.3 completed; remaining visual polish is still planned.
 
 Audit scope:
 
@@ -1938,6 +1938,10 @@ Current repository state:
 - `PageShell` provides a scrollable `.page-content` while header/title and bottom nav stay fixed visually.
 - Some pages already use loading/error/empty states well, especially exercises and workout plans.
 - Placeholder pages and future pages still need consistent states.
+- Phase 8.1 responsive audit verified the shell at 320px, 375px, 430px, and 768px widths with no horizontal overflow. The smallest-width layout now collapses dense form, macro, and stats grids and safely wraps long button labels.
+- Phase 8.2 normalized state semantics and form behavior: shared loading/error/empty cards expose accessible live-region roles, core data-load failures provide retry actions, and primary forms disable their fields while saving or mutating.
+- Follow-up workout layout fix constrains nested card children and navigation buttons at the mobile shell width, while long backend error messages now wrap instead of being clipped.
+- Phase 8.3 preserves parent-flow context in back links, keeps the selected food-log day when entering the add-food flow, gives the standalone/plan exercise picker an explicit return path, and replaces successful editor/log mutations so browser Back does not reopen stale forms. Nested plan routes continue to highlight the Plan tab.
 
 Constraints:
 

@@ -69,7 +69,9 @@ export function WorkoutPlanEditorPage() {
   const [errors, setErrors] = useState<WorkoutPlanFormErrors>({})
   const [isLoading, setIsLoading] = useState(isEditMode)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     async function loadPlanForEdit() {
@@ -79,7 +81,7 @@ export function WorkoutPlanEditorPage() {
 
       try {
         setIsLoading(true)
-        setErrorMessage(null)
+        setLoadError(null)
 
         const plan = await getWorkoutPlan(planId)
 
@@ -91,7 +93,7 @@ export function WorkoutPlanEditorPage() {
           isActive: plan.isActive,
         })
       } catch (error) {
-        setErrorMessage(
+        setLoadError(
           error instanceof Error ? error.message : 'Không thể tải kế hoạch tập.',
         )
       } finally {
@@ -100,7 +102,12 @@ export function WorkoutPlanEditorPage() {
     }
 
     void loadPlanForEdit()
-  }, [planId])
+  }, [planId, reloadToken])
+
+  // Re-runs the edit-form request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
 
 async function handleSubmit(
   event: SyntheticEvent<HTMLFormElement, SubmitEvent>,
@@ -129,7 +136,7 @@ async function handleSubmit(
           : await deactivateWorkoutPlan(planId)
       }
 
-      navigate(`/plans/${savedPlan.id}`)
+      navigate(`/plans/${savedPlan.id}`, { replace: true })
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Không thể lưu kế hoạch tập.',
@@ -147,11 +154,23 @@ async function handleSubmit(
     )
   }
 
+  if (loadError) {
+    return (
+      <PageShell title={isEditMode ? 'Sửa kế hoạch' : 'Tạo kế hoạch'}>
+        <ErrorState
+          title="Không tải được kế hoạch"
+          message={loadError}
+          action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+        />
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell title={isEditMode ? 'Sửa kế hoạch' : 'Tạo kế hoạch'}>
       <NeoCard className="editor-card">
-        <Link className="back-link" to="/plans">
-          ← Quay lại kế hoạch
+        <Link className="back-link" to={isEditMode && planId ? `/plans/${planId}` : '/plans'}>
+          ← {isEditMode ? 'Quay lại chi tiết kế hoạch' : 'Quay lại kế hoạch'}
         </Link>
 
         <p className="eyebrow">Workout Plan Editor</p>
@@ -172,12 +191,13 @@ async function handleSubmit(
             />
           }
         >
-          <form className="form-stack" onSubmit={handleSubmit}>
+          <form className="form-stack" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <NeoInput
             label="Tên kế hoạch"
             placeholder="Push Day, Leg Day..."
             value={form.name}
             error={errors.name}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -193,6 +213,7 @@ async function handleSubmit(
               rows={4}
               placeholder="Mục tiêu hoặc ghi chú ngắn cho kế hoạch này..."
               value={form.description}
+              disabled={isSubmitting}
               onChange={(event) =>
                 setForm({
                   ...form,
@@ -205,6 +226,7 @@ async function handleSubmit(
           <NeoSelect
             label="Mục tiêu"
             value={form.goal}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -223,6 +245,7 @@ async function handleSubmit(
           <NeoSelect
             label="Độ khó"
             value={form.difficulty}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -240,6 +263,7 @@ async function handleSubmit(
             <input
               type="checkbox"
               checked={form.isActive}
+              disabled={isSubmitting}
               onChange={(event) =>
                 setForm({
                   ...form,

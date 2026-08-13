@@ -144,6 +144,7 @@ function ProductSummary({
 export function FoodAddPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const returnDate = searchParams.get('date')
   const [searchText, setSearchText] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [products, setProducts] = useState<FoodProductDto[]>([])
@@ -315,7 +316,7 @@ export function FoodAddPage() {
       })
 
       const selectedDay = loggedAt.slice(0, 10)
-      navigate(`/food?date=${selectedDay}`)
+      navigate(`/food?date=${selectedDay}`, { replace: true })
     } catch (error) {
       setCreateError(
         error instanceof Error
@@ -345,7 +346,10 @@ export function FoodAddPage() {
   return (
     <PageShell title="Thêm món ăn">
       <div className="food-add-stack">
-        <Link className="back-link" to="/food">
+        <Link
+          className="back-link"
+          to={returnDate ? `/food?date=${encodeURIComponent(returnDate)}` : '/food'}
+        >
           ← Quay lại nhật ký
         </Link>
 
@@ -360,7 +364,7 @@ export function FoodAddPage() {
                 label="Tên hoặc từ khoá"
                 placeholder="Ví dụ: sữa, yến mạch..."
                 value={searchText}
-                disabled={isCreating}
+                disabled={isSearching || isCreating}
                 onChange={(event) => setSearchText(event.target.value)}
               />
             <NeoButton type="submit" disabled={isSearching || isCreating}>
@@ -375,7 +379,10 @@ export function FoodAddPage() {
             title="Không tìm được sản phẩm"
             message={searchError}
             action={
-              <NeoButton onClick={() => void loadProductPage(submittedSearch, productPage)}>
+              <NeoButton
+                disabled={isSearching || isCreating}
+                onClick={() => void loadProductPage(submittedSearch, productPage)}
+              >
                 Thử lại
               </NeoButton>
             }
@@ -430,7 +437,7 @@ export function FoodAddPage() {
               inputMode="numeric"
               placeholder="Nhập hoặc dán mã vạch"
               value={barcode}
-              disabled={isCreating}
+              disabled={isLookingUp || isCreating}
               onChange={(event) => setBarcode(event.target.value)}
               error={lookupError && !isLookingUp ? lookupError : undefined}
             />
@@ -460,7 +467,18 @@ export function FoodAddPage() {
 
         {isLookingUp ? <LoadingState message="Đang tra cứu mã vạch..." /> : null}
         {!isLookingUp && lookupError ? (
-          <ErrorState title="Tra cứu thất bại" message={lookupError} />
+          <ErrorState
+            title="Tra cứu thất bại"
+            message={lookupError}
+            action={
+              <NeoButton
+                disabled={isLookingUp || isCreating || !barcode.trim()}
+                onClick={() => void lookupBarcodeValue(barcode)}
+              >
+                Thử lại
+              </NeoButton>
+            }
+          />
         ) : null}
         {!isLookingUp && !lookupError && lookupResult && !lookupResult.found ? (
           <EmptyState
@@ -489,7 +507,7 @@ export function FoodAddPage() {
             <p className="food-add-help">
               Nhập thông tin nhật ký. Calories và macro sau khi lưu sẽ lấy từ phản hồi máy chủ.
             </p>
-            <form className="food-log-form" onSubmit={handleCreateFoodLog}>
+            <form className="food-log-form" onSubmit={handleCreateFoodLog} aria-busy={isCreating}>
               <NeoInput
                 label="Số lượng"
                 type="number"
@@ -497,6 +515,7 @@ export function FoodAddPage() {
                 max="999999"
                 step="0.01"
                 value={quantity}
+                disabled={isCreating}
                 onChange={(event) => setQuantity(event.target.value)}
                 error={quantityError}
               />
@@ -504,12 +523,14 @@ export function FoodAddPage() {
                 <NeoSelect
                   label="Đơn vị"
                   value={String(unit)}
+                  disabled={isCreating}
                   onChange={(event) => setUnit(Number(event.target.value) as FoodUnit)}
                   options={FOOD_UNIT_OPTIONS}
                 />
                 <NeoSelect
                   label="Bữa ăn"
                   value={String(mealType)}
+                  disabled={isCreating}
                   onChange={(event) => setMealType(Number(event.target.value) as MealType)}
                   options={MEAL_TYPE_OPTIONS}
                 />
@@ -518,12 +539,14 @@ export function FoodAddPage() {
                 label="Thời điểm"
                 type="datetime-local"
                 value={loggedAt}
+                disabled={isCreating}
                 onChange={(event) => setLoggedAt(event.target.value)}
               />
               <NeoInput
                 label="Ghi chú (tuỳ chọn)"
                 maxLength={512}
                 value={note}
+                disabled={isCreating}
                 onChange={(event) => setNote(event.target.value)}
               />
               <NeoButton type="submit" disabled={isCreating}>

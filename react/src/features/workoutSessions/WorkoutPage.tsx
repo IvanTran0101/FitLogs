@@ -638,7 +638,14 @@ export function WorkoutPage() {
   if (errorMessage) {
     return (
       <PageShell title="Buổi tập">
-        <ErrorState message={errorMessage} />
+        <ErrorState
+          message={errorMessage}
+          action={
+            <NeoButton onClick={() => void loadActiveSession()}>
+              Thử lại
+            </NeoButton>
+          }
+        />
       </PageShell>
     )
   }
@@ -821,7 +828,7 @@ export function WorkoutPage() {
                       className={set.isCompleted ? 'set-card completed' : 'set-card'}
                     >
                       {!isReadOnly && editingSetId === set.id && editingSetDraft ? (
-                        <form className="set-form" onSubmit={(event) => void handleUpdateSet(event)}>
+                        <form className="set-form" onSubmit={(event) => void handleUpdateSet(event)} aria-busy={isActionLoading}>
                           <strong>Chỉnh sửa set {set.setNumber}</strong>
                           <div className="set-form-grid">
                             <NeoInput
@@ -829,6 +836,7 @@ export function WorkoutPage() {
                               type="number"
                               min="1"
                               value={editingSetDraft.setNumber}
+                              disabled={isActionLoading}
                               onChange={(event) =>
                                 setEditingSetDraft({
                                   ...editingSetDraft,
@@ -842,6 +850,7 @@ export function WorkoutPage() {
                               min="0"
                               step="0.1"
                               value={editingSetDraft.weightKg}
+                              disabled={isActionLoading}
                               onChange={(event) =>
                                 setEditingSetDraft({
                                   ...editingSetDraft,
@@ -854,6 +863,7 @@ export function WorkoutPage() {
                               type="number"
                               min="1"
                               value={editingSetDraft.reps}
+                              disabled={isActionLoading}
                               onChange={(event) =>
                                 setEditingSetDraft({
                                   ...editingSetDraft,
@@ -867,6 +877,7 @@ export function WorkoutPage() {
                               min="0"
                               max="10"
                               value={editingSetDraft.rpe}
+                              disabled={isActionLoading}
                               onChange={(event) =>
                                 setEditingSetDraft({
                                   ...editingSetDraft,
@@ -878,6 +889,7 @@ export function WorkoutPage() {
                           <NeoInput
                             label="Ghi chú"
                             value={editingSetDraft.note}
+                            disabled={isActionLoading}
                             onChange={(event) =>
                               setEditingSetDraft({
                                 ...editingSetDraft,
@@ -953,7 +965,7 @@ export function WorkoutPage() {
               )}
 
               {isReadOnly ? null : (
-                <form className="set-form add-set-form" onSubmit={(event) => void handleAddSet(event)}>
+                <form className="set-form add-set-form" onSubmit={(event) => void handleAddSet(event)} aria-busy={isActionLoading}>
                 <p className="eyebrow">Add Set</p>
                 <div className="set-form-grid">
                   <NeoInput
@@ -961,6 +973,7 @@ export function WorkoutPage() {
                     type="number"
                     min="1"
                     value={setDraft.setNumber}
+                    disabled={isActionLoading}
                     onChange={(event) =>
                       setSetDraft({ ...setDraft, setNumber: event.target.value })
                     }
@@ -971,6 +984,7 @@ export function WorkoutPage() {
                     min="0"
                     step="0.1"
                     value={setDraft.weightKg}
+                    disabled={isActionLoading}
                     onChange={(event) =>
                       setSetDraft({ ...setDraft, weightKg: event.target.value })
                     }
@@ -980,6 +994,7 @@ export function WorkoutPage() {
                     type="number"
                     min="1"
                     value={setDraft.reps}
+                    disabled={isActionLoading}
                     onChange={(event) =>
                       setSetDraft({ ...setDraft, reps: event.target.value })
                     }
@@ -990,6 +1005,7 @@ export function WorkoutPage() {
                     min="0"
                     max="10"
                     value={setDraft.rpe}
+                    disabled={isActionLoading}
                     onChange={(event) =>
                       setSetDraft({ ...setDraft, rpe: event.target.value })
                     }
@@ -998,6 +1014,7 @@ export function WorkoutPage() {
                 <NeoInput
                   label="Ghi chú"
                   value={setDraft.note}
+                  disabled={isActionLoading}
                   onChange={(event) => setSetDraft({ ...setDraft, note: event.target.value })}
                 />
                 <NeoButton type="submit" disabled={isActionLoading}>
@@ -1049,6 +1066,7 @@ export function WorkoutPage() {
                       onSubmit={(event) =>
                         void handleUpdateSessionExercise(event, sessionExercise)
                       }
+                      aria-busy={isActionLoading}
                     >
                       <div className="set-form-grid">
                         <NeoInput
@@ -1056,6 +1074,7 @@ export function WorkoutPage() {
                           type="number"
                           min="1"
                           value={editingExerciseDraft.targetSets}
+                          disabled={isActionLoading}
                           onChange={(event) =>
                             setEditingExerciseDraft({
                               ...editingExerciseDraft,
@@ -1068,6 +1087,7 @@ export function WorkoutPage() {
                           type="number"
                           min="1"
                           value={editingExerciseDraft.targetReps}
+                          disabled={isActionLoading}
                           onChange={(event) =>
                             setEditingExerciseDraft({
                               ...editingExerciseDraft,
@@ -1081,6 +1101,7 @@ export function WorkoutPage() {
                           min="0"
                           step="0.1"
                           value={editingExerciseDraft.targetWeightKg}
+                          disabled={isActionLoading}
                           onChange={(event) =>
                             setEditingExerciseDraft({
                               ...editingExerciseDraft,
@@ -1093,6 +1114,7 @@ export function WorkoutPage() {
                           type="number"
                           min="0"
                           value={editingExerciseDraft.restSeconds}
+                          disabled={isActionLoading}
                           onChange={(event) =>
                             setEditingExerciseDraft({
                               ...editingExerciseDraft,
@@ -1104,6 +1126,7 @@ export function WorkoutPage() {
                       <NeoInput
                         label="Ghi chú"
                         value={editingExerciseDraft.note}
+                        disabled={isActionLoading}
                         onChange={(event) =>
                           setEditingExerciseDraft({
                             ...editingExerciseDraft,
@@ -1181,6 +1204,7 @@ export function WorkoutPage() {
           <form
             className="set-form add-session-exercise-form"
             onSubmit={(event) => void handleAddSessionExercise(event)}
+            aria-busy={isActionLoading}
           >
             <p className="eyebrow">Add Exercise</p>
             {availableExercises.length === 0 ? (

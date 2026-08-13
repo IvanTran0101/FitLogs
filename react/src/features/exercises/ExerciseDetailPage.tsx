@@ -11,6 +11,7 @@ import {
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
+import { NeoButton } from '../../components/NeoButton'
 import { NeoCard } from '../../components/NeoCard'
 import { PageShell } from '../../components/PageShell'
 import {
@@ -28,6 +29,7 @@ const [muscleGroups, setMuscleGroups] = useState<MuscleGroupDto[]>([])
 const [equipments, setEquipments] = useState<EquipmentDto[]>([])
 const [isLoading, setIsLoading] = useState(true)
 const [errorMessage, setErrorMessage] = useState<string | null>(null)
+const [reloadToken, setReloadToken] = useState(0)
 
 useEffect(() => {
   async function loadExerciseDetail() {
@@ -61,7 +63,12 @@ useEffect(() => {
   }
 
   void loadExerciseDetail()
-}, [exerciseId])
+}, [exerciseId, reloadToken])
+
+// Re-runs the detail request after a transient backend or network failure.
+function retryLoad() {
+  setReloadToken((currentToken) => currentToken + 1)
+}
 
 if (isLoading) {
   return (
@@ -74,7 +81,10 @@ if (isLoading) {
 if (errorMessage) {
   return (
     <PageShell title="Chi tiết bài tập">
-      <ErrorState message={errorMessage} />
+      <ErrorState
+        message={errorMessage}
+        action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+      />
     </PageShell>
   )
 }

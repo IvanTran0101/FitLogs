@@ -8,7 +8,7 @@ import {
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
-//import { NeoButton } from '../../components/NeoButton'
+import { NeoButton } from '../../components/NeoButton'
 import { NeoCard } from '../../components/NeoCard'
 import { PageShell } from '../../components/PageShell'
 import { PermissionGate } from '../../components/PermissionGate'
@@ -50,6 +50,7 @@ export function WorkoutPlansPage() {
   const [plans, setPlans] = useState<WorkoutPlanDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     async function loadWorkoutPlans() {
@@ -74,7 +75,12 @@ export function WorkoutPlansPage() {
     }
 
     void loadWorkoutPlans()
-  }, [])
+  }, [reloadToken])
+
+  // Re-runs the plan list request after a transient backend or network failure.
+  function retryLoad() {
+    setReloadToken((currentToken) => currentToken + 1)
+  }
 
   if (isLoading) {
     return (
@@ -87,7 +93,10 @@ export function WorkoutPlansPage() {
   if (errorMessage) {
     return (
       <PageShell title="Kế hoạch">
-        <ErrorState message={errorMessage} />
+        <ErrorState
+          message={errorMessage}
+          action={<NeoButton onClick={retryLoad}>Thử lại</NeoButton>}
+        />
       </PageShell>
     )
   }
