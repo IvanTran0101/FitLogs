@@ -363,6 +363,55 @@ public class WorkoutSessionAppService : FitLogsAppService, IWorkoutSessionAppSer
         return MapToDto(workoutSession);
         
     }
+    /// <summary>Marks an owned set as intentionally skipped without counting it as completed work.</summary>
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
+    public async Task<WorkoutSessionDto> SkipSetAsync(
+        Guid id,
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+
+        EnsureWorkoutSessionOwner(workoutSession);
+
+        workoutSession.SkipSetInExercise(
+            workoutSessionExerciseId,
+            exerciseSetId,
+            Clock.Now
+        );
+
+        workoutSession = await _workoutSessionRepository.UpdateAsync(
+            workoutSession,
+            autoSave: true
+        );
+
+        return MapToDto(workoutSession);
+    }
+
+    /// <summary>Reopens an owned skipped set so the user can record the performed result.</summary>
+    [Authorize(FitLogsPermissions.WorkoutSessions.ManageSets)]
+    public async Task<WorkoutSessionDto> UnskipSetAsync(
+        Guid id,
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId)
+    {
+        var workoutSession = await GetWorkoutSessionWithDetailsAsync(id);
+
+        EnsureWorkoutSessionOwner(workoutSession);
+
+        workoutSession.UnskipSetInExercise(
+            workoutSessionExerciseId,
+            exerciseSetId
+        );
+
+        workoutSession = await _workoutSessionRepository.UpdateAsync(
+            workoutSession,
+            autoSave: true
+        );
+
+        return MapToDto(workoutSession);
+    }
+
     [Authorize(FitLogsPermissions.WorkoutSessions.Complete)]
     public async Task<WorkoutSessionDto> CompleteAsync(Guid id)
     {

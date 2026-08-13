@@ -637,6 +637,9 @@ namespace FitLogs.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsSkipped")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -649,6 +652,9 @@ namespace FitLogs.Migrations
 
                     b.Property<int>("SetNumber")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("SkippedAt")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<float>("WeightKg")
                         .HasColumnType("real");

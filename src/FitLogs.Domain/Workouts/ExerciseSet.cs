@@ -15,6 +15,8 @@ public class ExerciseSet : Entity<Guid>
   public string? Note { get; private set; }
   public bool IsCompleted { get; private set; }
   public DateTime? CompletedAt { get; private set; }
+  public bool IsSkipped { get; private set; }
+  public DateTime? SkippedAt { get; private set; }
   
   protected ExerciseSet()
   {
@@ -43,6 +45,8 @@ public class ExerciseSet : Entity<Guid>
     
     IsCompleted = false;
     CompletedAt = null;
+    IsSkipped = false;
+    SkippedAt = null;
   }
 
   public void SetSetNumber(int setNumber)
@@ -98,6 +102,11 @@ public class ExerciseSet : Entity<Guid>
       throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetAlreadyCompleted);
     }
 
+    if (IsSkipped)
+    {
+      throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetAlreadySkipped);
+    }
+
     if (completedAt == default)
     {
       throw new BusinessException(FitLogsDomainErrorCodes.InvalidExerciseSetCompletedAt);
@@ -111,5 +120,34 @@ public class ExerciseSet : Entity<Guid>
   {
     IsCompleted = false;
     CompletedAt = null;
+  }
+
+  /// <summary>Marks a set as intentionally skipped without counting it as performed work.</summary>
+  public void Skip(DateTime skippedAt)
+  {
+    if (IsCompleted)
+    {
+      throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetAlreadyCompleted);
+    }
+
+    if (IsSkipped)
+    {
+      throw new BusinessException(FitLogsDomainErrorCodes.ExerciseSetAlreadySkipped);
+    }
+
+    if (skippedAt == default)
+    {
+      throw new BusinessException(FitLogsDomainErrorCodes.InvalidExerciseSetSkippedAt);
+    }
+
+    IsSkipped = true;
+    SkippedAt = skippedAt;
+  }
+
+  /// <summary>Reopens a skipped set so it can be performed and completed later.</summary>
+  public void Unskip()
+  {
+    IsSkipped = false;
+    SkippedAt = null;
   }
 }

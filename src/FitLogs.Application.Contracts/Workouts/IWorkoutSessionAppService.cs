@@ -83,6 +83,18 @@ public interface IWorkoutSessionAppService : IApplicationService
 
     );
 
+    Task<WorkoutSessionDto> SkipSetAsync(
+        Guid id,
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId
+    );
+
+    Task<WorkoutSessionDto> UnskipSetAsync(
+        Guid id,
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId
+    );
+
     Task<WorkoutSessionDto> CompleteAsync(Guid id);
 
     Task<WorkoutSessionDto> CancelAsync(Guid id);

@@ -489,6 +489,11 @@ public class FitLogsDbContext :
 
             b.Property(x => x.CompletedAt);
 
+            b.Property(x => x.IsSkipped)
+                .IsRequired();
+
+            b.Property(x => x.SkippedAt);
+
             b.HasIndex(x => x.WorkoutSessionExerciseId);
 
             b.HasIndex(x => new

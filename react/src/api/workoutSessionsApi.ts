@@ -49,6 +49,8 @@ export type ExerciseSetDto = {
   note: string | null
   isCompleted: boolean
   completedAt: string | null
+  isSkipped: boolean
+  skippedAt: string | null
 }
 
 export type GetWorkoutSessionListQuery = {
@@ -315,6 +317,42 @@ export function uncompleteExerciseSet(
 ) {
   return apiRequest<WorkoutSessionDto>(
     `/api/app/workout-session/${id}/uncomplete-set`,
+    {
+      method: 'POST',
+      query: {
+        workoutSessionExerciseId,
+        exerciseSetId,
+      },
+    },
+  )
+}
+
+// Marks one set as intentionally skipped and returns the refreshed workout session.
+export function skipExerciseSet(
+  id: string,
+  workoutSessionExerciseId: string,
+  exerciseSetId: string,
+) {
+  return apiRequest<WorkoutSessionDto>(
+    `/api/app/workout-session/${id}/skip-set`,
+    {
+      method: 'POST',
+      query: {
+        workoutSessionExerciseId,
+        exerciseSetId,
+      },
+    },
+  )
+}
+
+// Reopens one skipped set so the user can record it as performed.
+export function unskipExerciseSet(
+  id: string,
+  workoutSessionExerciseId: string,
+  exerciseSetId: string,
+) {
+  return apiRequest<WorkoutSessionDto>(
+    `/api/app/workout-session/${id}/unskip-set`,
     {
       method: 'POST',
       query: {

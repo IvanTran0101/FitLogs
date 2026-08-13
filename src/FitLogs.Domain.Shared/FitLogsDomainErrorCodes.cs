@@ -89,7 +89,9 @@ public static class FitLogsDomainErrorCodes
     public const string InvalidExerciseSetReps = "FitLogs:Workout:InvalidExerciseSetReps";
     public const string InvalidExerciseSetRpe = "FitLogs:Workout:InvalidExerciseSetRpe";
     public const string ExerciseSetAlreadyCompleted = "FitLogs:Workout:ExerciseSetAlreadyCompleted";
+    public const string ExerciseSetAlreadySkipped = "FitLogs:Workout:ExerciseSetAlreadySkipped";
     public const string InvalidExerciseSetCompletedAt = "FitLogs:Workout:InvalidExerciseSetCompletedAt";
+    public const string InvalidExerciseSetSkippedAt = "FitLogs:Workout:InvalidExerciseSetSkippedAt";
 
     public const string ExerciseSetNumberAlreadyExists = "FitLogs:Workout:ExerciseSetNumberAlreadyExists";
     public const string ExerciseSetNotFound = "FitLogs:Workout:ExerciseSetNotFound";

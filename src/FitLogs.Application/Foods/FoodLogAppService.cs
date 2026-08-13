@@ -16,16 +16,13 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
 {
     private readonly IFoodLogRepository _foodLogRepository;
     private readonly FoodLogManager _foodLogManager;
-    private readonly IUserProfileRepository _userProfileRepository;
 
     public FoodLogAppService(
         IFoodLogRepository foodLogRepository,
-        FoodLogManager foodLogManager,
-        IUserProfileRepository userProfileRepository)
+        FoodLogManager foodLogManager)
     {
         _foodLogRepository = foodLogRepository;
         _foodLogManager = foodLogManager;
-        _userProfileRepository = userProfileRepository;
     }
 
     /// <summary>Creates a food log, applies optional nutrition corrections, and persists it for the current user.</summary>
@@ -90,10 +87,10 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         return ObjectMapper.Map<FoodLog, FoodLogDto>(foodLog);
     }
 
-    /// <summary>Returns the current user's food logs for one local day converted into UTC boundaries.</summary>
+    /// <summary>Returns the current user's food logs for one local day using the storage's wall-clock range.</summary>
     public async Task<List<FoodLogDto>> GetListByDateAsync(GetFoodLogListInput input)
     {
-        var (startDate, endDate) = await GetUserDateRangeAsync(input.Date);
+        var (startDate, endDate) = GetUserDateRange(input.Date);
         var foodLogs = await _foodLogRepository.GetListByUserAndDateRangeAsync(
             CurrentUser.GetId(), startDate, endDate);
 
@@ -103,7 +100,7 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
     /// <summary>Totals calories and macros for food logs that fall within one user's local day.</summary>
     public async Task<DailyFoodNutritionSummaryDto> GetDailySummaryAsync(GetFoodLogListInput input)
     {
-        var (startDate, endDate) = await GetUserDateRangeAsync(input.Date);
+        var (startDate, endDate) = GetUserDateRange(input.Date);
         var foodLogs = await _foodLogRepository.GetListByUserAndDateRangeAsync(
             CurrentUser.GetId(), startDate, endDate);
 
@@ -125,12 +122,10 @@ public class FoodLogAppService : ApplicationService, IFoodLogAppService
         }
     }
 
-    /// <summary>Interprets the requested date as the user's local calendar day, then queries UTC storage.</summary>
-    private async Task<(DateTime StartUtc, DateTime EndUtc)> GetUserDateRangeAsync(DateTime requestedDate)
+    /// <summary>Interprets the requested date as the user's local calendar day, then queries stored local timestamps.</summary>
+    private static (DateTime Start, DateTime End) GetUserDateRange(DateTime requestedDate)
     {
-        var profile = await _userProfileRepository.FindByUserIdAsync(CurrentUser.GetId());
-        var timeZoneId = profile?.TimeZoneId ?? UserProfileConsts.DefaultTimeZoneId;
-        return UserTimeZone.GetUtcDateRange(DateOnly.FromDateTime(requestedDate), timeZoneId);
+        return UserTimeZone.GetStoredLocalDateRange(DateOnly.FromDateTime(requestedDate));
     }
 
     /// <summary>Applies only explicitly supplied macro corrections and marks the snapshot as overridden.</summary>

@@ -335,6 +335,30 @@ public class WorkoutSession : FullAuditedAggregateRoot<Guid>
         CurrentWorkoutSessionExerciseId = exercise.Id;
     }
 
+    /// <summary>Records that one exercise set was intentionally skipped.</summary>
+    public void SkipSetInExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId,
+        DateTime skippedAt)
+    {
+        EnsureInProgress();
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+        exercise.SkipSet(exerciseSetId, skippedAt);
+    }
+
+    /// <summary>Reopens a skipped set so it can be completed or skipped again.</summary>
+    public void UnskipSetInExercise(
+        Guid workoutSessionExerciseId,
+        Guid exerciseSetId)
+    {
+        EnsureInProgress();
+
+        var exercise = GetExerciseOrThrow(workoutSessionExerciseId);
+        exercise.UnskipSet(exerciseSetId);
+        CurrentWorkoutSessionExerciseId = exercise.Id;
+    }
+
     public WorkoutSessionExercise GetCurrentExercise()
     {
         if (CurrentWorkoutSessionExerciseId == null)

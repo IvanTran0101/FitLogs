@@ -201,6 +201,25 @@ public class WorkoutSessionExercise : Entity<Guid>
         MarkInProgress();
     }
 
+    /// <summary>Skips one set while keeping it visible and excluded from performed-set totals.</summary>
+    public void SkipSet(Guid exerciseSetId, DateTime skippedAt)
+    {
+        EnsureNotSkipped();
+        var set = GetSetOrThrow(exerciseSetId);
+
+        set.Skip(skippedAt);
+    }
+
+    /// <summary>Reopens one skipped set so the user can record it instead.</summary>
+    public void UnskipSet(Guid exerciseSetId)
+    {
+        EnsureNotSkipped();
+        var set = GetSetOrThrow(exerciseSetId);
+
+        set.Unskip();
+        MarkInProgress();
+    }
+
     /// <summary>Marks this exercise skipped so it is excluded from normal exercise navigation.</summary>
     public void Skip()
     {

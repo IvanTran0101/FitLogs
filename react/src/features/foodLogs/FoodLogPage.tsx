@@ -15,6 +15,7 @@ import {
   type FoodUnit,
   type MealType,
 } from '../../api/foodsApi'
+import { getTodayDashboard } from '../../api/dashboardApi'
 
 const MEAL_SECTIONS: { value: MealType; label: string }[] = [
   { value: 1, label: 'Bữa sáng' },
@@ -32,21 +33,11 @@ const UNIT_LABELS: Record<FoodUnit, string> = {
   4: 'cái',
 }
 
-/** Creates the browser-local YYYY-MM-DD value used by the date input. */
-function getTodayInputValue() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
-
-/** Accepts only a real date-input value so an empty query parameter cannot create an invalid API date. */
+/** Accepts only an explicit date-input value; the default day comes from the backend. */
 function getInitialDate(searchParam: string | null) {
   return searchParam && /^\d{4}-\d{2}-\d{2}$/.test(searchParam)
     ? searchParam
-    : getTodayInputValue()
+    : ''
 }
 
 /** Sends the selected calendar day as a date-time without silently converting its timezone. */
@@ -86,9 +77,11 @@ function groupLogsByMeal(logs: FoodLogDto[]) {
 /** Coordinates date selection, parallel API loading, server totals, and meal-grouped rendering. */
 export function FoodLogPage() {
   const [searchParams] = useSearchParams()
+  const initialDate = getInitialDate(searchParams.get('date'))
   const [selectedDate, setSelectedDate] = useState(
-    () => getInitialDate(searchParams.get('date')),
+    () => initialDate,
   )
+  const [isDateReady, setIsDateReady] = useState(Boolean(initialDate))
   const [foodLogs, setFoodLogs] = useState<FoodLogDto[]>([])
   const [summary, setSummary] = useState<DailyFoodNutritionSummaryDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -96,6 +89,47 @@ export function FoodLogPage() {
   const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
+    if (isDateReady) {
+      return
+    }
+
+    let isCurrentRequest = true
+
+    // Uses the dashboard's backend-resolved local date so both pages agree on "today".
+    async function resolveTodayDate() {
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const dashboard = await getTodayDashboard()
+        if (isCurrentRequest) {
+          setSelectedDate(dashboard.date)
+          setIsDateReady(true)
+        }
+      } catch (error) {
+        if (isCurrentRequest) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : 'Không thể xác định ngày hiện tại.',
+          )
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void resolveTodayDate()
+
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [isDateReady, reloadToken])
+
+  useEffect(() => {
+    if (!isDateReady || !selectedDate) {
+      return
+    }
+
     let isCurrentRequest = true
 
     // Both requests use the same selected date so the list and totals cannot represent different days.
@@ -140,7 +174,7 @@ export function FoodLogPage() {
     return () => {
       isCurrentRequest = false
     }
-  }, [reloadToken, selectedDate])
+  }, [isDateReady, reloadToken, selectedDate])
 
   const mealSections = useMemo(() => groupLogsByMeal(foodLogs), [foodLogs])
 
@@ -157,6 +191,7 @@ export function FoodLogPage() {
             label="Ngày xem nhật ký"
             type="date"
             value={selectedDate}
+            disabled={!isDateReady}
             onChange={(event) => setSelectedDate(event.target.value)}
           />
           <p className="food-date-note">

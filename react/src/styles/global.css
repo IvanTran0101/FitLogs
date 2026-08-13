@@ -1282,6 +1282,10 @@ button {
   gap: 8px;
 }
 
+.set-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .session-navigation .neo-button,
 .set-actions .neo-button,
 .session-lifecycle-actions .neo-button {
@@ -1337,6 +1341,17 @@ button {
 
 .set-card.completed {
   background: var(--color-lime);
+}
+
+.set-card.skipped {
+  background: var(--color-yellow);
+}
+
+.set-state-note {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .set-form {
@@ -1453,6 +1468,18 @@ button {
 
 .exercise-status.inactive {
   background: var(--color-pink);
+}
+
+.exercise-status.completed {
+  background: var(--color-lime);
+}
+
+.exercise-status.skipped {
+  background: var(--color-yellow);
+}
+
+.exercise-status.pending {
+  background: var(--color-white);
 }
 
 .exercise-detail-hero {

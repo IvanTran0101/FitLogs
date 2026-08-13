@@ -61,13 +61,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         };
     }
 
-    /// <summary>Queries food logs inside the user's UTC day range and calculates nutrition totals.</summary>
+    /// <summary>Queries food logs inside the user's stored local-day range and calculates nutrition totals.</summary>
     public async Task<DailyNutritionSummaryDto> GetDailyNutritionAsync(GetDailyDashboardInput input)
     {
         var userId = CurrentUser.GetId();
         var userProfile = await _userProfileRepository.FindByUserIdAsync(userId);
         var selectedDate = ResolveSelectedDate(input.Date, userProfile?.TimeZoneId);
-        var (startDate, endDate) = GetDateRange(selectedDate, userProfile?.TimeZoneId);
+        var (startDate, endDate) = GetDateRange(selectedDate);
         var foodLogs = await _foodLogRepository.GetListByUserAndDateRangeAsync(
             userId,
             startDate,
@@ -76,13 +76,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         
     }
 
-    /// <summary>Queries completed workout metrics inside the user's UTC day range.</summary>
+    /// <summary>Queries completed workout metrics inside the user's stored local-day range.</summary>
     public async Task<DailyWorkoutSummaryDto> GetDailyWorkoutAsync(GetDailyDashboardInput input)
     {
         var userId = CurrentUser.GetId();
         var userProfile = await _userProfileRepository.FindByUserIdAsync(userId);
         var selectedDate = ResolveSelectedDate(input.Date, userProfile?.TimeZoneId);
-        var (startDate, endDate) = GetDateRange(selectedDate, userProfile?.TimeZoneId);
+        var (startDate, endDate) = GetDateRange(selectedDate);
         var workoutMetrics = await _workoutSessionRepository.GetCompletedMetricsByUserAndDateRangeAsync(
             userId,
             startDate,
@@ -154,13 +154,10 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 : timeZoneId);
     }
 
-    /// <summary>Converts a user's local date into a half-open UTC query range.</summary>
-    private static (DateTime StartDate, DateTime EndDate) GetDateRange(DateOnly selectedDate, string? timeZoneId)
+    /// <summary>Converts a user's local date into the stored wall-clock query range.</summary>
+    private static (DateTime StartDate, DateTime EndDate) GetDateRange(DateOnly selectedDate)
     {
-        return UserTimeZone.GetUtcDateRange(
-            selectedDate,
-            string.IsNullOrWhiteSpace(timeZoneId)
-                ? UserProfileConsts.DefaultTimeZoneId
-                : timeZoneId);
+        // Date columns are currently timestamp-without-time-zone values, so compare local wall-clock values.
+        return UserTimeZone.GetStoredLocalDateRange(selectedDate);
     }
 }

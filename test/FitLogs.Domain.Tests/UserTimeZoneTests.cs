@@ -32,4 +32,22 @@ public class UserTimeZoneTests
         UserTimeZone.GetLocalDate(utc, "Asia/Ho_Chi_Minh")
             .ShouldBe(new DateOnly(2024, 1, 2));
     }
+
+    [Fact]
+    public void Local_clock_value_is_not_reinterpreted_as_utc()
+    {
+        var localClockValue = new DateTime(2024, 1, 1, 23, 30, 0, DateTimeKind.Local);
+
+        UserTimeZone.GetLocalDate(localClockValue, "Asia/Ho_Chi_Minh")
+            .ShouldBe(new DateOnly(2024, 1, 1));
+    }
+
+    [Fact]
+    public void Stored_local_date_range_keeps_the_selected_wall_clock_day()
+    {
+        var range = UserTimeZone.GetStoredLocalDateRange(new DateOnly(2024, 1, 13));
+
+        range.Start.ShouldBe(new DateTime(2024, 1, 13, 0, 0, 0, DateTimeKind.Unspecified));
+        range.End.ShouldBe(new DateTime(2024, 1, 14, 0, 0, 0, DateTimeKind.Unspecified));
+    }
 }

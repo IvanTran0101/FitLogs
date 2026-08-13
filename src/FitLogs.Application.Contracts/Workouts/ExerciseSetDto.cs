@@ -21,4 +21,8 @@ public class ExerciseSetDto : EntityDto<Guid>
     public bool IsCompleted { get; set; }
 
     public DateTime? CompletedAt { get; set; }
+
+    public bool IsSkipped { get; set; }
+
+    public DateTime? SkippedAt { get; set; }
 }

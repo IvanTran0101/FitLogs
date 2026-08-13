@@ -54825,6 +54825,98 @@
         }
       }
     },
+    "/api/app/workout-session/{id}/skip-set": {
+      "post": {
+        "tags": [
+          "WorkoutSession"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "workoutSessionExerciseId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exerciseSetId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FitLogs.Workouts.WorkoutSessionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/workout-session/{id}/unskip-set": {
+      "post": {
+        "tags": [
+          "WorkoutSession"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "workoutSessionExerciseId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exerciseSetId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FitLogs.Workouts.WorkoutSessionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/app/workout-session/{id}/complete": {
       "post": {
         "tags": [
@@ -57251,6 +57343,14 @@
             "type": "boolean"
           },
           "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isSkipped": {
+            "type": "boolean"
+          },
+          "skippedAt": {
             "type": "string",
             "format": "date-time",
             "nullable": true

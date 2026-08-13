@@ -28,10 +28,13 @@ public static class UserTimeZone
         }
     }
 
-    /// <summary>Returns the user's local calendar date for a UTC instant.</summary>
-    public static DateOnly GetLocalDate(DateTime utcNow, string timeZoneId)
+    /// <summary>Returns the user's local calendar date for a server clock instant.</summary>
+    public static DateOnly GetLocalDate(DateTime clockNow, string timeZoneId)
     {
-        var utc = DateTime.SpecifyKind(utcNow, DateTimeKind.Utc);
+        // ABP's default IClock can return a local DateTime, so normalize its instant before applying the user's zone.
+        var utc = clockNow.Kind == DateTimeKind.Local
+            ? clockNow.ToUniversalTime()
+            : DateTime.SpecifyKind(clockNow, DateTimeKind.Utc);
         var zone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
         return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(utc, zone));
     }
@@ -44,6 +47,14 @@ public static class UserTimeZone
         var localEnd = DateTime.SpecifyKind(localDate.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified);
 
         return (ConvertBoundary(localStart, zone), ConvertBoundary(localEnd, zone));
+    }
+
+    /// <summary>Returns the wall-clock range used by the current timestamp-without-time-zone columns.</summary>
+    public static (DateTime Start, DateTime End) GetStoredLocalDateRange(DateOnly localDate)
+    {
+        var start = DateTime.SpecifyKind(localDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified);
+        var end = DateTime.SpecifyKind(localDate.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified);
+        return (start, end);
     }
 
     /// <summary>Converts a local boundary to UTC while skipping a rare invalid midnight.</summary>

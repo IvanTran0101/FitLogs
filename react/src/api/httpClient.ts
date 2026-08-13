@@ -137,6 +137,10 @@ const BUSINESS_ERROR_MESSAGES: Record<string, string> = {
     'Không tìm thấy bài tập trong buổi tập.',
   'FitLogs:Workout:ExerciseSetAlreadyCompleted':
     'Set này đã được hoàn thành.',
+  'FitLogs:Workout:ExerciseSetAlreadySkipped':
+    'Set này đã được bỏ qua. Hãy chọn “Thực hiện lại” trước khi hoàn thành.',
+  'FitLogs:Workout:InvalidExerciseSetSkippedAt':
+    'Không thể ghi nhận thời điểm bỏ qua set. Hãy thử lại.',
   'FitLogs:Workout:ExerciseSetNumberAlreadyExists':
     'Số set này đã tồn tại trong bài tập.',
   'FitLogs:Workout:ExerciseSetNotFound':

@@ -17,6 +17,8 @@ import {
   removeExerciseSet,
   skipCurrentWorkoutSessionExercise,
   uncompleteExerciseSet,
+  skipExerciseSet,
+  unskipExerciseSet,
   updateExerciseSet,
   addWorkoutSessionExercise,
   updateWorkoutSessionExercise,
@@ -133,6 +135,18 @@ function getSessionStatusLabel(status: WorkoutSessionDto['status']) {
     default:
       return 'Đang tập'
   }
+}
+
+function getSetStatusLabel(set: ExerciseSetDto) {
+  if (set.isCompleted) {
+    return 'Đã hoàn thành'
+  }
+
+  if (set.isSkipped) {
+    return 'Đã bỏ qua'
+  }
+
+  return 'Chưa hoàn thành'
 }
 
 function getSetDraftError(draft: SetDraft, mode: 'add' | 'update') {
@@ -464,6 +478,19 @@ export function WorkoutPage() {
     )
   }
 
+  // Toggles whether the selected set is intentionally skipped or available to perform again.
+  async function handleToggleSkippedSet(set: ExerciseSetDto) {
+    if (!activeSession || !currentExercise) {
+      return
+    }
+
+    await runSessionAction(set.isSkipped ? 'unskip-set' : 'skip-set', (sessionId) =>
+      set.isSkipped
+        ? unskipExerciseSet(sessionId, currentExercise.id, set.id)
+        : skipExerciseSet(sessionId, currentExercise.id, set.id),
+    )
+  }
+
   async function handleAddSessionExercise(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -674,6 +701,9 @@ export function WorkoutPage() {
   }
 
   const sets = currentExercise?.sets ?? []
+  const completedSetCount = sets.filter((set) => set.isCompleted).length
+  const skippedSetCount = sets.filter((set) => set.isSkipped).length
+  const pendingSetCount = sets.length - completedSetCount - skippedSetCount
   const isActionLoading = actionLoading !== null
   const isReadOnly = activeSession.status !== 0
   const sessionExerciseIds = new Set(sessionExercises.map((item) => item.exerciseId))
@@ -814,8 +844,14 @@ export function WorkoutPage() {
               <div className="current-exercise-header">
                 <div>
                   <p className="eyebrow">Exercise Sets</p>
-                  <h3>{sets.length} sets đã ghi</h3>
+                  <h3>{sets.length} sets</h3>
                 </div>
+              </div>
+
+              <div className="exercise-tags set-summary" aria-live="polite">
+                <span>{completedSetCount} hoàn thành</span>
+                <span>{skippedSetCount} bỏ qua</span>
+                <span>{pendingSetCount} chờ thực hiện</span>
               </div>
 
               {sets.length === 0 ? (
@@ -825,7 +861,13 @@ export function WorkoutPage() {
                   {sets.map((set) => (
                     <NeoCard
                       key={set.id}
-                      className={set.isCompleted ? 'set-card completed' : 'set-card'}
+                      className={
+                        set.isCompleted
+                          ? 'set-card completed'
+                          : set.isSkipped
+                            ? 'set-card skipped'
+                            : 'set-card'
+                      }
                     >
                       {!isReadOnly && editingSetId === set.id && editingSetDraft ? (
                         <form className="set-form" onSubmit={(event) => void handleUpdateSet(event)} aria-busy={isActionLoading}>
@@ -917,8 +959,16 @@ export function WorkoutPage() {
                         <>
                           <div className="set-card-header">
                             <strong>Set {set.setNumber}</strong>
-                            <span className="exercise-status">
-                              {set.isCompleted ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
+                            <span
+                              className={`exercise-status ${
+                                set.isCompleted
+                                  ? 'completed'
+                                  : set.isSkipped
+                                    ? 'skipped'
+                                    : 'pending'
+                              }`}
+                            >
+                              {getSetStatusLabel(set)}
                             </span>
                           </div>
                           <div className="exercise-tags">
@@ -927,14 +977,36 @@ export function WorkoutPage() {
                             {set.rpe !== null ? <span>RPE {set.rpe}</span> : null}
                           </div>
                           {set.note ? <p>{set.note}</p> : null}
+                          {set.isSkipped ? (
+                            <p className="set-state-note">
+                              Set này vẫn được giữ lại để bạn có thể thực hiện lại sau.
+                            </p>
+                          ) : null}
                           {isReadOnly ? null : (
                             <div className="set-actions">
                               <NeoButton
                                 type="button"
-                                disabled={isActionLoading}
+                                disabled={isActionLoading || set.isSkipped}
                                 onClick={() => void handleToggleSet(set)}
                               >
-                                {set.isCompleted ? 'Bỏ hoàn thành' : 'Hoàn thành'}
+                                {actionLoading ===
+                                  (set.isCompleted ? 'uncomplete-set' : 'complete-set')
+                                  ? 'Đang cập nhật...'
+                                  : set.isCompleted
+                                    ? 'Bỏ hoàn thành'
+                                    : 'Hoàn thành'}
+                              </NeoButton>
+                              <NeoButton
+                                type="button"
+                                disabled={isActionLoading || set.isCompleted}
+                                onClick={() => void handleToggleSkippedSet(set)}
+                              >
+                                {actionLoading ===
+                                  (set.isSkipped ? 'unskip-set' : 'skip-set')
+                                  ? 'Đang cập nhật...'
+                                  : set.isSkipped
+                                    ? 'Thực hiện lại'
+                                    : 'Bỏ qua set'}
                               </NeoButton>
                               <NeoButton
                                 type="button"

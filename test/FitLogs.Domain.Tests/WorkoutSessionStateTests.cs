@@ -68,6 +68,63 @@ public class WorkoutSessionStateTests
         exercise.Status.ShouldBe(WorkoutSessionExerciseStatus.Completed);
     }
 
+    [Fact]
+    public void Skipping_a_set_keeps_it_visible_but_does_not_count_towards_the_target()
+    {
+        var session = CreateSession();
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 0, 1, 8);
+        var exercise = session.Exercises.Single();
+        var setId = Guid.NewGuid();
+        session.AddSetToExercise(exercise.Id, setId, 1, 20, 8);
+
+        var skippedAt = DateTime.UtcNow;
+        session.SkipSetInExercise(exercise.Id, setId, skippedAt);
+
+        var set = exercise.Sets.Single();
+        set.IsSkipped.ShouldBeTrue();
+        set.SkippedAt.ShouldBe(skippedAt);
+        set.IsCompleted.ShouldBeFalse();
+        exercise.HasReachedTargetSets.ShouldBeFalse();
+        exercise.Status.ShouldBe(WorkoutSessionExerciseStatus.InProgress);
+    }
+
+    [Fact]
+    public void A_skipped_set_can_be_reopened_and_completed_later()
+    {
+        var session = CreateSession();
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 0, 1, 8);
+        var exercise = session.Exercises.Single();
+        var setId = Guid.NewGuid();
+        session.AddSetToExercise(exercise.Id, setId, 1, 20, 8);
+        session.SkipSetInExercise(exercise.Id, setId, DateTime.UtcNow);
+
+        session.UnskipSetInExercise(exercise.Id, setId);
+        session.CompleteSetInExercise(exercise.Id, setId, DateTime.UtcNow);
+
+        var set = exercise.Sets.Single();
+        set.IsSkipped.ShouldBeFalse();
+        set.SkippedAt.ShouldBeNull();
+        set.IsCompleted.ShouldBeTrue();
+        exercise.HasReachedTargetSets.ShouldBeTrue();
+        exercise.Status.ShouldBe(WorkoutSessionExerciseStatus.Completed);
+    }
+
+    [Fact]
+    public void A_skipped_set_cannot_be_completed_without_reopening_it()
+    {
+        var session = CreateSession();
+        session.AddExercise(Guid.NewGuid(), Guid.NewGuid(), 0, 1, 8);
+        var exercise = session.Exercises.Single();
+        var setId = Guid.NewGuid();
+        session.AddSetToExercise(exercise.Id, setId, 1, 20, 8);
+        session.SkipSetInExercise(exercise.Id, setId, DateTime.UtcNow);
+
+        var exception = Should.Throw<BusinessException>(() =>
+            session.CompleteSetInExercise(exercise.Id, setId, DateTime.UtcNow));
+
+        exception.Code.ShouldBe(FitLogsDomainErrorCodes.ExerciseSetAlreadySkipped);
+    }
+
     private static WorkoutSession CreateSession()
     {
         return new WorkoutSession(
