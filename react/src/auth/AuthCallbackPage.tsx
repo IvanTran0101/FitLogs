@@ -28,6 +28,11 @@ export function AuthCallbackPage() {
     async function completeLogin() {
       try {
         const user = await handleLoginCallback()
+        // Silent renew callbacks finish inside an iframe and do not return a new redirect user.
+        if (!user) {
+          return
+        }
+
         await refreshUser()
         navigate(getSafeReturnUrl(user.state), { replace: true })
       } catch (error) {

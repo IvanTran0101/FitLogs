@@ -23,7 +23,7 @@ Current frontend role:
 Current frontend maturity:
 
 - Exercise Library and Workout Plan flows are the most developed.
-- Authentication wiring includes an app-wide auth context/provider and protected-route guard; renewal and permission hardening remain.
+- Authentication wiring includes an app-wide auth context/provider, protected-route guard, and centralized renewal plumbing; runtime renewal and permission verification remain.
 - Food Log, Dashboard, and Workout Session pages are mostly placeholders or static UI; Profile now loads and saves real backend data.
 - API integration is handwritten, not generated.
 - The app uses a consistent Neo-Brutalist visual style with shared components and a mobile shell.
@@ -194,7 +194,8 @@ Routes are declared in `/react/src/App.tsx`.
 | `/plans/:planId/edit` | `WorkoutPlanEditorPage` | ProtectedRoute + backend | Implemented/Partial | Edit plan form and submit. |
 | `/plans/:planId/add-exercises` | `ExercisePickerPage` | ProtectedRoute + backend | Implemented/Partial | Adds selected exercises to plan with target inputs. |
 | `/plans/:planId/exercises/:workoutPlanExerciseId/edit` | `WorkoutPlanExerciseEditorPage` | ProtectedRoute + backend | Implemented/Partial | Edits target sets/reps/kg/rest/note/orderIndex. |
-| `/auth/callback` | `AuthCallbackPage` | Public callback | Implemented/Partial | Completes OIDC login and navigates home. |
+| `/auth/callback` | `AuthCallbackPage` | Public callback | Implemented/Partial | Completes normal OIDC login or silent-renew callback; normal login navigates home. |
+| `/auth/silent-callback` | `AuthCallbackPage` | Public callback | Implemented/Partial | Optional separate silent-renew callback when registered by OpenIddict. |
 | `/auth/logout-callback` | `AuthLogoutCallbackPage` | Public callback | Implemented/Partial | Completes OIDC logout and navigates home. |
 | `*` | `Navigate to /` | Public | Implemented | Catch-all redirect. |
 
@@ -232,7 +233,7 @@ Login flow:
 - `login()` calls `userManager.signinRedirect()`.
 - ABP/OpenIddict handles the login UI server-side.
 - After login, browser returns to `/auth/callback`.
-- `AuthCallbackPage` calls `handleLoginCallback()` and navigates to `/`.
+- `AuthCallbackPage` dispatches normal and silent OIDC callbacks; normal login navigates to `/` or the requested internal path.
 
 Logout flow:
 
@@ -253,8 +254,9 @@ Cookies/credentials:
 
 Refresh token handling:
 
-- No explicit refresh-token or silent-renew implementation is present.
-- If the stored user is expired, `getAccessToken()` returns `null`.
+- `authService.ts` enables `oidc-client-ts` automatic silent renewal and uses `VITE_OIDC_SILENT_REDIRECT_URI` when configured.
+- The existing registered login callback is the safe development fallback for silent renewal; the callback dispatcher distinguishes normal login from silent renewal.
+- If an access token is already expired, `getAccessToken()` attempts one deduplicated `signinSilent()` renewal before returning `null`.
 
 Authentication context/provider:
 
@@ -278,26 +280,29 @@ Current limitations:
 
 - Login/logout buttons are only on `ProfilePage`.
 - No user display name, account menu, or auth state UI.
-- No token refresh/silent renew configured.
-- `useAuth().hasRole()` exposes role claims for UX hints, but no backend permission names are guessed or enforced in React.
+- Silent renew is configured, but its real refresh-token/iframe behavior still requires runtime verification against the deployed OpenIddict client.
+- `useAuth().hasRole()` exposes role claims for UX hints, while `useAuth().hasPermission()` reads server-granted ABP policies for presentation decisions.
 
 ---
 
 # 7. Authorization / Permissions
 
-Frontend authorization is currently minimal.
+Frontend authorization is a server-informed UX layer; backend authorization remains authoritative.
 
 Implemented:
 
 - The frontend sends bearer tokens when available.
 - Backend ABP authorization decides whether requests are allowed.
+- `permissionsApi.ts` reads `auth.grantedPolicies` from `/api/abp/application-configuration`.
+- `AuthProvider` exposes `permissionsLoading` and `hasPermission()` and denies unknown permissions by default.
+- `PermissionGate` provides reusable permission-aware rendering without replacing backend checks.
+- Verified workout-plan, workout-session, and user-profile permission names are centralized in `auth/permissions.ts`.
+- Plan creation/editing/exercise management, workout start, and profile updates hide their controls when the corresponding permission is not granted.
 
 Not implemented:
 
-- No frontend permission API calls.
-- No ABP permission names are imported or checked in React.
-- No route-level permission guard.
-- No component-level permission guard.
+- No route-level permission guard is used; protected routes still rely on authentication plus backend authorization.
+- Fine-grained food-log permissions are not added because the backend exposes no named food-log permission contract.
 
 Important rule:
 
@@ -1065,7 +1070,7 @@ Actual technical debt observed:
 - No generated API client; DTO types are handwritten and can drift from backend.
 - `openapi.json` is large and checked into `src/api`, but no generation workflow exists.
 - Auth context/provider and protected routes are implemented; UI permission checks are not.
-- No token refresh/silent renew flow.
+- Silent renewal is implemented through the existing OIDC client; production token and callback behavior still require runtime verification.
 - `FoodLogPage`, `WorkoutPage`, and `DashboardPage` remain mostly placeholders/static; `ProfilePage` and the dashboard API layer are connected to backend contracts.
 - `ExercisePickerPage` has a standalone route that only logs selected exercise IDs when no `planId` exists.
 - Some code formatting/indentation is inconsistent.
@@ -1088,12 +1093,12 @@ Do not fix these as part of context/handover documentation unless explicitly ask
 | --- | --- | --- |
 | App shell | Implemented | `PageShell`, fixed bottom nav, scrollable content. |
 | Routing | Implemented/Partial | Routes and `ProtectedRoute` exist; no nested layouts. |
-| Authentication | Implemented/Partial | OIDC redirect flow, shared auth state, protected routes, and centralized 401 clearing exist; renewal and permission UX remain. |
-| Authorization | Backend only | No frontend permission checks. |
+| Authentication | Implemented/Partial | OIDC redirect flow, shared auth state, protected routes, centralized 401 clearing, and silent-renew plumbing exist; runtime renewal remains to verify. |
+| Authorization | Implemented/Partial | ABP granted policies are loaded centrally and used for UX gating; backend remains authoritative. |
 | API client | Implemented/Partial | `apiRequest()` handles fetch, bearer token, ABP errors; no generated client. |
 | OpenAPI | Available | `src/api/openapi.json` exists as reference only. |
 | Design system | Implemented/Partial | Neo-Brutalist global CSS and reusable components. |
-| Dashboard | Implemented/Partial | Real API integration with date selection, loading/error/empty states, and incomplete-profile CTA; route protection remains. |
+| Dashboard | Implemented/Partial | Real API integration with date selection, loading/error/empty states, incomplete-profile CTA, and protected routing. |
 | Exercise Library | Implemented | Real API read integration and filters. |
 | Exercise Detail | Implemented/Partial | Real read integration; action buttons not fully wired. |
 | Exercise Picker | Implemented/Partial | Real add-to-plan integration; standalone route incomplete. |
@@ -1705,7 +1710,7 @@ Requirements:
 
 Status:
 
-- Phase 6.1–6.6 completed; Phase 7 authentication hardening is next.
+- Phase 6.1–6.6 completed; Phase 7.1–7.6 frontend auth hardening is implemented, with runtime verification outstanding.
 
 Current ProfilePage state:
 
@@ -1767,7 +1772,7 @@ Definition of done:
 
 Risks:
 
-- Dashboard route protection remains unresolved and belongs to Phase 7 authentication hardening.
+- Dashboard route protection is implemented; runtime auth renewal and backend permission behavior remain Phase 7 verification items.
 - Auth route protection becomes more important as these pages become user-specific.
 
 ---
@@ -1776,7 +1781,7 @@ Risks:
 
 Status:
 
-- Phase 7.1–7.4 completed; silent renewal and backend permission-aware UX remain for the final auth hardening pass.
+- Phase 7.1–7.6 completed; runtime OpenIddict renewal and permission responses still require device/backend verification.
 
 ## Current authentication state
 
@@ -1785,6 +1790,7 @@ Status:
 - `WebStorageStateStore` stores OIDC user data in `window.localStorage`.
 - `login()`, `logout()`, `handleLoginCallback()`, `handleLogoutCallback()`, `getCurrentUser()`, and `getAccessToken()` exist.
 - `AuthCallbackPage` and `AuthLogoutCallbackPage` exist and are routed.
+- `/auth/silent-callback` is also available if production OpenIddict registers a separate silent-renew redirect URI.
 - `apiRequest()` attaches `Authorization: Bearer <token>` when `getAccessToken()` returns a non-expired token.
 - `apiRequest()` also uses `credentials: 'include'`.
 - `ProfilePage` uses `useAuth()` for login/logout actions.
@@ -1793,8 +1799,18 @@ Status:
 - The provider synchronizes persisted users and listens for OIDC user-loaded, user-unloaded, signed-out, and access-token-expired events.
 - `ProtectedRoute` gates user-specific routes and preserves the requested internal path through login.
 - `apiRequest()` clears the local user session on `401` or an ABP login redirect; `403` remains a backend permission error.
-- No silent renew/refresh handling is implemented.
-- No ABP permission names are checked in frontend.
+- `oidc-client-ts` automatic silent renewal is enabled; expired-token requests attempt a single deduplicated `signinSilent()` renewal.
+- `AuthCallbackPage` uses the OIDC callback dispatcher so normal redirects and silent-renew iframe callbacks share the registered callback route safely.
+- `/api/abp/application-configuration` supplies the current user's `auth.grantedPolicies` map through `permissionsApi.ts`.
+- `PermissionGate` and `useAuth().hasPermission()` are UI hints only and fail closed when policies are unavailable.
+- Verified FitLogs permission names cover dashboards, user profiles, workout plans, and workout sessions; food-log actions have no named fine-grained permission contract.
+
+## Phase 7.6 permission-aware UX
+
+- `permissionsApi.ts` uses the documented ABP application-configuration endpoint rather than a guessed permission endpoint.
+- `PermissionGate` hides or replaces controls only after the server policy map is loaded; unknown or unavailable policies fail closed.
+- Workout plan creation, editing, exercise management, workout start, and profile updates use the verified FitLogs permission constants.
+- This layer does not authorize requests, infer permissions from roles, or add controls for food-log operations that lack named backend permissions.
 
 ## Phase 7.1 verification findings
 
@@ -1803,6 +1819,7 @@ Confirmed locally:
 - React uses `FitLogs_App` from `react/.env.local`.
 - Development login callback is `http://localhost:5173/auth/callback`.
 - Development logout callback is `http://localhost:5173/auth/logout-callback`.
+- A separate silent-renew callback is optional; the frontend falls back to `/auth/callback` unless `VITE_OIDC_SILENT_REDIRECT_URI` is configured and registered.
 - Requested scopes are `openid profile email roles FitLogs`.
 - The backend seed reads the same client ID/root URL and creates callback/logout URI variants.
 - The backend CORS policy allows `http://localhost:5173` and `https://localhost:5173` with credentials.
@@ -1853,7 +1870,7 @@ Target improvements:
 - Keep token lookup and attachment centralized in `httpClient.ts` / auth layer.
 - Use `AuthProvider`/`useAuth` for shared auth state; keep token attachment in `httpClient.ts`.
 - Keep protected-route decisions centralized in `ProtectedRoute` rather than duplicating checks in pages.
-- Handle expired tokens centrally instead of adding token checks in every page. **Implemented for `401`/login redirects; silent renewal remains unverified.**
+- Handle expired tokens centrally instead of adding token checks in every page. **Implemented for `401`/login redirects and deduplicated silent renewal; runtime provider behavior remains unverified.**
 - Avoid custom username/password forms unless backend explicitly provides and requires them.
 
 ## Route protection
@@ -2001,8 +2018,8 @@ Where Phase 7 authentication can be deferred:
 ## P1 — Production readiness
 
 - Phase 4.7–4.9: session exercise management, finish/cancel, business-rule error handling.
-- Phase 6.4: dashboard API contract/module completed. Phase 6.5: real DashboardPage completed. Phase 6.6: missing-profile/incomplete-profile fallback completed. Phase 7 is next.
-- Phase 7: OIDC hardening, auth state UX, protected routes, expired-token handling, backend auth/CORS/OpenIddict verification.
+- Phase 6.4: dashboard API contract/module completed. Phase 6.5: real DashboardPage completed. Phase 6.6: missing-profile/incomplete-profile fallback completed. Phase 7.1–7.6 frontend auth hardening completed.
+- Phase 7: OIDC hardening, auth state UX, protected routes, expired-token handling, permission-aware UX, and backend auth/CORS/OpenIddict verification; runtime verification remains.
 - Consistent handling of backend business errors for user-specific aggregates.
 
 ## P2 — UX polish
@@ -2232,7 +2249,7 @@ Implemented:
 
 Partial:
 
-- Authentication route protection remains a Phase 7 concern.
+- Runtime verification of silent renewal and backend authorization remains a Phase 7 concern.
 
 Missing:
 
@@ -2247,7 +2264,7 @@ Implemented:
 
 Partial:
 
-- Authentication route protection remains.
+- Runtime verification of silent renewal and backend authorization remains.
 
 Missing:
 
@@ -2265,7 +2282,7 @@ Partial:
 
 Missing:
 
-- Silent renewal/refresh handling and backend permission-aware UI.
+- Runtime verification of silent renewal/refresh, exact `401`/`403` behavior, and policy grants for test users.
 
 ---
 
@@ -2650,10 +2667,10 @@ CURRENT STATE
 - Backend is source of truth for auth, authorization, validation, business logic, persistence, DTOs, enums.
 - Entrypoint: `src/main.tsx`; routes: `src/App.tsx`; layout: `PageShell` + `BottomNav`.
 - API layer: handwritten modules in `src/api`; all calls should go through `apiRequest()`.
-- Current API modules: `exercisesApi.ts`, `workoutPlansApi.ts`; planned modules must follow this pattern.
+- Current API modules include `exercisesApi.ts`, `workoutPlansApi.ts`, and `permissionsApi.ts`; planned modules must follow this pattern.
 - `src/api/openapi.json` exists as a local Swagger/OpenAPI reference, not generated TypeScript code.
 - Auth: `authService.ts` uses `oidc-client-ts`, localStorage user store, OIDC code flow, bearer token attachment in `httpClient.ts`.
-- Missing auth pieces: silent-renew/refresh handling and backend permission-aware UI; auth context, protected routes, and centralized `401` clearing are implemented.
+- Missing auth pieces: runtime verification of silent-renew/refresh and backend permission-aware UI; auth context, protected routes, centralized `401` clearing, and frontend renewal plumbing are implemented.
 - Design: mobile-first Neo-Brutalism in `src/styles/global.css`; preserve `min(100%, 430px)` shell, black borders, hard shadows, bold colors.
 - Implemented most: Exercise Library and Workout Plan aggregate.
 - Partial/static: Dashboard, FoodLog, Profile, Workout Session.

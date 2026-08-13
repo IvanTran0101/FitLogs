@@ -5,30 +5,57 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import type { User } from 'oidc-client-ts'
 import {
   getCurrentUser,
   login as startLogin,
   logout as startLogout,
+  renewUserSession,
   userManager,
 } from './authService'
+import { getGrantedPolicies, type GrantedPolicies } from '../api/permissionsApi'
 import { AuthContext, type AuthContextValue } from './authContext'
 
 /** Provides shared OIDC user state while keeping token storage and requests in the auth/API layers. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthContextValue['user']>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [permissions, setPermissions] = useState<GrantedPolicies>({})
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
+
+  // Loads server-calculated permissions and fails closed when the configuration request is unavailable.
+  const loadPermissions = useCallback(async (currentUser: User | null) => {
+    if (!currentUser || currentUser.expired) {
+      setPermissions({})
+      setPermissionsLoading(false)
+      return
+    }
+
+    setPermissionsLoading(true)
+    try {
+      setPermissions(await getGrantedPolicies())
+    } catch {
+      setPermissions({})
+    } finally {
+      setPermissionsLoading(false)
+    }
+  }, [])
 
   // Re-reads the persisted OIDC user so pages can refresh auth state after a callback or session change.
   const refreshUser = useCallback(async () => {
     setIsLoading(true)
     try {
       const currentUser = await getCurrentUser()
-      setUser(currentUser)
-      return currentUser
+      const activeUser = currentUser?.expired
+        ? await renewUserSession()
+        : currentUser
+      setUser(activeUser)
+      await loadPermissions(activeUser)
+      return activeUser
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [loadPermissions])
 
   useEffect(() => {
     let isMounted = true
@@ -38,12 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true)
       try {
         const currentUser = await getCurrentUser()
+        const activeUser = currentUser?.expired
+          ? await renewUserSession()
+          : currentUser
         if (isMounted) {
-          setUser(currentUser)
+          setUser(activeUser)
         }
+        await loadPermissions(activeUser)
       } catch {
         if (isMounted) {
           setUser(null)
+          setPermissions({})
+          setPermissionsLoading(false)
         }
       } finally {
         if (isMounted) {
@@ -56,23 +89,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isMounted) {
         setUser(nextUser)
         setIsLoading(false)
+        void loadPermissions(nextUser)
       }
     })
     const unsubscribeUserUnloaded = userManager.events.addUserUnloaded(() => {
       if (isMounted) {
         setUser(null)
+        setPermissions({})
+        setPermissionsLoading(false)
         setIsLoading(false)
       }
     })
     const unsubscribeUserSignedOut = userManager.events.addUserSignedOut(() => {
       if (isMounted) {
         setUser(null)
+        setPermissions({})
+        setPermissionsLoading(false)
         setIsLoading(false)
       }
     })
     const unsubscribeAccessTokenExpired = userManager.events.addAccessTokenExpired(() => {
       if (isMounted) {
-        setUser(null)
+        // Attempts one final centralized renewal before protected routes fall back to login.
+        void renewUserSession().then((renewedUser) => {
+          if (isMounted) {
+            setUser(renewedUser)
+            void loadPermissions(renewedUser)
+          }
+        })
       }
     })
 
@@ -85,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribeUserSignedOut()
       unsubscribeAccessTokenExpired()
     }
-  }, [])
+  }, [loadPermissions])
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -102,11 +146,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return Array.isArray(roleClaim) && roleClaim.some((value) => value === role)
       },
+      permissionsLoading,
+      // Unknown permissions are denied so a failed configuration request never exposes a privileged control.
+      hasPermission: (permission: string) => permissions[permission] === true,
       login: startLogin,
       logout: startLogout,
       refreshUser,
     }),
-    [isLoading, refreshUser, user],
+    [isLoading, permissions, permissionsLoading, refreshUser, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

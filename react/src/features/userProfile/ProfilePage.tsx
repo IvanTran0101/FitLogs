@@ -8,6 +8,8 @@ import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
 import { useAuth } from '../../auth/useAuth'
+import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
+import { PermissionGate } from '../../components/PermissionGate'
 import {
   getMyProfile,
   updateMyProfile,
@@ -312,9 +314,11 @@ export function ProfilePage() {
             ) : null}
             {saveError ? <ErrorState title="Không thể lưu hồ sơ" message={saveError} /> : null}
 
-            <NeoButton className="full-width-button" type="submit" disabled={isSaving}>
-              {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-            </NeoButton>
+            <PermissionGate permission={FITLOGS_PERMISSIONS.userProfiles.update}>
+              <NeoButton className="full-width-button" type="submit" disabled={isSaving}>
+                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </NeoButton>
+            </PermissionGate>
           </form>
 
           <div className="profile-auth-actions">

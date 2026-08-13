@@ -11,6 +11,8 @@ import { LoadingState } from '../../components/LoadingState'
 //import { NeoButton } from '../../components/NeoButton'
 import { NeoCard } from '../../components/NeoCard'
 import { PageShell } from '../../components/PageShell'
+import { PermissionGate } from '../../components/PermissionGate'
+import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 import { Link } from 'react-router-dom'
 function formatWorkoutGoal(goal: WorkoutGoal) {
   if (goal === 0) {
@@ -97,9 +99,11 @@ export function WorkoutPlansPage() {
           title="Chưa có kế hoạch tập"
           message="Tạo workout plan đầu tiên để bắt đầu xây dựng lịch tập."
           action={
-          <Link className="neo-button link-button" to="/plans/new">
-            Tạo kế hoạch
-          </Link>
+          <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.create}>
+            <Link className="neo-button link-button" to="/plans/new">
+              Tạo kế hoạch
+            </Link>
+          </PermissionGate>
         }
         />
       </PageShell>
@@ -109,9 +113,11 @@ export function WorkoutPlansPage() {
   return (
     <PageShell title="Kế hoạch">
       <div className="plan-list-actions">
-        <Link className="neo-button link-button" to="/plans/new">
-          Tạo kế hoạch
-        </Link>
+        <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.create}>
+          <Link className="neo-button link-button" to="/plans/new">
+            Tạo kế hoạch
+          </Link>
+        </PermissionGate>
       </div>
 
       <section className="exercise-list">

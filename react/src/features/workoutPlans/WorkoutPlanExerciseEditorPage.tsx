@@ -18,6 +18,8 @@ import { NeoButton } from '../../components/NeoButton'
 import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { PageShell } from '../../components/PageShell'
+import { PermissionGate } from '../../components/PermissionGate'
+import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 
 type TargetFormState = {
   orderIndex: string
@@ -211,7 +213,16 @@ export function WorkoutPlanExerciseEditorPage() {
         <p className="eyebrow">Exercise Target</p>
         <h2>{getExerciseName(exerciseCatalog, planExercise.exerciseId)}</h2>
 
-        <form className="form-stack" onSubmit={handleSubmit}>
+        <PermissionGate
+          permission={FITLOGS_PERMISSIONS.workoutPlans.manageExercises}
+          fallback={
+            <ErrorState
+              title="Không có quyền chỉnh sửa"
+              message="Tài khoản hiện tại không được phép chỉnh sửa bài tập trong plan."
+            />
+          }
+        >
+          <form className="form-stack" onSubmit={handleSubmit}>
           <NeoInput
             label="Thứ tự"
             type="number"
@@ -302,7 +313,8 @@ export function WorkoutPlanExerciseEditorPage() {
           <NeoButton className="full-width-button" disabled={isSubmitting}>
             {isSubmitting ? 'Đang lưu...' : 'Lưu target'}
           </NeoButton>
-        </form>
+          </form>
+        </PermissionGate>
       </NeoCard>
     </PageShell>
   )

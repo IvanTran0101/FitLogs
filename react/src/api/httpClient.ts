@@ -234,7 +234,10 @@ async function readErrorInfo(response: Response) {
 
   if (!contentType.includes('application/json')) {
     return {
-      message: `API request failed: ${response.status}`,
+      message:
+        response.status === 403
+          ? 'Bạn không có quyền thực hiện thao tác này.'
+          : `API request failed: ${response.status}`,
       code: undefined,
     }
   }
@@ -252,6 +255,9 @@ async function readErrorInfo(response: Response) {
       (code
         ? `Backend đã từ chối thao tác (${code}).`
         : data.error?.message) ??
+      (response.status === 403
+        ? 'Bạn không có quyền thực hiện thao tác này.'
+        : undefined) ??
       `API request failed: ${response.status}`,
     code,
   }

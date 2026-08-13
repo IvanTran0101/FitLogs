@@ -18,6 +18,8 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
+import { PermissionGate } from '../../components/PermissionGate'
+import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 
 type WorkoutPlanFormState = {
   name: string
@@ -157,7 +159,20 @@ async function handleSubmit(
 
         {errorMessage ? <ErrorState message={errorMessage} /> : null}
 
-        <form className="form-stack" onSubmit={handleSubmit}>
+        <PermissionGate
+          permission={
+            isEditMode
+              ? FITLOGS_PERMISSIONS.workoutPlans.update
+              : FITLOGS_PERMISSIONS.workoutPlans.create
+          }
+          fallback={
+            <ErrorState
+              title="Không có quyền chỉnh sửa"
+              message="Tài khoản hiện tại không được phép thay đổi workout plan."
+            />
+          }
+        >
+          <form className="form-stack" onSubmit={handleSubmit}>
           <NeoInput
             label="Tên kế hoạch"
             placeholder="Push Day, Leg Day..."
@@ -238,7 +253,8 @@ async function handleSubmit(
           <NeoButton type="submit" className="full-width-button" disabled={isSubmitting}>
             {isSubmitting ? 'Đang lưu...' : 'Lưu kế hoạch'}
           </NeoButton>
-        </form>
+          </form>
+        </PermissionGate>
       </NeoCard>
     </PageShell>
   )

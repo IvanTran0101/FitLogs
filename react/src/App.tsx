@@ -73,6 +73,7 @@ function App() {
         element={<ProtectedRoute><WorkoutPlanExerciseEditorPage /></ProtectedRoute>}
       />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/auth/silent-callback" element={<AuthCallbackPage />} />
       <Route path="/auth/logout-callback" element={<AuthLogoutCallbackPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
 

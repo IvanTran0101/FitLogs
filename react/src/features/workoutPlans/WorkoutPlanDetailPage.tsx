@@ -18,6 +18,8 @@ import { LoadingState } from '../../components/LoadingState'
 import { NeoCard } from '../../components/NeoCard'
 import { NeoButton } from '../../components/NeoButton'
 import { PageShell } from '../../components/PageShell'
+import { PermissionGate } from '../../components/PermissionGate'
+import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 
 
 function getExerciseName(exercises: ExerciseDto[], exerciseId: string) {
@@ -244,25 +246,31 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
           <p>Plan đã archived nên không thể chỉnh sửa.</p>
         ) : (
           <>
-            <NeoButton
-              className="link-button"
-              type="button"
-              disabled={isStartingWorkout}
-              onClick={() => void handleStartWorkout()}
-            >
-              {isStartingWorkout ? 'Đang bắt đầu...' : 'Bắt đầu buổi tập'}
-            </NeoButton>
+            <PermissionGate permission={FITLOGS_PERMISSIONS.workoutSessions.create}>
+              <NeoButton
+                className="link-button"
+                type="button"
+                disabled={isStartingWorkout}
+                onClick={() => void handleStartWorkout()}
+              >
+                {isStartingWorkout ? 'Đang bắt đầu...' : 'Bắt đầu buổi tập'}
+              </NeoButton>
+            </PermissionGate>
 
-            <Link className="neo-button link-button" to={`/plans/${plan.id}/edit`}>
-              Sửa kế hoạch
-            </Link>
+            <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.update}>
+              <Link className="neo-button link-button" to={`/plans/${plan.id}/edit`}>
+                Sửa kế hoạch
+              </Link>
+            </PermissionGate>
 
-            <Link
-              className="neo-button link-button secondary-link-button"
-              to={`/plans/${plan.id}/add-exercises`}
-            >
-              Thêm bài tập
-            </Link>
+            <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.manageExercises}>
+              <Link
+                className="neo-button link-button secondary-link-button"
+                to={`/plans/${plan.id}/add-exercises`}
+              >
+                Thêm bài tập
+              </Link>
+            </PermissionGate>
           </>
         )}
       </NeoCard>
@@ -284,12 +292,14 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
             }
             action={
               plan.isArchived ? null : (
-                <Link
-                  className="neo-button link-button"
-                  to={`/plans/${plan.id}/add-exercises`}
-                >
-                  Thêm bài tập
-                </Link>
+                <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.manageExercises}>
+                  <Link
+                    className="neo-button link-button"
+                    to={`/plans/${plan.id}/add-exercises`}
+                  >
+                    Thêm bài tập
+                  </Link>
+                </PermissionGate>
               )
             }
           />
@@ -313,34 +323,36 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
                 </div>
                 
                 {planExercise.note ? <p>{planExercise.note}</p> : null}
-                <div className="plan-exercise-actions">
-                <button
-                  className="neo-button plan-exercise-action-button"
-                  type="button"
-                  disabled={index === 0 || mutatingExerciseId === planExercise.id}
-                  onClick={() => handleMoveExercise(index, index - 1)}
-                >
-                  ↑ Lên
-                </button>
+                <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.manageExercises}>
+                  <div className="plan-exercise-actions">
+                    <button
+                      className="neo-button plan-exercise-action-button"
+                      type="button"
+                      disabled={index === 0 || mutatingExerciseId === planExercise.id}
+                      onClick={() => handleMoveExercise(index, index - 1)}
+                    >
+                      ↑ Lên
+                    </button>
 
-                <button
-                  className="neo-button plan-exercise-action-button danger"
-                  type="button"
-                  disabled={mutatingExerciseId === planExercise.id}
-                  onClick={() => handleRemoveExercise(planExercise.id)}
-                >
-                  {mutatingExerciseId === planExercise.id ? 'Đang xoá...' : 'Xoá'}
-                </button>
+                    <button
+                      className="neo-button plan-exercise-action-button danger"
+                      type="button"
+                      disabled={mutatingExerciseId === planExercise.id}
+                      onClick={() => handleRemoveExercise(planExercise.id)}
+                    >
+                      {mutatingExerciseId === planExercise.id ? 'Đang xoá...' : 'Xoá'}
+                    </button>
 
-                <button
-                  className="neo-button plan-exercise-action-button"
-                  type="button"
-                  disabled={index === planExercises.length - 1 || mutatingExerciseId === planExercise.id}
-                  onClick={() => handleMoveExercise(index, index + 1)}
-                >
-                  ↓ Xuống
-                </button>
-              </div>
+                    <button
+                      className="neo-button plan-exercise-action-button"
+                      type="button"
+                      disabled={index === planExercises.length - 1 || mutatingExerciseId === planExercise.id}
+                      onClick={() => handleMoveExercise(index, index + 1)}
+                    >
+                      ↓ Xuống
+                    </button>
+                  </div>
+                </PermissionGate>
               </div>
             </NeoCard>
           ))}
