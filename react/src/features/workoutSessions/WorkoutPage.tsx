@@ -669,8 +669,11 @@ export function WorkoutPage() {
         Mở thư viện
       </Link>
 
-      <Link className="neo-button link-button secondary-link-button" to="/exercise-picker">
-        Mở picker
+      <Link
+        className="neo-button link-button secondary-link-button"
+        to="/exercise-picker?mode=session"
+      >
+        Mở picker thêm bài
       </Link>
     </NeoCard>
   )

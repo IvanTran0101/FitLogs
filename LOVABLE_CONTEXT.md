@@ -188,7 +188,7 @@ Routes are declared in `/react/src/App.tsx`.
 | `/profile` | `ProfilePage` | ProtectedRoute + backend | Implemented/Partial | Real profile form plus shared login/logout actions. |
 | `/exercises` | `ExerciseLibraryPage` | Backend-enforced only | Implemented | Loads exercises, muscle groups, equipment from API and filters locally. |
 | `/exercises/:exerciseId` | `ExerciseDetailPage` | Backend-enforced only | Implemented/Partial | Uses `getExerciseBySlug(exerciseId)`. Detail actions mostly links/placeholders. |
-| `/exercise-picker` | `ExercisePickerPage` | Not enforced | Partial | Standalone picker logs selection to console when no `planId`. |
+| `/exercise-picker` | `ExercisePickerPage` | ProtectedRoute + backend | Implemented/Partial | Supports plan mode and explicit `?mode=session` mode for adding exercises to the active workout. |
 | `/plans/new` | `WorkoutPlanEditorPage` | ProtectedRoute + backend | Implemented/Partial | Create plan form and submit. |
 | `/plans/:planId` | `WorkoutPlanDetailPage` | ProtectedRoute + backend | Implemented/Partial | Loads plan detail, shows exercises, remove/reorder actions. |
 | `/plans/:planId/edit` | `WorkoutPlanEditorPage` | ProtectedRoute + backend | Implemented/Partial | Edit plan form and submit. |
@@ -569,15 +569,14 @@ Backend integration:
 
 Known limitations:
 
-- Standalone `/exercise-picker` has no real destination; it logs selected IDs to console.
-- Minimal validation only via input `min`; no explicit frontend error messages before submit for picker target fields.
-- Adds exercises sequentially in a loop; no bulk API currently used.
+- The picker still adds exercises sequentially because the session API exposes only a single-exercise add operation; a mid-request failure can require the user to review the destination before retrying.
+- The picker requires a plan route or explicit `?mode=session`; a direct route without a destination now explains how to open it correctly.
 
 Possible next frontend tasks:
 
 - Remove or repurpose standalone picker route.
 - Add validation messages for target inputs.
-- Reuse picker for workout session add flow once session APIs are integrated.
+- Use the picker from the active workout when multi-select session additions are more convenient than the inline single-exercise form.
 
 ## Workout Plans List
 
@@ -1920,7 +1919,7 @@ Lovable MUST NOT:
 
 Status:
 
-- Phase 8.8 completed; remaining visual polish is still planned.
+- Phase 8.9 completed; remaining visual polish is still planned.
 
 Audit scope:
 
@@ -1948,6 +1947,7 @@ Current repository state:
 - Phase 8.6 exposes the existing plan-exercise target editor from plan detail, protects archived plans from mutation controls, and keeps direct target-editor routes read-only with a clear return path.
 - Phase 8.7 makes the header menu functional: it exposes existing app routes, marks the active route, closes after navigation, and supports Escape-key dismissal with focus returned to the menu button.
 - Phase 8.8 makes direct food-entry navigation resolve its default day from the backend dashboard timezone contract, while explicit `?date=` links remain unchanged and the form stays disabled until the day is known.
+- Phase 8.9 normalizes shared loading, error, and empty-state semantics: all state cards use atomic live-region announcements, decorative icons/skeletons are hidden from assistive technology, and empty states share the standard state-icon styling.
 
 Constraints:
 
@@ -2212,15 +2212,13 @@ Missing:
 
 Implemented:
 
-- Plan exercise picker patterns exist.
+- The active workout exposes the picker with `?mode=session`.
+- The session picker loads the active session, prevents duplicate exercise selection, validates targets, and maps selections to `AddWorkoutSessionExerciseDto`.
+- The existing inline session exercise manager remains available for single-exercise additions and edits.
 
 Partial:
 
-- Local OpenAPI contains session exercise add/update/remove endpoints.
-
-Missing:
-
-- Session-specific picker/management UI and DTO mapping.
+- Local OpenAPI contains session exercise add/update/remove endpoints, but there is no bulk session-exercise add endpoint, so picker submissions remain sequential.
 
 ## Log food
 

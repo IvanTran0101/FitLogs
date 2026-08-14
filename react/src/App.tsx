@@ -63,7 +63,7 @@ function App() {
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/exercises" element={<ExerciseLibraryPage />} />
       <Route path="/exercises/:exerciseId" element={<ExerciseDetailPage />} />
-      <Route path="/exercise-picker" element={<ExercisePickerPage />} />
+      <Route path="/exercise-picker" element={<ProtectedRoute><ExercisePickerPage /></ProtectedRoute>} />
       <Route path="/plans/new" element={<ProtectedRoute><WorkoutPlanEditorPage /></ProtectedRoute>} />
       <Route path="/plans/:planId" element={<ProtectedRoute><WorkoutPlanDetailPage /></ProtectedRoute>} />
       <Route path="/plans/:planId/edit" element={<ProtectedRoute><WorkoutPlanEditorPage /></ProtectedRoute>} />
