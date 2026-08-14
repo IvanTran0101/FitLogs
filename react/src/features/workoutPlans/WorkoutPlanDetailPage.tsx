@@ -19,6 +19,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoButton } from '../../components/NeoButton'
 import { PageShell } from '../../components/PageShell'
 import { PermissionGate } from '../../components/PermissionGate'
+import { useToast } from '../../components/useToast'
 import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 
 
@@ -64,6 +65,7 @@ function moveExercise(
 export function WorkoutPlanDetailPage() {
   const { planId } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [plan, setPlan] = useState<WorkoutPlanDto | null>(null)
   const [exerciseCatalog, setExerciseCatalog] = useState<ExerciseDto[]>([])
@@ -131,6 +133,7 @@ export function WorkoutPlanDetailPage() {
       const updatedPlan = await removeWorkoutPlanExercise(plan.id, planExerciseId)
 
       setPlan(updatedPlan)
+      showToast('Đã xoá bài tập khỏi kế hoạch.')
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Không thể xoá bài tập khỏi plan.',
@@ -153,6 +156,7 @@ export function WorkoutPlanDetailPage() {
             workoutPlanId: plan.id,
         })
 
+      showToast('Đã bắt đầu buổi tập.')
       navigate('/workout')
     } catch (error) {
       setStartWorkoutError(
@@ -225,6 +229,7 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
     })
 
     setPlan(updatedPlan)
+    showToast('Đã cập nhật thứ tự bài tập.')
   } catch (error) {
     setErrorMessage(
       error instanceof Error ? error.message : 'Không thể đổi thứ tự bài tập.',

@@ -15,6 +15,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
+import { useToast } from '../../components/useToast'
 import { getNameById } from './exerciseFormatters'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -53,6 +54,7 @@ export function ExercisePickerPage() {
 
   const { planId } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -100,6 +102,11 @@ export function ExercisePickerPage() {
         })
     }
 
+    showToast(
+      selectedExerciseIds.length === 1
+        ? 'Đã thêm bài tập vào kế hoạch.'
+        : `Đã thêm ${selectedExerciseIds.length} bài tập vào kế hoạch.`,
+    )
     navigate(`/plans/${planId}`, { replace: true })
   } catch (error) {
     setErrorMessage(

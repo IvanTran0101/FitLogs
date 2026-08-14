@@ -19,6 +19,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { PageShell } from '../../components/PageShell'
 import { PermissionGate } from '../../components/PermissionGate'
+import { useToast } from '../../components/useToast'
 import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 
 type TargetFormState = {
@@ -88,6 +89,7 @@ function toUpdateInput(form: TargetFormState): UpdateWorkoutPlanExerciseDto {
 export function WorkoutPlanExerciseEditorPage() {
   const { planId, workoutPlanExerciseId } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [planExercise, setPlanExercise] = useState<WorkoutPlanExerciseDto | null>(null)
   const [exerciseCatalog, setExerciseCatalog] = useState<ExerciseDto[]>([])
@@ -167,6 +169,7 @@ export function WorkoutPlanExerciseEditorPage() {
         toUpdateInput(form),
       )
 
+      showToast('Đã cập nhật mục tiêu bài tập.')
       navigate(`/plans/${planId}`, { replace: true })
     } catch (error) {
       setErrorMessage(

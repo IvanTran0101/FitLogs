@@ -9,6 +9,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
+import { useToast } from '../../components/useToast'
 import { BarcodeScanner } from './BarcodeScanner'
 import {
   createFoodLog,
@@ -143,6 +144,7 @@ function ProductSummary({
 /** Coordinates product selection, typed barcode lookup, and creation of a server-backed food log. */
 export function FoodAddPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [searchParams] = useSearchParams()
   const returnDate = searchParams.get('date')
   const [searchText, setSearchText] = useState('')
@@ -316,6 +318,7 @@ export function FoodAddPage() {
       })
 
       const selectedDay = loggedAt.slice(0, 10)
+      showToast('Đã thêm món ăn vào nhật ký.')
       navigate(`/food?date=${selectedDay}`, { replace: true })
     } catch (error) {
       setCreateError(

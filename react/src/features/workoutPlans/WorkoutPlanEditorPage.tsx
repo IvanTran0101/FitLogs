@@ -19,6 +19,7 @@ import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
 import { PermissionGate } from '../../components/PermissionGate'
+import { useToast } from '../../components/useToast'
 import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 
 type WorkoutPlanFormState = {
@@ -63,6 +64,7 @@ function toWorkoutPlanInput(form: WorkoutPlanFormState): CreateWorkoutPlanDto {
 export function WorkoutPlanEditorPage() {
   const { planId } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const isEditMode = Boolean(planId)
 
   const [form, setForm] = useState<WorkoutPlanFormState>(defaultFormState)
@@ -136,6 +138,7 @@ async function handleSubmit(
           : await deactivateWorkoutPlan(planId)
       }
 
+      showToast(isEditMode ? 'Đã cập nhật kế hoạch tập.' : 'Đã tạo kế hoạch tập.')
       navigate(`/plans/${savedPlan.id}`, { replace: true })
     } catch (error) {
       setErrorMessage(

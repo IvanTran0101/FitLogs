@@ -8,6 +8,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
+import { useToast } from '../../components/useToast'
 import {
   deleteFoodLog,
   getFoodLog,
@@ -48,6 +49,7 @@ function toApiDateTime(value: string) {
 export function FoodLogEditPage() {
   const { foodLogId } = useParams<{ foodLogId: string }>()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [searchParams] = useSearchParams()
   const [foodLog, setFoodLog] = useState<FoodLogDto | null>(null)
   const [quantity, setQuantity] = useState('')
@@ -146,6 +148,7 @@ export function FoodLogEditPage() {
       })
 
       const selectedDay = loggedAt.slice(0, 10) || searchParams.get('date') || ''
+      showToast('Đã cập nhật nhật ký món ăn.')
       navigate(selectedDay ? `/food?date=${selectedDay}` : '/food', { replace: true })
     } catch (error) {
       setFormError(
@@ -173,6 +176,7 @@ export function FoodLogEditPage() {
     try {
       await deleteFoodLog(foodLogId)
       const selectedDay = loggedAt.slice(0, 10) || searchParams.get('date') || ''
+      showToast('Đã xoá nhật ký món ăn.')
       navigate(selectedDay ? `/food?date=${selectedDay}` : '/food', { replace: true })
     } catch (error) {
       setFormError(

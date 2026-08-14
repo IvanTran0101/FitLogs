@@ -10,6 +10,7 @@ import { PageShell } from '../../components/PageShell'
 import { useAuth } from '../../auth/useAuth'
 import { FITLOGS_PERMISSIONS } from '../../auth/permissions'
 import { PermissionGate } from '../../components/PermissionGate'
+import { useToast } from '../../components/useToast'
 import {
   getMyProfile,
   updateMyProfile,
@@ -91,6 +92,7 @@ function toUpdateDto(form: ProfileFormState): UpdateUserProfileDto {
 /** Coordinates profile loading, editable form state, validation, and backend persistence. */
 export function ProfilePage() {
   const { login, logout } = useAuth()
+  const { showToast } = useToast()
   const [form, setForm] = useState<ProfileFormState | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -203,6 +205,7 @@ export function ProfilePage() {
     try {
       const updatedProfile = await updateMyProfile(updateDto)
       setForm(toFormState(updatedProfile))
+      showToast('Đã lưu hồ sơ người dùng.')
     } catch (error) {
       setSaveError(
         error instanceof Error

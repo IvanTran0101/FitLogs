@@ -1920,7 +1920,7 @@ Lovable MUST NOT:
 
 Status:
 
-- Phase 8.4 completed; remaining visual polish is still planned.
+- Phase 8.5 completed; remaining visual polish is still planned.
 
 Audit scope:
 
@@ -1944,6 +1944,7 @@ Current repository state:
 - Phase 8.3 preserves parent-flow context in back links, keeps the selected food-log day when entering the add-food flow, gives the standalone/plan exercise picker an explicit return path, and replaces successful editor/log mutations so browser Back does not reopen stale forms. Nested plan routes continue to highlight the Plan tab.
 - Food Log now resolves its default day through the existing Dashboard today endpoint, so its default date uses the same profile-timezone source as Dashboard instead of the browser clock.
 - Phase 8.4 normalizes active-workout set states: completed, skipped, and pending counts are visible; skipped sets explain their reversible behavior; set actions use a two-column mobile layout; and the new skip business errors have clear frontend messages.
+- Phase 8.5 adds a shared accessible toast provider for successful mutations across profile, workout plans, workout sessions, exercise selection, and food-log flows. Persistent `ErrorState` cards remain responsible for failures that need user action.
 
 Constraints:
 

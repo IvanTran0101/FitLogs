@@ -39,6 +39,7 @@ import { NeoCard } from '../../components/NeoCard'
 import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
+import { useToast } from '../../components/useToast'
 
 type SetDraft = {
   setNumber: string
@@ -147,6 +148,19 @@ function getSetStatusLabel(set: ExerciseSetDto) {
   }
 
   return 'Chưa hoàn thành'
+}
+
+const SESSION_ACTION_SUCCESS_MESSAGES: Record<string, string> = {
+  'add-set': 'Đã thêm set.',
+  'update-set': 'Đã cập nhật set.',
+  'remove-set': 'Đã xoá set.',
+  'complete-set': 'Đã hoàn thành set.',
+  'uncomplete-set': 'Đã mở lại set.',
+  'skip-set': 'Đã bỏ qua set.',
+  'unskip-set': 'Set đã sẵn sàng để thực hiện lại.',
+  'add-session-exercise': 'Đã thêm bài tập vào buổi tập.',
+  'update-session-exercise': 'Đã cập nhật mục tiêu bài tập.',
+  'remove-session-exercise': 'Đã xoá bài tập khỏi buổi tập.',
 }
 
 function getSetDraftError(draft: SetDraft, mode: 'add' | 'update') {
@@ -283,6 +297,7 @@ function getSetDraftFromSet(set: ExerciseSetDto) {
 }
 
 export function WorkoutPage() {
+  const { showToast } = useToast()
   const [activeSession, setActiveSession] = useState<WorkoutSessionDto | null>(null)
   const [currentExercise, setCurrentExercise] =
     useState<WorkoutSessionExerciseDto | null>(null)
@@ -396,6 +411,10 @@ export function WorkoutPage() {
       setActionError(null)
       const nextSession = await action(activeSession.id)
       await applySession(nextSession)
+      const successMessage = SESSION_ACTION_SUCCESS_MESSAGES[actionName]
+      if (successMessage) {
+        showToast(successMessage)
+      }
       return true
     } catch (error) {
       setActionError(
@@ -589,6 +608,7 @@ export function WorkoutPage() {
       setExercise(null)
       setExerciseCatalog([])
       setSessionOutcomeMessage('Buổi tập đã được hoàn thành và không còn là buổi tập đang diễn ra.')
+      showToast('Đã hoàn thành buổi tập.')
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : 'Không thể hoàn thành buổi tập.',
@@ -620,6 +640,7 @@ export function WorkoutPage() {
       setExercise(null)
       setExerciseCatalog([])
       setSessionOutcomeMessage('Buổi tập đã được huỷ và không còn là buổi tập đang diễn ra.')
+      showToast('Đã huỷ buổi tập.')
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : 'Không thể huỷ buổi tập.',
