@@ -1965,6 +1965,36 @@ Definition of done:
 
 ---
 
+# Phase 9 — Public iPhone Test Environment
+
+Status:
+
+- Phase 9.1 infrastructure preparation completed; DNS, router forwarding, backend runtime launch, and certificate issuance remain external setup steps.
+
+Current repository state:
+
+- `react/.env.public` targets `https://fitlogs.trananhminh.uk` for the API, OIDC authority, login callback, and logout callback.
+- `react` exposes `npm run build:public` for a static bundle intended to be served by Nginx.
+- `ops/nginx/` contains the HTTP certificate-bootstrap block, final HTTPS reverse-proxy block, and proxy headers.
+- `ops/backend/fitlogs.public.env.example` documents the public ASP.NET Core and OpenIddict environment values while keeping database and signing-certificate secrets outside the repository.
+- Nginx and Certbot are installed locally on the Mac Mini, and the bootstrap Nginx configuration passes `nginx -t`.
+
+External prerequisites still pending:
+
+- Add an `A` record for `fitlogs.trananhminh.uk` pointing to the router's public IPv4 address.
+- Reserve the Mac Mini's LAN address and forward only TCP ports 80 and 443 to it.
+- Run ASP.NET Core on `127.0.0.1:5000`, run the DbMigrator with the public OpenIddict client root URL, and provide the production OpenIddict certificate outside the repository.
+- Issue the Let's Encrypt certificate, install the final Nginx block, and verify renewal.
+- Perform smoke tests from outside the LAN before using the iPhone camera flow.
+
+Constraints:
+
+- Do not forward Kestrel, Vite, PostgreSQL, or Swagger ports.
+- Do not commit TLS private keys, OpenIddict certificates, database passwords, or router credentials.
+- If the ISP uses CGNAT, replace direct port forwarding with a tunnel rather than exposing the Mac through an unsafe workaround.
+
+---
+
 # Roadmap Dependency Order
 
 ```text
