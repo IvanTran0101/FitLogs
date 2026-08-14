@@ -92,6 +92,7 @@ export function WorkoutPlanExerciseEditorPage() {
   const { showToast } = useToast()
 
   const [planExercise, setPlanExercise] = useState<WorkoutPlanExerciseDto | null>(null)
+  const [isPlanArchived, setIsPlanArchived] = useState(false)
   const [exerciseCatalog, setExerciseCatalog] = useState<ExerciseDto[]>([])
   const [form, setForm] = useState<TargetFormState | null>(null)
   const [errors, setErrors] = useState<TargetFormErrors>({})
@@ -124,6 +125,7 @@ export function WorkoutPlanExerciseEditorPage() {
           planResult.exercises?.find((exercise) => exercise.id === workoutPlanExerciseId) ?? null
 
         setPlanExercise(foundExercise)
+        setIsPlanArchived(planResult.isArchived)
         setExerciseCatalog(exerciseResult.items ?? [])
         setForm(foundExercise ? toFormState(foundExercise) : null)
       } catch (error) {
@@ -207,6 +209,22 @@ export function WorkoutPlanExerciseEditorPage() {
           message="Bài tập này không còn nằm trong workout plan."
           action={
             <Link className="neo-button link-button" to={planId ? `/plans/${planId}` : '/plans'}>
+              Quay lại plan
+            </Link>
+          }
+        />
+      </PageShell>
+    )
+  }
+
+  if (isPlanArchived) {
+    return (
+      <PageShell title="Sửa target">
+        <EmptyState
+          title="Plan đã archived"
+          message="Plan đã archived nên target bài tập chỉ có thể xem, không thể chỉnh sửa."
+          action={
+            <Link className="neo-button link-button" to={`/plans/${planId}`}>
               Quay lại plan
             </Link>
           }

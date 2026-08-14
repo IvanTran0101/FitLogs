@@ -116,7 +116,7 @@ export function WorkoutPlanDetailPage() {
   }
 
   async function handleRemoveExercise(planExerciseId: string) {
-    if (!plan) {
+    if (!plan || plan.isArchived) {
       return
     }
 
@@ -204,8 +204,8 @@ export function WorkoutPlanDetailPage() {
 
   const planExercises = sortPlanExercises(plan.exercises ?? [])
 
-async function handleMoveExercise(fromIndex: number, toIndex: number) {
-  if (!plan) {
+  async function handleMoveExercise(fromIndex: number, toIndex: number) {
+  if (!plan || plan.isArchived) {
     return
   }
 
@@ -337,36 +337,45 @@ async function handleMoveExercise(fromIndex: number, toIndex: number) {
                 </div>
                 
                 {planExercise.note ? <p>{planExercise.note}</p> : null}
-                <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.manageExercises}>
-                  <div className="plan-exercise-actions">
-                    <button
-                      className="neo-button plan-exercise-action-button"
-                      type="button"
-                      disabled={index === 0 || mutatingExerciseId === planExercise.id}
-                      onClick={() => handleMoveExercise(index, index - 1)}
-                    >
-                      ↑ Lên
-                    </button>
+                {!plan.isArchived ? (
+                  <PermissionGate permission={FITLOGS_PERMISSIONS.workoutPlans.manageExercises}>
+                    <div className="plan-exercise-actions">
+                      <Link
+                        className="neo-button plan-exercise-action-button"
+                        to={`/plans/${plan.id}/exercises/${planExercise.id}/edit`}
+                      >
+                        Sửa target
+                      </Link>
 
-                    <button
-                      className="neo-button plan-exercise-action-button danger"
-                      type="button"
-                      disabled={mutatingExerciseId === planExercise.id}
-                      onClick={() => handleRemoveExercise(planExercise.id)}
-                    >
-                      {mutatingExerciseId === planExercise.id ? 'Đang xoá...' : 'Xoá'}
-                    </button>
+                      <button
+                        className="neo-button plan-exercise-action-button"
+                        type="button"
+                        disabled={index === 0 || mutatingExerciseId === planExercise.id}
+                        onClick={() => handleMoveExercise(index, index - 1)}
+                      >
+                        ↑ Lên
+                      </button>
 
-                    <button
-                      className="neo-button plan-exercise-action-button"
-                      type="button"
-                      disabled={index === planExercises.length - 1 || mutatingExerciseId === planExercise.id}
-                      onClick={() => handleMoveExercise(index, index + 1)}
-                    >
-                      ↓ Xuống
-                    </button>
-                  </div>
-                </PermissionGate>
+                      <button
+                        className="neo-button plan-exercise-action-button danger"
+                        type="button"
+                        disabled={mutatingExerciseId === planExercise.id}
+                        onClick={() => handleRemoveExercise(planExercise.id)}
+                      >
+                        {mutatingExerciseId === planExercise.id ? 'Đang xoá...' : 'Xoá'}
+                      </button>
+
+                      <button
+                        className="neo-button plan-exercise-action-button"
+                        type="button"
+                        disabled={index === planExercises.length - 1 || mutatingExerciseId === planExercise.id}
+                        onClick={() => handleMoveExercise(index, index + 1)}
+                      >
+                        ↓ Xuống
+                      </button>
+                    </div>
+                  </PermissionGate>
+                ) : null}
               </div>
             </NeoCard>
           ))}

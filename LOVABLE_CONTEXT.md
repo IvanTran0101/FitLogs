@@ -1920,7 +1920,7 @@ Lovable MUST NOT:
 
 Status:
 
-- Phase 8.5 completed; remaining visual polish is still planned.
+- Phase 8.6 completed; remaining visual polish is still planned.
 
 Audit scope:
 
@@ -1945,6 +1945,7 @@ Current repository state:
 - Food Log now resolves its default day through the existing Dashboard today endpoint, so its default date uses the same profile-timezone source as Dashboard instead of the browser clock.
 - Phase 8.4 normalizes active-workout set states: completed, skipped, and pending counts are visible; skipped sets explain their reversible behavior; set actions use a two-column mobile layout; and the new skip business errors have clear frontend messages.
 - Phase 8.5 adds a shared accessible toast provider for successful mutations across profile, workout plans, workout sessions, exercise selection, and food-log flows. Persistent `ErrorState` cards remain responsible for failures that need user action.
+- Phase 8.6 exposes the existing plan-exercise target editor from plan detail, protects archived plans from mutation controls, and keeps direct target-editor routes read-only with a clear return path.
 
 Constraints:
 
