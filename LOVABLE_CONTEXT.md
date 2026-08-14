@@ -1920,7 +1920,7 @@ Lovable MUST NOT:
 
 Status:
 
-- Phase 8.7 completed; remaining visual polish is still planned.
+- Phase 8.8 completed; remaining visual polish is still planned.
 
 Audit scope:
 
@@ -1947,6 +1947,7 @@ Current repository state:
 - Phase 8.5 adds a shared accessible toast provider for successful mutations across profile, workout plans, workout sessions, exercise selection, and food-log flows. Persistent `ErrorState` cards remain responsible for failures that need user action.
 - Phase 8.6 exposes the existing plan-exercise target editor from plan detail, protects archived plans from mutation controls, and keeps direct target-editor routes read-only with a clear return path.
 - Phase 8.7 makes the header menu functional: it exposes existing app routes, marks the active route, closes after navigation, and supports Escape-key dismissal with focus returned to the menu button.
+- Phase 8.8 makes direct food-entry navigation resolve its default day from the backend dashboard timezone contract, while explicit `?date=` links remain unchanged and the form stays disabled until the day is known.
 
 Constraints:
 

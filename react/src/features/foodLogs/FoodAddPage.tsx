@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../../components/EmptyState'
@@ -10,6 +10,7 @@ import { NeoInput } from '../../components/NeoInput'
 import { NeoSelect } from '../../components/NeoSelect'
 import { PageShell } from '../../components/PageShell'
 import { useToast } from '../../components/useToast'
+import { getTodayDashboard } from '../../api/dashboardApi'
 import { BarcodeScanner } from './BarcodeScanner'
 import {
   createFoodLog,
@@ -41,20 +42,9 @@ const MEAL_TYPE_OPTIONS = [
   { label: 'Sau tập', value: '6' },
 ]
 
-/** Creates the browser-local date used when no date was supplied by the daily log page. */
-function getTodayInputValue() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 /** Accepts only a valid date-input value from the daily-log link. */
 function getInitialDate(searchParam: string | null) {
-  return searchParam && /^\d{4}-\d{2}-\d{2}$/.test(searchParam)
-    ? searchParam
-    : getTodayInputValue()
+  return searchParam && /^\d{4}-\d{2}-\d{2}$/.test(searchParam) ? searchParam : ''
 }
 
 /** Creates a datetime-local value while keeping the browser's local calendar date visible. */
@@ -146,7 +136,12 @@ export function FoodAddPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
-  const returnDate = searchParams.get('date')
+  const requestedDate = searchParams.get('date')
+  const initialDate = getInitialDate(requestedDate)
+  const returnDate = initialDate || null
+  const [isDateReady, setIsDateReady] = useState(Boolean(initialDate))
+  const [dateError, setDateError] = useState<string | null>(null)
+  const [dateReloadToken, setDateReloadToken] = useState(0)
   const [searchText, setSearchText] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [products, setProducts] = useState<FoodProductDto[]>([])
@@ -166,7 +161,7 @@ export function FoodAddPage() {
   const [unit, setUnit] = useState<FoodUnit>(1)
   const [mealType, setMealType] = useState<MealType>(1)
   const [loggedAt, setLoggedAt] = useState(() =>
-    getDateTimeLocalValue(getInitialDate(searchParams.get('date'))),
+    initialDate ? getDateTimeLocalValue(initialDate) : '',
   )
   const [note, setNote] = useState('')
   const [quantityError, setQuantityError] = useState<string | undefined>()
@@ -174,6 +169,51 @@ export function FoodAddPage() {
   const [isCreating, setIsCreating] = useState(false)
   const searchRequestId = useRef(0)
   const lookupRequestId = useRef(0)
+
+  useEffect(() => {
+    if (isDateReady) {
+      return
+    }
+
+    let isCurrentRequest = true
+    setDateError(null)
+
+    // Resolves the default calendar day from the same backend timezone source as Dashboard and Food Log.
+    async function resolveDefaultDate() {
+      try {
+        const dashboard = await getTodayDashboard()
+        const serverDate = getInitialDate(dashboard.date)
+
+        if (!serverDate) {
+          throw new Error('Máy chủ trả về ngày hiện tại không hợp lệ.')
+        }
+
+        if (isCurrentRequest) {
+          setLoggedAt(getDateTimeLocalValue(serverDate))
+          setIsDateReady(true)
+        }
+      } catch (error) {
+        if (isCurrentRequest) {
+          setDateError(
+            error instanceof Error
+              ? error.message
+              : 'Không thể xác định ngày hiện tại từ máy chủ.',
+          )
+        }
+      }
+    }
+
+    void resolveDefaultDate()
+
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [dateReloadToken, isDateReady])
+
+  // Retries only the backend date lookup without resetting the product or barcode form state.
+  function retryDefaultDate() {
+    setDateReloadToken((currentToken) => currentToken + 1)
+  }
 
   // Loads only one backend page so the browser never downloads the complete food catalog.
   async function loadProductPage(queryText: string, page: number) {
@@ -356,6 +396,17 @@ export function FoodAddPage() {
           ← Quay lại nhật ký
         </Link>
 
+        {!isDateReady && dateError ? (
+          <ErrorState
+            title="Không xác định được ngày"
+            message={dateError}
+            action={<NeoButton onClick={retryDefaultDate}>Thử lại</NeoButton>}
+          />
+        ) : null}
+        {!isDateReady && !dateError ? (
+          <LoadingState message="Đang xác định ngày theo múi giờ hồ sơ..." />
+        ) : null}
+
         <NeoCard className="food-add-card food-search-card">
           <p className="eyebrow">Tìm trong kho sản phẩm</p>
           <h2>Tìm món ăn</h2>
@@ -405,7 +456,7 @@ export function FoodAddPage() {
                 product={product}
                 selected={selectedProductId === product.id}
                 onSelect={() => selectProduct(product)}
-                disabled={isCreating}
+                disabled={isCreating || !isDateReady}
               />
             ))}
             <div className="food-pagination">
@@ -494,7 +545,7 @@ export function FoodAddPage() {
             product={lookupResult}
             sourceLabel={lookupResult.fromCache ? 'Đã có trong hệ thống' : 'Tìm từ Open Food Facts'}
             selected={selectedProductId === lookupResult.foodProductId}
-            disabled={isCreating}
+            disabled={isCreating || !isDateReady}
             onSelect={
               lookupResult.foodProductId
                 ? () => selectProduct(lookupResult)
@@ -518,7 +569,7 @@ export function FoodAddPage() {
                 max="999999"
                 step="0.01"
                 value={quantity}
-                disabled={isCreating}
+                disabled={isCreating || !isDateReady}
                 onChange={(event) => setQuantity(event.target.value)}
                 error={quantityError}
               />
@@ -526,14 +577,14 @@ export function FoodAddPage() {
                 <NeoSelect
                   label="Đơn vị"
                   value={String(unit)}
-                  disabled={isCreating}
+                  disabled={isCreating || !isDateReady}
                   onChange={(event) => setUnit(Number(event.target.value) as FoodUnit)}
                   options={FOOD_UNIT_OPTIONS}
                 />
                 <NeoSelect
                   label="Bữa ăn"
                   value={String(mealType)}
-                  disabled={isCreating}
+                  disabled={isCreating || !isDateReady}
                   onChange={(event) => setMealType(Number(event.target.value) as MealType)}
                   options={MEAL_TYPE_OPTIONS}
                 />
@@ -542,17 +593,17 @@ export function FoodAddPage() {
                 label="Thời điểm"
                 type="datetime-local"
                 value={loggedAt}
-                disabled={isCreating}
+                disabled={isCreating || !isDateReady}
                 onChange={(event) => setLoggedAt(event.target.value)}
               />
               <NeoInput
                 label="Ghi chú (tuỳ chọn)"
                 maxLength={512}
                 value={note}
-                disabled={isCreating}
+                disabled={isCreating || !isDateReady}
                 onChange={(event) => setNote(event.target.value)}
               />
-              <NeoButton type="submit" disabled={isCreating}>
+              <NeoButton type="submit" disabled={isCreating || !isDateReady}>
                 {isCreating ? 'Đang lưu...' : 'Lưu nhật ký món ăn'}
               </NeoButton>
             </form>
